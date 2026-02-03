@@ -1,0 +1,4 @@
+# Sims4 Duplicate Scanner Requirements
+# Für Entwicklung & EXE-Erstellung
+
+pyinstaller==6.18.0
