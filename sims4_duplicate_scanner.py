@@ -3262,6 +3262,16 @@ class LocalServer:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return
 
+                if u.path == "/api/tutorial":
+                    qs = parse_qs(u.query)
+                    if qs.get("token", [""])[0] != token:
+                        self._json(403, {"ok": False, "error": "bad token"})
+                        return
+                    seen = getattr(server_ref, 'app_ref', None)
+                    tutorial_seen = getattr(seen, '_tutorial_seen', False) if seen else False
+                    self._json(200, {"ok": True, "tutorial_seen": tutorial_seen})
+                    return
+
                 self._send(404, b"not found", "text/plain; charset=utf-8")
 
             def do_POST(self):
@@ -3868,6 +3878,17 @@ class LocalServer:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return
 
+                if action == "mark_tutorial_seen":
+                    try:
+                        app = getattr(server_ref, 'app_ref', None)
+                        if app:
+                            app._tutorial_seen = True
+                            app._save_config_now()
+                        self._json(200, {"ok": True})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
                 self._json(404, {"ok": False, "error": "unknown action"})
                 print(f"[UNKNOWN_ACTION] {action} -> {p}", flush=True)
                 append_log(f"UNKNOWN_ACTION {action} {p}")
@@ -3961,6 +3982,50 @@ class LocalServer:
   .legend-grid { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:12px; margin-top:10px; }
   .legend-icon { text-align:center; min-width:80px; }
   .info-hint { background:#172554; border:1px solid #1e40af; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12px; color:#93c5fd; }
+
+  /* ---- Tutorial Overlay ---- */
+  #tutorial-overlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
+  #tutorial-overlay.active { display:flex; }
+  #tutorial-card { background:linear-gradient(145deg,#0f172a,#1e1b4b); border:1px solid #4f46e5; border-radius:20px; padding:36px 40px 28px; max-width:600px; width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.6); position:relative; animation:tutorialIn 0.35s ease-out; }
+  @keyframes tutorialIn { from { opacity:0; transform:translateY(30px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+  #tutorial-card .tut-header { text-align:center; margin-bottom:20px; }
+  #tutorial-card .tut-icon { font-size:48px; margin-bottom:8px; display:block; }
+  #tutorial-card .tut-title { font-size:22px; font-weight:bold; color:#e2e8f0; margin-bottom:4px; }
+  #tutorial-card .tut-body { color:#cbd5e1; font-size:14px; line-height:1.7; min-height:100px; }
+  #tutorial-card .tut-body b { color:#a5b4fc; }
+  #tutorial-card .tut-body ul { margin:8px 0 0 18px; padding:0; }
+  #tutorial-card .tut-body li { margin-bottom:4px; }
+  .tut-footer { display:flex; justify-content:space-between; align-items:center; margin-top:24px; gap:12px; flex-wrap:wrap; }
+  .tut-dots { display:flex; gap:6px; justify-content:center; flex:1; }
+  .tut-dot { width:10px; height:10px; border-radius:50%; background:#334155; transition:all 0.2s; cursor:pointer; }
+  .tut-dot.active { background:#6366f1; transform:scale(1.3); }
+  .tut-dot.done { background:#4f46e5; }
+  .tut-btn { border:1px solid #4f46e5; background:#1e1b4b; color:#c7d2fe; padding:8px 20px; border-radius:10px; cursor:pointer; font-size:13px; transition:all 0.15s; white-space:nowrap; }
+  .tut-btn:hover { background:#312e81; color:#e0e7ff; }
+  .tut-btn-primary { background:#6366f1; color:#fff; border-color:#6366f1; font-weight:bold; }
+  .tut-btn-primary:hover { background:#818cf8; }
+  .tut-btn-skip { background:transparent; border-color:#334155; color:#64748b; font-size:12px; }
+  .tut-btn-skip:hover { color:#94a3b8; border-color:#475569; }
+  .tut-check { display:flex; align-items:center; gap:8px; margin-top:16px; justify-content:center; }
+  .tut-check label { color:#64748b; font-size:12px; cursor:pointer; }
+  .tut-check input { accent-color:#6366f1; }
+
+  /* Plumbob CSS Animation */
+  .plumbob-container { position:relative; width:54px; height:70px; margin:0 auto 12px; }
+  .plumbob { width:54px; height:70px; animation: plumbobFloat 3s ease-in-out infinite, plumbobGlow 2s ease-in-out infinite alternate; filter: drop-shadow(0 0 12px rgba(99,230,130,0.5)); }
+  @keyframes plumbobFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(2deg); }
+    50% { transform: translateY(-4px) rotate(0deg); }
+    75% { transform: translateY(-10px) rotate(-2deg); }
+  }
+  @keyframes plumbobGlow {
+    0% { filter: drop-shadow(0 0 8px rgba(99,230,130,0.3)); }
+    100% { filter: drop-shadow(0 0 20px rgba(99,230,130,0.7)); }
+  }
+  .nav-btn-tutorial { background:linear-gradient(135deg,#312e81,#1e1b4b) !important; border-color:#6366f1 !important; color:#c7d2fe !important; }
+  .nav-btn-tutorial:hover { background:linear-gradient(135deg,#3730a3,#312e81) !important; color:#e0e7ff !important; }
+
   #back-to-top { position:fixed; bottom:24px; right:24px; z-index:99; background:#6366f1; color:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:20px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.4); transition:opacity 0.2s, transform 0.2s; opacity:0; pointer-events:none; transform:translateY(10px); }
   #back-to-top.visible { opacity:1; pointer-events:auto; transform:translateY(0); }
   #back-to-top:hover { background:#818cf8; transform:translateY(-2px); }
@@ -4310,6 +4375,8 @@ class LocalServer:
   <button class="nav-btn" onclick="document.getElementById('allmods-section').scrollIntoView({behavior:'smooth'})" id="nav-allmods">🏷️ Alle Mods</button>
   <button class="nav-btn nav-hidden" onclick="document.getElementById('quarantine-section').scrollIntoView({behavior:'smooth'})" id="nav-quarantine">📦 Quarantäne <span class="nav-badge" id="nav-badge-quarantine">0</span></button>
   <button class="nav-btn" onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'})" id="nav-history">📚 Verlauf</button>
+  <div class="nav-sep"></div>
+  <button class="nav-btn nav-btn-tutorial" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
 </div>
 
 <div class="box notice">
@@ -6203,6 +6270,224 @@ loadCreators();
 loadNotes();
 loadTags();
 loadCurseForge();
+
+// ---- Tutorial System ----
+const TUTORIAL_STEPS = [
+  {
+    icon: '🎮',
+    title: 'Willkommen beim Sims 4 Duplikate Scanner!',
+    body: `<b>Schön, dass du da bist!</b> Dieses Tool hilft dir, deine Mods-Sammlung sauber und organisiert zu halten.<br><br>
+    In diesem kurzen Tutorial zeigen wir dir alle wichtigen Funktionen.<br><br>
+    <b>💡 Tipp:</b> Du kannst das Tutorial jederzeit über den <b>❓ Tutorial</b>-Button in der Navigationsleiste erneut starten.`
+  },
+  {
+    icon: '🧭',
+    title: 'Die Navigationsleiste',
+    body: `Oben findest du die <b>Navigationsleiste</b> mit allen Bereichen:<br>
+    <ul>
+      <li><b>📂 Duplikate</b> — Gefundene doppelte Mod-Dateien</li>
+      <li><b>💀 Korrupte</b> — Beschädigte Dateien die Probleme verursachen</li>
+      <li><b>⚔️ Konflikte</b> — Mods die sich gegenseitig überschreiben</li>
+      <li><b>⏰ Veraltet</b> — Mods die nicht mehr aktuell sind</li>
+    </ul>
+    Die Badges zeigen die <b>Anzahl</b> der gefundenen Probleme an. Abschnitte ohne Funde werden automatisch ausgeblendet.`
+  },
+  {
+    icon: '🔍',
+    title: 'Duplikate verstehen',
+    body: `Der Scanner findet drei Arten von Duplikaten:<br>
+    <ul>
+      <li><b>📝 Name</b> — Gleicher Dateiname in verschiedenen Ordnern</li>
+      <li><b>📦 Inhalt</b> — Identischer Dateiinhalt (exakte Kopien)</li>
+      <li><b>🔎 Ähnlich</b> — Dateien mit ähnlichem Inhalt (z.B. verschiedene Versionen)</li>
+    </ul>
+    Jede Gruppe zeigt alle betroffenen Dateien mit <b>Pfad, Größe und Änderungsdatum</b>.`
+  },
+  {
+    icon: '📦',
+    title: 'DBPF-Tiefenanalyse',
+    body: `Der Scanner kann <b>.package-Dateien</b> lesen und analysieren — das Sims 4 Dateiformat.<br><br>
+    Die Tiefenanalyse erkennt automatisch:
+    <ul>
+      <li><b>Kategorie</b> — CAS, Objekte, Tuning, Skript usw.</li>
+      <li><b>Vorschaubilder</b> — Thumbnails direkt aus der Datei</li>
+      <li><b>Interne Ressourcen</b> — Was genau in der Datei steckt</li>
+    </ul>
+    So siehst du auf einen Blick, was jede Mod-Datei enthält!`
+  },
+  {
+    icon: '🖼️',
+    title: 'Thumbnails & Bildvergleich',
+    body: `Bei Duplikat-Gruppen mit Vorschaubildern erscheint ein <b>🖼️ Vergleichen</b>-Button.<br><br>
+    Damit öffnest du eine <b>Galerie</b> mit allen Bildern nebeneinander — perfekt um zu entscheiden, welche Version du behalten willst!<br><br>
+    <b>💡 Klicke</b> auf ein Bild zum Vergrößern. Mit <b>ESC</b> schließt du die Ansicht wieder.`
+  },
+  {
+    icon: '⚡',
+    title: 'Aktionen & Quarantäne',
+    body: `Für jede Datei stehen dir Aktionen zur Verfügung:<br>
+    <ul>
+      <li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li>
+      <li><b>🗑️ Löschen</b> — Löscht die Datei endgültig</li>
+      <li><b>📂 Öffnen</b> — Zeigt den Ordner im Explorer</li>
+    </ul>
+    <b>🛡️ Tipp:</b> Nutze immer Quarantäne statt Löschen! Du kannst Dateien jederzeit wiederherstellen.`
+  },
+  {
+    icon: '🎛️',
+    title: 'Batch-Aktionen',
+    body: `Im Bereich <b>🎛️ Aktionen</b> findest du praktische Werkzeuge:<br>
+    <ul>
+      <li><b>Alle Duplikate markieren</b> — Schnell eine Seite auswählen</li>
+      <li><b>Batch-Quarantäne</b> — Alle markierten auf einmal verschieben</li>
+      <li><b>🔄 Rescan</b> — Erneut scannen nach Änderungen</li>
+      <li><b>📥 Export</b> — Mod-Liste als CSV exportieren</li>
+    </ul>
+    Über die <b>Checkboxen</b> bei jeder Datei kannst du auswählen, was passieren soll.`
+  },
+  {
+    icon: '🔎',
+    title: 'Globale Suche',
+    body: `Die <b>Globale Suche</b> ganz oben durchsucht <b>ALLES</b> auf einmal:<br>
+    <ul>
+      <li>Dateinamen und Pfade</li>
+      <li>Notizen und Tags</li>
+      <li>Creator-Informationen</li>
+      <li>CurseForge-Daten</li>
+    </ul>
+    Einfach eintippen — die Ergebnisse erscheinen sofort!`
+  },
+  {
+    icon: '🏷️',
+    title: 'Notizen & Tags',
+    body: `Du kannst zu jeder Mod <b>persönliche Notizen</b> und <b>Tags</b> hinzufügen:<br><br>
+    <b>📝 Notizen</b> — Freitext, z.B. "Funktioniert super mit XY Mod"<br>
+    <b>🏷️ Tags</b> — Kategorie-Labels wie "Favorit", "Testen", "Behalten"<br><br>
+    Alles wird gespeichert und überlebt Rescans! Nutze Tags um deine Mods zu organisieren.`
+  },
+  {
+    icon: '🔥',
+    title: 'CurseForge Integration',
+    body: `Wenn du den <b>CurseForge App</b> nutzt, kann der Scanner deine installierten Mods abgleichen.<br><br>
+    Die Integration zeigt dir:
+    <ul>
+      <li><b>Installierte Mods</b> vs. lokale Dateien</li>
+      <li><b>Versionsinfos</b> und Update-Status</li>
+      <li><b>Autor & Beschreibung</b> aus CurseForge</li>
+    </ul>
+    Der Pfad wird automatisch erkannt, kann aber in den Einstellungen angepasst werden.`
+  },
+  {
+    icon: '📜',
+    title: 'Scan-Historie & Snapshots',
+    body: `Im Bereich <b>📚 Verlauf</b> findest du:<br><br>
+    <b>📸 Mod-Snapshot</b> — Ein Foto deiner Mod-Sammlung bei jedem Scan<br>
+    <b>📋 Scan-Historie</b> — Alle durchgeführten Aktionen (Quarantäne, Löschen usw.)<br><br>
+    So kannst du nachvollziehen, was sich geändert hat und welche Aktionen du durchgeführt hast.`
+  },
+  {
+    icon: '🎉',
+    title: 'Fertig! Viel Spaß!',
+    body: `Du kennst jetzt alle <b>wichtigen Funktionen</b>!<br><br>
+    <b>Noch ein paar Tipps:</b>
+    <ul>
+      <li>Der <b>🔄 Auto-Watcher</b> erkennt Änderungen automatisch</li>
+      <li>Erstelle <b>Creator-Verknüpfungen</b> für deine Lieblings-Modder</li>
+      <li>Nutze den <b>📥 Import-Manager</b> für neue Mods</li>
+      <li>Schau regelmäßig nach <b>⚔️ Konflikten</b></li>
+    </ul>
+    <b>🎮 Happy Simming!</b>`
+  }
+];
+
+let tutorialStep = 0;
+
+function renderTutorialStep() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  document.getElementById('tut-step-icon').textContent = step.icon;
+  document.getElementById('tut-step-title').textContent = step.title;
+  document.getElementById('tut-step-body').innerHTML = step.body;
+
+  // Dots
+  const dotsEl = document.getElementById('tut-dots');
+  dotsEl.innerHTML = TUTORIAL_STEPS.map((_, i) =>
+    `<div class="tut-dot ${i === tutorialStep ? 'active' : (i < tutorialStep ? 'done' : '')}" onclick="tutorialGoTo(${i})"></div>`
+  ).join('');
+
+  // Buttons
+  document.getElementById('tut-btn-prev').style.display = tutorialStep === 0 ? 'none' : '';
+  const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+  document.getElementById('tut-btn-next').textContent = isLast ? '✅ Fertig!' : 'Weiter →';
+  document.getElementById('tut-btn-skip').style.display = isLast ? 'none' : '';
+}
+
+function startTutorial() {
+  tutorialStep = 0;
+  renderTutorialStep();
+  document.getElementById('tutorial-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTutorial() {
+  document.getElementById('tutorial-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+  if (document.getElementById('tut-dont-show').checked) {
+    markTutorialSeen();
+  }
+}
+
+function tutorialNext() {
+  if (tutorialStep < TUTORIAL_STEPS.length - 1) {
+    tutorialStep++;
+    renderTutorialStep();
+  } else {
+    closeTutorial();
+  }
+}
+
+function tutorialPrev() {
+  if (tutorialStep > 0) {
+    tutorialStep--;
+    renderTutorialStep();
+  }
+}
+
+function tutorialGoTo(i) {
+  tutorialStep = i;
+  renderTutorialStep();
+}
+
+async function markTutorialSeen() {
+  try {
+    await fetch('/api/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ token: TOKEN, action: 'mark_tutorial_seen' })
+    });
+  } catch(e) { console.warn('Tutorial-Status konnte nicht gespeichert werden', e); }
+}
+
+async function checkTutorialOnStart() {
+  try {
+    const r = await fetch('/api/tutorial?token=' + encodeURIComponent(TOKEN));
+    const d = await r.json();
+    if (d.ok && !d.tutorial_seen) {
+      startTutorial();
+    }
+  } catch(e) { console.warn('Tutorial-Check fehlgeschlagen', e); }
+}
+
+// Tutorial-Keyboard Navigation
+document.addEventListener('keydown', function(e) {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (!overlay.classList.contains('active')) return;
+  if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); tutorialNext(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); tutorialPrev(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeTutorial(); }
+});
+
+// Check on page load
+checkTutorialOnStart();
 
 // ---- Alles OK Banner ----
 function checkAllOK(data) {
@@ -8173,6 +8458,46 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLightbox();
 });
 </script>
+
+<!-- Tutorial Overlay -->
+<div id="tutorial-overlay">
+  <div id="tutorial-card">
+    <div class="plumbob-container">
+      <svg class="plumbob" viewBox="0 0 80 110" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="plumbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#63e682;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#34d058;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#22863a;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="plumbShine" x1="0%" y1="0%" x2="50%" y2="50%">
+            <stop offset="0%" style="stop-color:rgba(255,255,255,0.4);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:rgba(255,255,255,0);stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <polygon points="40,2 78,35 40,108 2,35" fill="url(#plumbGrad)" stroke="#2ea043" stroke-width="1.5" />
+        <polygon points="40,2 78,35 40,108 2,35" fill="url(#plumbShine)" />
+        <polygon points="40,6 72,35 40,100" fill="rgba(255,255,255,0.08)" />
+      </svg>
+    </div>
+    <div class="tut-header">
+      <div class="tut-icon" id="tut-step-icon"></div>
+      <div class="tut-title" id="tut-step-title"></div>
+    </div>
+    <div class="tut-body" id="tut-step-body"></div>
+    <div class="tut-dots" id="tut-dots"></div>
+    <div class="tut-footer">
+      <button class="tut-btn tut-btn-skip" id="tut-btn-skip" onclick="closeTutorial()">Überspringen</button>
+      <button class="tut-btn" id="tut-btn-prev" onclick="tutorialPrev()">← Zurück</button>
+      <button class="tut-btn tut-btn-primary" id="tut-btn-next" onclick="tutorialNext()">Weiter →</button>
+    </div>
+    <div class="tut-check">
+      <input type="checkbox" id="tut-dont-show" checked>
+      <label for="tut-dont-show">Beim nächsten Start nicht mehr anzeigen</label>
+    </div>
+  </div>
+</div>
+
 <script>
 window.addEventListener('scroll', () => {
   document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
@@ -8374,6 +8699,7 @@ class App(tk.Tk):
                 self.var_cf_path.set(str(default_cf))
         if "minimize_on_close" in cfg:
             self.var_minimize_on_close.set(cfg["minimize_on_close"])
+        self._tutorial_seen = cfg.get("tutorial_seen", False)
 
     def _save_config_now(self):
         """Speichere aktuelle Einstellungen in die Konfiguration."""
@@ -8385,6 +8711,7 @@ class App(tk.Tk):
             "sims4_dir": self.var_sims4_dir.get(),
             "cf_path": self.var_cf_path.get(),
             "minimize_on_close": self.var_minimize_on_close.get(),
+            "tutorial_seen": getattr(self, '_tutorial_seen', False),
         }
         save_config(cfg)
 
@@ -8721,6 +9048,7 @@ class App(tk.Tk):
 
                 self.stop_server()
                 srv = LocalServer(ds, qdir, sims4_dir=self.var_sims4_dir.get(), cf_path=self.var_cf_path.get())
+                srv.app_ref = self
                 srv.scan_history = scan_hist
                 srv.mod_snapshot = mod_snap
                 srv.start()
