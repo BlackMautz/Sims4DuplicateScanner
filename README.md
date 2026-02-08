@@ -19,7 +19,12 @@ Ein leistungsstarkes Werkzeug zum Finden, Vergleichen und Entfernen doppelter Si
 - 🔥 **CurseForge-Integration** — erkennt über CurseForge/Overwolf installierte Mods, zeigt Mod-Name, Autor & Update-Hinweise
 - 🌐 **Web-UI** — schönes responsives Interface im Browser (localhost)
 - 🖥️ **Tkinter-GUI** — native Windows-Oberfläche für Einstellungen und Scan-Start
-- 🔒 **100% Offline** — keine Daten werden gesendet, alles lokal
+- � **Bug Report System** — Nutzer können Fehler direkt aus dem Scanner melden (Discord Webhook)
+  - Automatische Analyse: Schweregrad, verdächtige Mods, extrahierte Fehlermeldungen
+  - HTML-Report als Anhang mit allen Details: Exceptions, Mod-Liste, Konflikte, Scanner-Log
+  - Klappbare Sektionen, Dark-Theme, Tabellen, Farbcodierung
+- 📖 **Interaktives Tutorial** — Schritt-für-Schritt Einführung beim ersten Start mit animiertem Plumbob
+- 🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (Bug-Reports nur mit User-Klick)
 - ✨ **Einzelne EXE** — kein Python nötig, einfach Doppelklick
 
 ## 📥 Installation & Verwendung
@@ -104,6 +109,13 @@ Ignoriert automatisch: Symlinks, Junctions, `__pycache__`, Cache-Ordner
 | `%LOCALAPPDATA%\Overwolf\Curse\GameInstances\AddonGameInstance.json` | CurseForge-Manifest (automatisch erkannt) |
 | `_sims4_quarantine/` | Quarantäne-Ordner (im Scan-Verzeichnis) |
 | `_sims4_actions.csv` | Aktions-Log als CSV |
+
+### Bug Report System
+- User klickt 🐛 **Bug melden** in der Navbar
+- Wählt Kategorie (Absturz, Scan-Problem, Performance, etc.) und Symptome per Checkbox
+- Scanner sammelt automatisch: System-Info, Spielversion, Scan-Ergebnis, Exceptions, Mod-Liste
+- **Auto-Analyse** bewertet den Report: Schweregrad (Kritisch/Mittel/Gering), verdächtige Mods, Urteil
+- Alles wird als schöner **HTML-Report** an Discord gesendet
 
 ## ⚠️ Hinweise
 

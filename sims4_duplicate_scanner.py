@@ -35,6 +35,8 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
+SCANNER_VERSION = "2.3.0"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1470190485824868544/eDQYj0eHWK8EbeIeiuDdAWirjWZLWtYHDPHE6YuhhkVLfoGdiXaxfP2fOYX_3f9r4rKe"
 
 # ---- Persistente Einstellungen (Ordner/Optionen merken) ----
 def _default_config_path() -> Path:
@@ -3704,7 +3706,7 @@ class LocalServer:
                     if not is_q:
                         self._json(400, {"ok": False, "error": "path not in quarantine"})
                         return
-                elif action in ("ignore_group", "unignore_group", "import_upload", "import_upload_confirm"):
+                elif action in ("ignore_group", "unignore_group", "import_upload", "import_upload_confirm", "mark_tutorial_seen", "send_bug_report"):
                     pass  # Diese Aktionen brauchen keinen Dateipfad
                 elif not is_under_any_root(p, server_ref.dataset.roots):
                     self._json(400, {"ok": False, "error": "path not allowed (not under selected roots)"})
@@ -3889,6 +3891,606 @@ class LocalServer:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return
 
+                if action == "send_bug_report":
+                    try:
+                        import urllib.request as _urlreq
+                        import platform as _plat
+                        category = payload.get("category", "").strip()
+                        symptoms = payload.get("symptoms", [])
+                        description = payload.get("description", "").strip()
+
+                        if not category:
+                            self._json(400, {"ok": False, "error": "Bitte wähle eine Kategorie"})
+                            return
+                        if not symptoms and not description:
+                            self._json(400, {"ok": False, "error": "Bitte wähle Symptome oder beschreibe das Problem"})
+                            return
+
+                        # Kategorie-Labels
+                        cat_labels = {
+                            'crash': '💥 Absturz / Einfrieren',
+                            'scan': '🔍 Scan-Problem',
+                            'display': '🖥️ Anzeige-Fehler',
+                            'action': '⚡ Aktion funktioniert nicht',
+                            'import': '📥 Import-Problem',
+                            'curseforge': '🔥 CurseForge-Problem',
+                            'performance': '🐢 Performance-Problem',
+                            'other': '❓ Sonstiges'
+                        }
+                        cat_label = cat_labels.get(category, category)
+
+                        # Symptome als Text
+                        symptom_text = ', '.join(symptoms) if symptoms else 'Keine ausgewählt'
+
+                        # Beschreibung
+                        desc_text = description if description else 'Keine Beschreibung'
+
+                        # Sammle System-Infos
+                        sys_info = f"Windows {_plat.version()} | Python {_plat.python_version()} | Scanner v{SCANNER_VERSION}"
+
+                        # GameVersion.txt auslesen
+                        game_ver = "Nicht gefunden"
+                        sims4_path = Path(server_ref.sims4_dir) if server_ref.sims4_dir else None
+                        if sims4_path and sims4_path.exists():
+                            gv_file = sims4_path / "GameVersion.txt"
+                            if gv_file.exists():
+                                try:
+                                    game_ver = gv_file.read_text(encoding='utf-8', errors='replace').strip()[:200]
+                                except Exception:
+                                    game_ver = "Nicht lesbar"
+
+                        # Sammle Scan-Daten
+                        scan_summary = "Kein Scan vorhanden"
+                        mod_type_stats = "Keine Daten"
+                        ds = server_ref.dataset
+                        if ds:
+                            d = ds.to_json()
+                            s = d.get('summary', {})
+                            scan_summary = (
+                                f"Dateien: {s.get('total_files', '?')} | "
+                                f"Duplikate: Name {s.get('groups_name', 0)} / Inhalt {s.get('groups_content', 0)} / Ähnlich {s.get('groups_similar', 0)} | "
+                                f"Korrupt: {s.get('corrupt_count', 0)} | Konflikte: {s.get('conflict_count', 0)}"
+                            )
+                            # Mod-Typ Statistik — ALLE Dateien im Mod-Ordner zählen
+                            try:
+                                type_counts = {}
+                                if ds and ds.roots:
+                                    for root in ds.roots:
+                                        root_path = Path(root)
+                                        if root_path.exists():
+                                            for fp in root_path.rglob('*'):
+                                                if fp.is_file():
+                                                    ext = fp.suffix.lower()
+                                                    if ext:
+                                                        type_counts[ext] = type_counts.get(ext, 0) + 1
+                                if type_counts:
+                                    mod_type_stats = ' | '.join(f"{ext}: {cnt}" for ext, cnt in sorted(type_counts.items(), key=lambda x: -x[1]))
+                            except Exception:
+                                mod_type_stats = "Fehler beim Zählen"
+
+                        # Sammle Mod-Ordner
+                        mod_folders = "Keine"
+                        if ds and ds.roots:
+                            mod_folders = ', '.join(str(r) for r in ds.roots)
+
+                        # ── Alle Exception-Dateien sammeln (VOLL für .txt) ──
+                        import re as _re
+                        all_exc_files_data = []
+                        all_ui_exc_files_data = []
+                        last_exc_short = "Keine lastException gefunden"
+                        last_ui_exc_short = "Keine lastUIException gefunden"
+                        last_exc_full = ""
+                        last_ui_exc_full = ""
+                        error_messages = []  # Extrahierte Fehlermeldungen
+                        broken_mods = []    # Verdächtige Mods
+
+                        if sims4_path and sims4_path.exists():
+                            # ALLE lastException Dateien
+                            exc_files = sorted(sims4_path.glob("lastException*.txt"),
+                                               key=lambda f: f.stat().st_mtime if f.exists() else 0, reverse=True)
+                            for ef in exc_files[:5]:  # Max 5 neueste
+                                try:
+                                    content = ef.read_text(encoding='utf-8', errors='replace')
+                                    all_exc_files_data.append((ef.name, content))
+                                    # XML parsen für bessere Analyse
+                                    # Fehlermeldung extrahieren
+                                    desync_match = _re.search(r'<desyncdata>(.*?)</desyncdata>', content, _re.DOTALL)
+                                    if desync_match:
+                                        raw = desync_match.group(1).replace('&#13;&#10;', '\n').replace('&#10;', '\n').replace('&#13;', '\n')
+                                        # Erste Zeile = Haupt-Fehlermeldung
+                                        first_line = raw.strip().split('\n')[0][:300]
+                                        if first_line and first_line not in error_messages:
+                                            error_messages.append(first_line)
+                                    # BetterExceptions Advice
+                                    advice_match = _re.search(r'<Advice>(.*?)</Advice>', content)
+                                    if advice_match:
+                                        advice = advice_match.group(1).strip()
+                                        if advice and advice not in error_messages:
+                                            error_messages.append(f"[BE] {advice}")
+                                    # Mod-Namen aus categoryid
+                                    cat_match = _re.search(r'<categoryid>(.*?)</categoryid>', content)
+                                    if cat_match:
+                                        cat_val = cat_match.group(1).strip()
+                                        if cat_val and cat_val not in ('', 'Unknown'):
+                                            broken_mods.append(cat_val)
+                                    # Mod-Namen aus Fehlertexten
+                                    mod_hits = _re.findall(r'([a-zA-Z_]{3,}(?:mods?|interactions?|script|cheats?|overhaul)[a-zA-Z0-9_]*)', content, _re.IGNORECASE)
+                                    mod_hits += _re.findall(r'(?:TypeError|Error):\s*(\w+?)[\s(]', content)
+                                    for m in mod_hits:
+                                        if len(m) > 5 and m.lower() not in ('module', 'import', 'error', 'false', 'string', 'version', 'typeerror', 'script'):
+                                            if m not in broken_mods:
+                                                broken_mods.append(m)
+                                except Exception:
+                                    all_exc_files_data.append((ef.name, "NICHT LESBAR"))
+                            if exc_files:
+                                try:
+                                    c = exc_files[0].read_text(encoding='utf-8', errors='replace')
+                                    last_exc_short = f"**{exc_files[0].name}**\n```\n{c[:1500]}\n```"
+                                    last_exc_full = c
+                                except Exception:
+                                    last_exc_short = f"Datei: {exc_files[0].name} (nicht lesbar)"
+
+                            # ALLE lastUIException Dateien
+                            ui_exc_files = sorted(sims4_path.glob("lastUIException*.txt"),
+                                               key=lambda f: f.stat().st_mtime if f.exists() else 0, reverse=True)
+                            for uf in ui_exc_files[:5]:
+                                try:
+                                    content = uf.read_text(encoding='utf-8', errors='replace')
+                                    all_ui_exc_files_data.append((uf.name, content))
+                                    desync_match = _re.search(r'<desyncdata>(.*?)</desyncdata>', content, _re.DOTALL)
+                                    if desync_match:
+                                        raw = desync_match.group(1).replace('&#13;&#10;', '\n').replace('&#10;', '\n')
+                                        first_line = raw.strip().split('\n')[0][:300]
+                                        if first_line and first_line not in error_messages:
+                                            error_messages.append(first_line)
+                                    cat_match = _re.search(r'<categoryid>(.*?)</categoryid>', content)
+                                    if cat_match:
+                                        cat_val = cat_match.group(1).strip()
+                                        if cat_val and cat_val not in ('', 'Unknown') and cat_val not in broken_mods:
+                                            broken_mods.append(cat_val)
+                                except Exception:
+                                    all_ui_exc_files_data.append((uf.name, "NICHT LESBAR"))
+                            if ui_exc_files:
+                                try:
+                                    c = ui_exc_files[0].read_text(encoding='utf-8', errors='replace')
+                                    last_ui_exc_short = f"**{ui_exc_files[0].name}**\n```\n{c[:1000]}\n```"
+                                    last_ui_exc_full = c
+                                except Exception:
+                                    last_ui_exc_short = f"Datei: {ui_exc_files[0].name} (nicht lesbar)"
+
+                        # Scanner-Log einlesen (VOLL + gekürzt)
+                        scanner_log_short = "Kein Log vorhanden"
+                        scanner_log_full = ""
+                        if server_ref.log_file and server_ref.log_file.exists():
+                            try:
+                                scanner_log_full = server_ref.log_file.read_text(encoding='utf-8', errors='replace')
+                                lines = scanner_log_full.splitlines()
+                                scanner_log_short = '\n'.join(lines[-30:])
+                            except Exception:
+                                scanner_log_short = "Log nicht lesbar"
+
+                        # Duplikat-Details für Report
+                        duplicate_details = ""
+                        conflict_details = ""
+                        corrupt_details = ""
+                        if ds:
+                            d_full = ds.to_json()
+                            groups = d_full.get('groups', [])
+                            # Duplikate auflisten
+                            dup_lines = []
+                            for g in groups:
+                                gtype = g.get('type', '')
+                                files = g.get('files', [])
+                                if len(files) > 1:
+                                    dup_lines.append(f"\n--- {gtype.upper()} Gruppe ---")
+                                    for fi in files:
+                                        dup_lines.append(f"  {fi.get('path', '?')} ({fi.get('size_hr', '?')})")
+                            duplicate_details = '\n'.join(dup_lines) if dup_lines else "Keine Duplikate"
+
+                            # Konflikte
+                            conflicts = d_full.get('conflicts', [])
+                            conf_lines = []
+                            for c in conflicts[:50]:  # Max 50
+                                c_files = c.get('files', [])
+                                res_name = c.get('resource', '?')
+                                conf_lines.append(f"\n  Ressource: {res_name}")
+                                for cf in c_files:
+                                    conf_lines.append(f"    {cf.get('path', '?')}")
+                            conflict_details = '\n'.join(conf_lines) if conf_lines else "Keine Konflikte"
+
+                            # Korrupte Dateien
+                            corrupts = d_full.get('corrupt', [])
+                            if corrupts:
+                                corrupt_details = '\n'.join(f"  {c.get('path', '?')} — {c.get('error', '?')}" for c in corrupts)
+                            else:
+                                corrupt_details = "Keine korrupten Dateien"
+
+                        # Mod-Logs (z.B. Sims4CommunityLib Logs)
+                        mod_log_data = ""
+                        if sims4_path and sims4_path.exists():
+                            mod_log_dir = sims4_path / "mod_logs"
+                            if mod_log_dir.exists():
+                                try:
+                                    log_files = sorted(mod_log_dir.glob("*.txt"), key=lambda f: f.stat().st_mtime, reverse=True)
+                                    for lf in log_files[:3]:
+                                        try:
+                                            lc = lf.read_text(encoding='utf-8', errors='replace')[-2000:]
+                                            mod_log_data += f"\n\n--- {lf.name} (letzte 2000 Zeichen) ---\n{lc}"
+                                        except Exception:
+                                            mod_log_data += f"\n--- {lf.name}: NICHT LESBAR ---"
+                                except Exception:
+                                    mod_log_data = "mod_logs Ordner nicht lesbar"
+
+                        # ── Auto-Analyse ──────────────────────────────
+                        severity = "🟢 Gering"
+                        hints = []
+                        verdict = ""
+
+                        has_exc = len(all_exc_files_data) > 0
+                        has_ui_exc = len(all_ui_exc_files_data) > 0
+
+                        # Deduplizierte Mod-Liste (max 10)
+                        broken_mods = list(dict.fromkeys(broken_mods))[:10]
+
+                        # Scan-Daten prüfen
+                        has_corrupt = False
+                        has_dupes = False
+                        has_conflicts = False
+                        dupe_count = 0
+                        conflict_count = 0
+                        corrupt_count = 0
+                        if ds:
+                            d2 = ds.to_json()
+                            s2 = d2.get('summary', {})
+                            corrupt_count = s2.get('corrupt_count', 0)
+                            conflict_count = s2.get('conflict_count', 0)
+                            dupe_count = s2.get('groups_name', 0) + s2.get('groups_content', 0) + s2.get('groups_similar', 0)
+                            has_corrupt = corrupt_count > 0
+                            has_dupes = dupe_count > 0
+                            has_conflicts = conflict_count > 0
+
+                        # Schweregrad bestimmen
+                        critical_cats = ('crash', 'scan')
+                        critical_symptoms = ('Absturz', 'Einfrieren', 'wird nicht gestartet', 'Scan startet nicht')
+                        has_critical_symptom = any(s in symptom_text for s in critical_symptoms)
+
+                        if category in critical_cats and (has_exc or has_critical_symptom):
+                            severity = "🔴 Kritisch"
+                        elif has_corrupt or (has_exc and category in critical_cats):
+                            severity = "🔴 Kritisch"
+                        elif has_exc or has_conflicts or category == 'performance':
+                            severity = "🟡 Mittel"
+                        else:
+                            severity = "🟢 Gering"
+
+                        # Hinweise sammeln
+                        if has_corrupt:
+                            hints.append(f"⛔ {corrupt_count} korrupte Datei(en) gefunden — echtes Problem!")
+                        if has_exc and broken_mods:
+                            hints.append(f"🔥 Fehlerhafte Mods/Quellen: {', '.join(broken_mods[:5])}")
+                        elif has_exc:
+                            hints.append("⚠️ Exception vorhanden — wahrscheinlich Mod-Konflikt")
+                        if has_ui_exc:
+                            hints.append("⚠️ UI-Exception vorhanden — möglicherweise UI-Mod-Problem")
+                        if error_messages:
+                            for em in error_messages[:3]:
+                                hints.append(f"💬 {em[:200]}")
+                        if has_conflicts:
+                            hints.append(f"⚡ {conflict_count} Mod-Konflikte erkannt")
+                        if has_dupes and dupe_count > 10:
+                            hints.append(f"📦 {dupe_count} Duplikat-Gruppen — User braucht Hilfe beim Aufräumen")
+                        elif has_dupes:
+                            hints.append(f"📦 {dupe_count} Duplikat-Gruppen vorhanden")
+                        if len(all_exc_files_data) > 1:
+                            hints.append(f"📄 {len(all_exc_files_data)} Exception-Dateien gefunden (siehe .txt)")
+                        if len(all_ui_exc_files_data) > 1:
+                            hints.append(f"📄 {len(all_ui_exc_files_data)} UI-Exception-Dateien gefunden (siehe .txt)")
+                        if not has_exc and not has_ui_exc and not has_corrupt and not has_conflicts:
+                            hints.append("✅ Keine Fehler in Logs — alles sauber")
+                        if len(description) < 10 and not symptoms:
+                            hints.append("🤷 Sehr wenig Info vom User — evtl. verwirrt")
+
+                        # Gesamturteil
+                        if has_corrupt or (has_exc and broken_mods):
+                            verdict = "🔴 **Echtes Problem** — Es gibt konkrete Fehler. Mod-Konflikte oder korrupte Dateien."
+                        elif has_exc or has_ui_exc:
+                            verdict = "🟡 **Wahrscheinlich echtes Problem** — Exceptions vorhanden, aber Ursache unklar."
+                        elif has_conflicts and conflict_count > 20:
+                            verdict = "🟡 **Mod-Chaos** — Viele Konflikte. User braucht Hilfe beim Sortieren."
+                        elif not has_exc and not has_ui_exc and not has_corrupt and category == 'other':
+                            verdict = "🟢 **Vermutlich User-Fehler** — Keine Fehler gefunden. User versteht vermutlich etwas nicht."
+                        elif not has_exc and not has_ui_exc and not has_corrupt:
+                            verdict = "🟡 **Unklar** — Keine Exceptions, aber User meldet Problem. Nachfragen empfohlen."
+                        else:
+                            verdict = "🟡 **Manuell prüfen** — Automatische Analyse kann Ursache nicht sicher bestimmen."
+
+                        hints_text = '\n'.join(hints) if hints else 'Keine besonderen Auffälligkeiten'
+
+                        # ── HTML Report-Datei ──────────────────────────────
+                        report_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        import html as _html
+
+                        def _h(text):
+                            """HTML-escape helper"""
+                            return _html.escape(str(text))
+
+                        sev_color = '#4caf50' if severity.startswith('🟢') else ('#ff9800' if severity.startswith('🟡') else '#f44336')
+                        sev_bg = '#e8f5e9' if severity.startswith('🟢') else ('#fff3e0' if severity.startswith('🟡') else '#ffebee')
+
+                        html_parts = []
+                        html_parts.append(f'''<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Bug Report — {_h(report_time)}</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:'Segoe UI',sans-serif;background:#1a1a2e;color:#e0e0e0;padding:20px;line-height:1.5}}
+.container{{max-width:1100px;margin:0 auto}}
+h1{{color:#ff6b6b;text-align:center;padding:20px 0;font-size:1.8em;border-bottom:2px solid #ff6b6b}}
+h2{{color:#61dafb;margin:20px 0 10px;padding:10px;background:#16213e;border-radius:8px;cursor:pointer;user-select:none}}
+h2:hover{{background:#1a2744}}
+h2::before{{content:'▼ ';font-size:0.8em}}
+.section{{background:#16213e;border-radius:8px;padding:15px;margin-bottom:15px}}
+.collapsed .section{{display:none}}
+.collapsed h2::before{{content:'▶ '}}
+.info-grid{{display:grid;grid-template-columns:180px 1fr;gap:8px 15px;padding:10px}}
+.info-label{{color:#61dafb;font-weight:600}}
+.info-value{{color:#e0e0e0}}
+.severity-box{{background:{sev_bg};color:{sev_color};border:2px solid {sev_color};border-radius:10px;padding:15px;text-align:center;font-size:1.3em;font-weight:700;margin:10px 0}}
+.verdict-box{{background:#1e1e3a;border-left:4px solid {sev_color};padding:12px 15px;margin:10px 0;border-radius:0 8px 8px 0;font-size:1.05em}}
+.hint{{padding:5px 10px;margin:3px 0;background:#1e1e3a;border-radius:5px}}
+.mod-tag{{display:inline-block;background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b55;padding:3px 10px;border-radius:15px;margin:3px;font-size:0.9em}}
+.error-msg{{background:#2d1b1b;border-left:3px solid #ff6b6b;padding:8px 12px;margin:5px 0;border-radius:0 5px 5px 0;font-family:monospace;font-size:0.85em;word-break:break-all}}
+table{{width:100%;border-collapse:collapse;margin:10px 0}}
+th{{background:#0d1b2a;color:#61dafb;padding:8px 12px;text-align:left;border-bottom:2px solid #61dafb33}}
+td{{padding:6px 12px;border-bottom:1px solid #ffffff11}}
+tr:hover td{{background:#ffffff08}}
+.corrupt-row td{{color:#ff6b6b}}
+pre{{background:#0d1117;color:#c9d1d9;padding:12px;border-radius:8px;overflow-x:auto;font-size:0.82em;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}}
+.mod-list{{max-height:500px;overflow-y:auto}}
+.mod-list table td:first-child{{max-width:600px;overflow:hidden;text-overflow:ellipsis}}
+.size-col{{text-align:right;white-space:nowrap;color:#888}}
+.stats-bar{{display:flex;gap:15px;flex-wrap:wrap;margin:10px 0}}
+.stat-card{{background:#1e1e3a;padding:10px 18px;border-radius:8px;text-align:center;min-width:100px}}
+.stat-num{{font-size:1.5em;font-weight:700;color:#61dafb}}
+.stat-label{{font-size:0.8em;color:#888}}
+.footer{{text-align:center;color:#666;padding:20px;font-size:0.8em;border-top:1px solid #333;margin-top:30px}}
+</style>
+<script>
+function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
+</script>
+</head>
+<body>
+<div class="container">
+<h1>🐛 Bug Report — Sims 4 Duplikate Scanner</h1>
+<p style="text-align:center;color:#888;margin:10px 0">Erstellt: {_h(report_time)} | Scanner v{_h(SCANNER_VERSION)}</p>
+''')
+
+                        # ── Übersicht ──
+                        html_parts.append(f'''
+<div><h2 onclick="toggle(this)">📋 Übersicht</h2>
+<div class="section">
+<div class="info-grid">
+<span class="info-label">Kategorie</span><span class="info-value">{_h(cat_label)}</span>
+<span class="info-label">Symptome</span><span class="info-value">{_h(symptom_text)}</span>
+<span class="info-label">Beschreibung</span><span class="info-value">{_h(desc_text)}</span>
+<span class="info-label">System</span><span class="info-value">{_h(sys_info)}</span>
+<span class="info-label">Spielversion</span><span class="info-value">{_h(game_ver)}</span>
+<span class="info-label">Mod-Ordner</span><span class="info-value">{_h(mod_folders)}</span>
+<span class="info-label">Mod-Typen</span><span class="info-value">{_h(mod_type_stats)}</span>
+</div>
+<div class="stats-bar">
+<div class="stat-card"><div class="stat-num">{s.get('total_files','?') if ds else '?'}</div><div class="stat-label">Dateien</div></div>
+<div class="stat-card"><div class="stat-num">{dupe_count}</div><div class="stat-label">Duplikate</div></div>
+<div class="stat-card"><div class="stat-num">{corrupt_count}</div><div class="stat-label">Korrupt</div></div>
+<div class="stat-card"><div class="stat-num">{conflict_count}</div><div class="stat-label">Konflikte</div></div>
+</div>
+</div></div>
+''')
+
+                        # ── Auto-Analyse ──
+                        hints_html = ''.join(f'<div class="hint">{_h(h)}</div>' for h in hints)
+                        mods_html = ''.join(f'<span class="mod-tag">{_h(m)}</span>' for m in broken_mods) if broken_mods else '<span style="color:#888">Keine erkannt</span>'
+                        errors_html = ''.join(f'<div class="error-msg">{_h(e)}</div>' for e in error_messages) if error_messages else '<span style="color:#888">Keine</span>'
+
+                        # verdict ohne Markdown-Formatierung
+                        verdict_clean = verdict.replace('**', '')
+
+                        html_parts.append(f'''
+<div><h2 onclick="toggle(this)">🤖 Auto-Analyse</h2>
+<div class="section">
+<div class="severity-box">{_h(severity)}</div>
+<div class="verdict-box">{_h(verdict_clean)}</div>
+<h3 style="color:#aaa;margin:15px 0 5px">📋 Hinweise</h3>
+{hints_html}
+<h3 style="color:#aaa;margin:15px 0 5px">🔥 Verdächtige Mods</h3>
+{mods_html}
+<h3 style="color:#aaa;margin:15px 0 5px">💬 Fehlermeldungen</h3>
+{errors_html}
+</div></div>
+''')
+
+                        # ── Korrupte Dateien ──
+                        if has_corrupt and ds:
+                            corrupts = d_full.get('corrupt', [])
+                            corrupt_rows = ''.join(f'<tr class="corrupt-row"><td>{_h(c.get("path","?"))}</td><td>{_h(c.get("error","?"))}</td></tr>' for c in corrupts)
+                            html_parts.append(f'''
+<div><h2 onclick="toggle(this)">⛔ Korrupte Dateien ({corrupt_count})</h2>
+<div class="section">
+<table><tr><th>Datei</th><th>Fehler</th></tr>{corrupt_rows}</table>
+</div></div>
+''')
+
+                        # ── Duplikate ──
+                        if has_dupes and ds:
+                            dup_html = ''
+                            for g in d_full.get('groups', []):
+                                files = g.get('files', [])
+                                if len(files) > 1:
+                                    gtype = g.get('type', '').upper()
+                                    rows = ''.join(f'<tr><td>{_h(fi.get("path","?"))}</td><td class="size-col">{_h(fi.get("size_hr","?"))}</td></tr>' for fi in files)
+                                    dup_html += f'<h4 style="color:#61dafb;margin:10px 0 5px">{_h(gtype)} Gruppe</h4><table><tr><th>Datei</th><th>Größe</th></tr>{rows}</table>'
+                            html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📦 Duplikate ({dupe_count} Gruppen)</h2>
+<div class="section">{dup_html}</div></div>
+''')
+
+                        # ── Mod-Konflikte ──
+                        if has_conflicts and ds:
+                            conflicts = d_full.get('conflicts', [])
+                            conf_html = ''
+                            for c_item in conflicts[:80]:
+                                c_files = c_item.get('files', [])
+                                res_name = c_item.get('resource', '?')
+                                rows = ''.join(f'<tr><td>{_h(cf.get("path","?"))}</td></tr>' for cf in c_files)
+                                conf_html += f'<h4 style="color:#ff9800;margin:10px 0 5px">Ressource: {_h(res_name)}</h4><table><tr><th>Datei</th></tr>{rows}</table>'
+                            html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">⚡ Mod-Konflikte ({conflict_count})</h2>
+<div class="section">{conf_html}</div></div>
+''')
+
+                        # ── Exceptions ──
+                        for i, (fname, fcontent) in enumerate(all_exc_files_data):
+                            html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">⚠️ lastException #{i+1}: {_h(fname)}</h2>
+<div class="section"><pre>{_h(fcontent)}</pre></div></div>
+''')
+                        for i, (fname, fcontent) in enumerate(all_ui_exc_files_data):
+                            html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">🖥️ lastUIException #{i+1}: {_h(fname)}</h2>
+<div class="section"><pre>{_h(fcontent)}</pre></div></div>
+''')
+
+                        # ── Mod-Logs ──
+                        if mod_log_data:
+                            html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📋 Mod-Logs</h2>
+<div class="section"><pre>{_h(mod_log_data)}</pre></div></div>
+''')
+
+                        # ── Komplette Mod-Liste ──
+                        mod_list_html = ''
+                        total_mod_count = 0
+                        if ds and ds.roots:
+                            for root in ds.roots:
+                                root_path = Path(root)
+                                mod_list_html += f'<h4 style="color:#61dafb;margin:10px 0 5px">📂 {_h(str(root_path))}</h4>'
+                                if root_path.exists():
+                                    mod_list_html += '<table><tr><th>Datei</th><th style="text-align:right">Größe</th></tr>'
+                                    mod_files = sorted(root_path.rglob('*'))
+                                    for mf in mod_files:
+                                        if mf.is_file():
+                                            total_mod_count += 1
+                                            try:
+                                                rel = mf.relative_to(root_path)
+                                                size = mf.stat().st_size
+                                                if size >= 1048576:
+                                                    size_str = f"{size / 1048576:.1f} MB"
+                                                elif size >= 1024:
+                                                    size_str = f"{size / 1024:.1f} KB"
+                                                else:
+                                                    size_str = f"{size} B"
+                                                mod_list_html += f'<tr><td>{_h(str(rel))}</td><td class="size-col">{size_str}</td></tr>'
+                                            except Exception:
+                                                mod_list_html += f'<tr><td>{_h(mf.name)}</td><td class="size-col">?</td></tr>'
+                                    mod_list_html += '</table>'
+                                else:
+                                    mod_list_html += '<p style="color:#888">(Ordner nicht erreichbar)</p>'
+
+                        html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📁 Alle Mods ({total_mod_count} Dateien)</h2>
+<div class="section"><div class="mod-list">{mod_list_html}</div></div></div>
+''')
+
+                        # ── Scanner-Log ──
+                        html_parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📋 Scanner-Log</h2>
+<div class="section"><pre>{_h(scanner_log_full) if scanner_log_full else 'Kein Log vorhanden'}</pre></div></div>
+''')
+
+                        # Footer
+                        html_parts.append(f'''
+<div class="footer">Scanner v{_h(SCANNER_VERSION)} | Report erstellt {_h(report_time)}</div>
+</div></body></html>''')
+
+                        report_html = ''.join(html_parts)
+                        report_bytes = report_html.encode('utf-8')
+
+                        # ── Discord Embeds (Kurzübersicht) ──────────────────
+                        embed1 = {
+                            "title": "\U0001f41b Bug Report — Sims 4 Duplikate Scanner",
+                            "color": 0xFF4444,
+                            "fields": [
+                                {"name": "📋 Kategorie", "value": cat_label, "inline": True},
+                                {"name": "🎮 Spielversion", "value": game_ver[:200], "inline": True},
+                                {"name": "🔎 Symptome", "value": symptom_text[:1024], "inline": False},
+                                {"name": "📝 Beschreibung", "value": desc_text[:1024], "inline": False},
+                                {"name": "💻 System", "value": sys_info, "inline": False},
+                                {"name": "📊 Scan-Ergebnis", "value": scan_summary[:1024], "inline": False},
+                                {"name": "📁 Mod-Typen", "value": mod_type_stats[:1024], "inline": False},
+                                {"name": "📂 Mod-Ordner", "value": mod_folders[:1024], "inline": False},
+                            ],
+                            "footer": {"text": f"Scanner v{SCANNER_VERSION} | {report_time} | 📎 Details in .html Anhang"}
+                        }
+                        embed2 = {
+                            "title": "🤖 Auto-Analyse",
+                            "color": 0x4488FF if severity.startswith("🟢") else (0xFFAA00 if severity.startswith("🟡") else 0xFF0000),
+                            "fields": [
+                                {"name": "📊 Schweregrad", "value": severity, "inline": True},
+                                {"name": "🏷️ Kategorie", "value": cat_label, "inline": True},
+                                {"name": "🎯 Urteil", "value": verdict, "inline": False},
+                                {"name": "📋 Hinweise", "value": hints_text[:1024], "inline": False},
+                            ]
+                        }
+                        if broken_mods:
+                            embed2["fields"].append({"name": "🔥 Verdächtige Mods", "value": ', '.join(broken_mods[:5])[:1024], "inline": False})
+                        if error_messages:
+                            err_preview = '\n'.join(f"• {e[:150]}" for e in error_messages[:3])
+                            embed2["fields"].append({"name": "💬 Fehlermeldungen", "value": err_preview[:1024], "inline": False})
+
+                        # ── Multipart senden (Embeds + .txt Datei) ──────────
+                        import uuid as _uuid
+                        boundary = f"----BugReport{_uuid.uuid4().hex}"
+                        body_parts = []
+
+                        # payload_json Part
+                        webhook_payload = {
+                            "embeds": [embed1, embed2],
+                            "username": "Sims4 Scanner Bug Bot"
+                        }
+                        body_parts.append(f'--{boundary}\r\n')
+                        body_parts.append('Content-Disposition: form-data; name="payload_json"\r\n')
+                        body_parts.append('Content-Type: application/json\r\n\r\n')
+                        body_parts.append(json.dumps(webhook_payload))
+                        body_parts.append('\r\n')
+
+                        # File Part
+                        report_filename = f"bugreport_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+                        body_parts.append(f'--{boundary}\r\n')
+                        body_parts.append(f'Content-Disposition: form-data; name="file"; filename="{report_filename}"\r\n')
+                        body_parts.append('Content-Type: text/html; charset=utf-8\r\n\r\n')
+
+                        body_bytes = ''.join(body_parts).encode('utf-8') + report_bytes + f'\r\n--{boundary}--\r\n'.encode('utf-8')
+
+                        req = _urlreq.Request(
+                            DISCORD_WEBHOOK_URL,
+                            data=body_bytes,
+                            headers={
+                                'Content-Type': f'multipart/form-data; boundary={boundary}',
+                                'User-Agent': 'Sims4Scanner'
+                            },
+                            method='POST'
+                        )
+                        _urlreq.urlopen(req, timeout=15)
+                        self._json(200, {"ok": True})
+                        print(f"[BUG_REPORT] Sent to Discord with .txt — {cat_label} ({len(report_bytes)} bytes)", flush=True)
+                        append_log(f"BUG_REPORT sent ({category}, {len(report_bytes)} bytes)")
+                    except Exception as ex:
+                        print(f"[BUG_REPORT] Error: {ex}", flush=True)
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
                 self._json(404, {"ok": False, "error": "unknown action"})
                 print(f"[UNKNOWN_ACTION] {action} -> {p}", flush=True)
                 append_log(f"UNKNOWN_ACTION {action} {p}")
@@ -4025,6 +4627,29 @@ class LocalServer:
   }
   .nav-btn-tutorial { background:linear-gradient(135deg,#312e81,#1e1b4b) !important; border-color:#6366f1 !important; color:#c7d2fe !important; }
   .nav-btn-tutorial:hover { background:linear-gradient(135deg,#3730a3,#312e81) !important; color:#e0e7ff !important; }
+  .nav-btn-bug { background:linear-gradient(135deg,#7f1d1d,#1e1b4b) !important; border-color:#dc2626 !important; color:#fca5a5 !important; }
+  .nav-btn-bug:hover { background:linear-gradient(135deg,#991b1b,#312e81) !important; color:#fecaca !important; }
+
+  /* Bug Report Modal */
+  #bugreport-overlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
+  #bugreport-overlay.active { display:flex; }
+  #bugreport-card { background:linear-gradient(145deg,#0f172a,#1c1017); border:1px solid #dc2626; border-radius:20px; padding:32px 36px 24px; max-width:620px; width:94vw; box-shadow:0 20px 60px rgba(0,0,0,0.6); animation:tutorialIn 0.35s ease-out; max-height:90vh; overflow-y:auto; }
+  #bugreport-card h2 { margin:0 0 6px; font-size:20px; color:#fca5a5; }
+  #bugreport-card .bug-sub { color:#94a3b8; font-size:13px; margin-bottom:16px; }
+  #bugreport-card textarea { width:100%; min-height:80px; background:#0f1422; border:1px solid #334155; border-radius:10px; color:#e7e7e7; padding:12px; font-size:13px; resize:vertical; font-family:inherit; }
+  #bugreport-card textarea:focus { outline:none; border-color:#dc2626; }
+  #bugreport-card .bug-info { background:#172554; border:1px solid #1e40af; border-radius:8px; padding:10px 14px; margin:12px 0; font-size:12px; color:#93c5fd; }
+  #bugreport-card .bug-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+  #bugreport-card .bug-status { margin-top:12px; padding:10px; border-radius:8px; font-size:13px; display:none; }
+  #bugreport-card .bug-status.success { display:block; background:#052e16; border:1px solid #16a34a; color:#86efac; }
+  #bugreport-card .bug-status.error { display:block; background:#2b1111; border:1px solid #dc2626; color:#fca5a5; }
+  #bugreport-card label { color:#cbd5e1; font-size:13px; font-weight:bold; display:block; margin-bottom:4px; }
+  #bugreport-card select { width:100%; background:#0f1422; border:1px solid #334155; border-radius:10px; color:#e7e7e7; padding:10px 12px; font-size:13px; font-family:inherit; appearance:auto; }
+  #bugreport-card select:focus { outline:none; border-color:#dc2626; }
+  .bug-field { margin-bottom:14px; }
+  .bug-checks { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin-top:6px; }
+  .bug-checks label { font-weight:normal; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:#94a3b8; }
+  .bug-checks input { accent-color:#dc2626; }
 
   #back-to-top { position:fixed; bottom:24px; right:24px; z-index:99; background:#6366f1; color:#fff; border:none; border-radius:50%; width:44px; height:44px; font-size:20px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.4); transition:opacity 0.2s, transform 0.2s; opacity:0; pointer-events:none; transform:translateY(10px); }
   #back-to-top.visible { opacity:1; pointer-events:auto; transform:translateY(0); }
@@ -4377,6 +5002,56 @@ class LocalServer:
   <button class="nav-btn" onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'})" id="nav-history">📚 Verlauf</button>
   <div class="nav-sep"></div>
   <button class="nav-btn nav-btn-tutorial" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
+  <button class="nav-btn nav-btn-bug" onclick="openBugReport()" title="Bug melden">🐛 Bug melden</button>
+</div>
+
+<!-- Bug Report Modal -->
+<div id="bugreport-overlay">
+  <div id="bugreport-card">
+    <h2>🐛 Bug melden</h2>
+    <div class="bug-sub">Dein Bericht wird automatisch mit System-Infos, Scan-Daten und Fehlerlogs an den Entwickler gesendet.</div>
+
+    <div class="bug-field">
+      <label>📋 Was für ein Problem hast du?</label>
+      <select id="bug-category">
+        <option value="">— Bitte auswählen —</option>
+        <option value="crash">💥 Scanner stürzt ab / friert ein</option>
+        <option value="scan">🔍 Scan funktioniert nicht richtig</option>
+        <option value="display">🖥️ Anzeige-Fehler (Seite sieht kaputt aus)</option>
+        <option value="action">⚡ Aktion funktioniert nicht (Quarantäne, Löschen etc.)</option>
+        <option value="import">📥 Import funktioniert nicht</option>
+        <option value="curseforge">🔥 CurseForge-Integration Problem</option>
+        <option value="performance">🐢 Scanner ist sehr langsam</option>
+        <option value="other">❓ Sonstiges</option>
+      </select>
+    </div>
+
+    <div class="bug-field">
+      <label>🔎 Was ist passiert? (Wähle alles aus was zutrifft)</label>
+      <div class="bug-checks">
+        <label><input type="checkbox" class="bug-symptom" value="Fehlermeldung angezeigt"> Fehlermeldung angezeigt</label>
+        <label><input type="checkbox" class="bug-symptom" value="Seite lädt nicht"> Seite lädt nicht</label>
+        <label><input type="checkbox" class="bug-symptom" value="Daten fehlen / sind falsch"> Daten fehlen / falsch</label>
+        <label><input type="checkbox" class="bug-symptom" value="Button reagiert nicht"> Button reagiert nicht</label>
+        <label><input type="checkbox" class="bug-symptom" value="Scanner hängt / keine Reaktion"> Scanner hängt</label>
+        <label><input type="checkbox" class="bug-symptom" value="Spiel startet danach nicht"> Spiel startet danach nicht</label>
+        <label><input type="checkbox" class="bug-symptom" value="Dateien verschwunden"> Dateien verschwunden</label>
+        <label><input type="checkbox" class="bug-symptom" value="Sonstiges Problem"> Sonstiges</label>
+      </div>
+    </div>
+
+    <div class="bug-field">
+      <label>📝 Beschreibe das Problem kurz (optional aber hilfreich)</label>
+      <textarea id="bug-description" placeholder="Z.B.: Ich habe auf Quarantäne geklickt aber nichts ist passiert…"></textarea>
+    </div>
+
+    <div class="bug-info">📎 <b>Folgende Infos werden automatisch mitgesendet:</b> System-Info, Scanner-Version, Spielversion, Scan-Ergebnis, Mod-Ordner, Mod-Statistik nach Typ, lastException.txt, lastUIException.txt, Scanner-Log</div>
+    <div id="bug-status" class="bug-status"></div>
+    <div class="bug-footer">
+      <button class="tut-btn tut-btn-skip" onclick="closeBugReport()">Abbrechen</button>
+      <button class="tut-btn tut-btn-primary" id="bug-send-btn" onclick="sendBugReport()" style="background:#dc2626;border-color:#dc2626;">🐛 Absenden</button>
+    </div>
+  </div>
 </div>
 
 <div class="box notice">
@@ -6488,6 +7163,75 @@ document.addEventListener('keydown', function(e) {
 
 // Check on page load
 checkTutorialOnStart();
+
+// ---- Bug Report ----
+function openBugReport() {
+  document.getElementById('bug-category').value = '';
+  document.getElementById('bug-description').value = '';
+  document.querySelectorAll('.bug-symptom').forEach(cb => cb.checked = false);
+  document.getElementById('bug-status').className = 'bug-status';
+  document.getElementById('bug-status').textContent = '';
+  document.getElementById('bug-send-btn').disabled = false;
+  document.getElementById('bug-send-btn').textContent = '🐛 Absenden';
+  document.getElementById('bugreport-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBugReport() {
+  document.getElementById('bugreport-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function sendBugReport() {
+  const category = document.getElementById('bug-category').value;
+  const desc = document.getElementById('bug-description').value.trim();
+  const symptoms = [];
+  document.querySelectorAll('.bug-symptom:checked').forEach(cb => symptoms.push(cb.value));
+
+  if (!category) {
+    document.getElementById('bug-status').className = 'bug-status error';
+    document.getElementById('bug-status').textContent = '⚠️ Bitte wähle eine Kategorie aus!';
+    return;
+  }
+  if (symptoms.length === 0 && !desc) {
+    document.getElementById('bug-status').className = 'bug-status error';
+    document.getElementById('bug-status').textContent = '⚠️ Bitte wähle mindestens ein Symptom oder beschreibe das Problem!';
+    return;
+  }
+  const btn = document.getElementById('bug-send-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Wird gesendet…';
+  try {
+    const r = await fetch('/api/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ token: TOKEN, action: 'send_bug_report', category: category, symptoms: symptoms, description: desc })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.getElementById('bug-status').className = 'bug-status success';
+      document.getElementById('bug-status').textContent = '✅ Bug-Report wurde erfolgreich gesendet! Danke für deine Hilfe!';
+      setTimeout(() => closeBugReport(), 3000);
+    } else {
+      document.getElementById('bug-status').className = 'bug-status error';
+      document.getElementById('bug-status').textContent = '❌ Fehler: ' + (d.error || 'Unbekannt');
+      btn.disabled = false;
+      btn.textContent = '🐛 Absenden';
+    }
+  } catch(e) {
+    document.getElementById('bug-status').className = 'bug-status error';
+    document.getElementById('bug-status').textContent = '❌ Verbindungsfehler: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = '🐛 Absenden';
+  }
+}
+
+// Bug Report Keyboard
+document.addEventListener('keydown', function(e) {
+  const ov = document.getElementById('bugreport-overlay');
+  if (!ov.classList.contains('active')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeBugReport(); }
+});
 
 // ---- Alles OK Banner ----
 function checkAllOK(data) {
