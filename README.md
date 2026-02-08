@@ -16,6 +16,7 @@ Ein leistungsstarkes Werkzeug zum Finden, Vergleichen und Entfernen doppelter Si
 - 🔗 **Symlink-Erkennung** — ignoriert Junctions/Symlinks automatisch
 - 📁 **Alle Mods anzeigen** — komplette Mod-Bibliothek durchsuchen und filtern
 - 📜 **Scan-Historie** — vergangene Scans vergleichen (Änderungen, neue/entfernte Dateien)
+- 🔥 **CurseForge-Integration** — erkennt über CurseForge/Overwolf installierte Mods, zeigt Mod-Name, Autor & Update-Hinweise
 - 🌐 **Web-UI** — schönes responsives Interface im Browser (localhost)
 - 🖥️ **Tkinter-GUI** — native Windows-Oberfläche für Einstellungen und Scan-Start
 - 🔒 **100% Offline** — keine Daten werden gesendet, alles lokal
@@ -82,6 +83,14 @@ pyinstaller --onefile --windowed --name "Sims4DuplicateScanner" sims4_duplicate_
 | Audio | Sound-Dateien |
 | Mixed | Gemischte Inhalte |
 
+### CurseForge-Erkennung
+- Liest das **Overwolf/CurseForge-Manifest** (`AddonGameInstance.json`) automatisch
+- Erkennt welche Mods über CurseForge installiert wurden
+- Zeigt **Mod-Name, Autor und Website-Link** als Badge in der Web-UI
+- **Update-Hinweise**: Zeigt an, wenn eine neuere Version auf CurseForge verfügbar ist
+- Manifest-Pfad wird automatisch gesucht oder kann manuell gewählt werden
+- Funktioniert auch ohne CurseForge — Feature ist optional
+
 ### Datei-Filter
 Scannt standardmäßig: `.package`, `.ts4script`
 Ignoriert automatisch: Symlinks, Junctions, `__pycache__`, Cache-Ordner
@@ -92,6 +101,7 @@ Ignoriert automatisch: Symlinks, Junctions, `__pycache__`, Cache-Ordner
 |-------|-------------|
 | `%APPDATA%\Sims4DupeScanner\sims4_duplicate_scanner_config.json` | Gespeicherte Einstellungen |
 | `%APPDATA%\Sims4DupeScanner\dbpf_deep_cache.json` | DBPF-Analyse-Cache |
+| `%LOCALAPPDATA%\Overwolf\Curse\GameInstances\AddonGameInstance.json` | CurseForge-Manifest (automatisch erkannt) |
 | `_sims4_quarantine/` | Quarantäne-Ordner (im Scan-Verzeichnis) |
 | `_sims4_actions.csv` | Aktions-Log als CSV |
 
