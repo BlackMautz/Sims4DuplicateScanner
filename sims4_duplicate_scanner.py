@@ -35,7 +35,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
-SCANNER_VERSION = "2.3.0"
+SCANNER_VERSION = "2.5.0"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1470190485824868544/eDQYj0eHWK8EbeIeiuDdAWirjWZLWtYHDPHE6YuhhkVLfoGdiXaxfP2fOYX_3f9r4rKe"
 
 # ---- Persistente Einstellungen (Ordner/Optionen merken) ----
@@ -132,6 +132,66 @@ def save_config(cfg: dict) -> None:
     except Exception:
         # Im Notfall nicht crashen, nur nicht speichern
         pass
+
+
+# ---- Auto-Update Check (GitHub Releases API) ----
+GITHUB_REPO = "BlackMautz/Sims4DuplicateScanner"
+_update_cache: dict | None = None  # globaler Cache für Update-Info
+
+
+def _parse_version(v: str) -> tuple[int, ...]:
+    """'v2.3.0' oder '2.3.0' → (2, 3, 0)"""
+    v = v.strip().lstrip("vV")
+    parts = []
+    for p in v.split("."):
+        m = re.match(r"(\d+)", p)
+        if m:
+            parts.append(int(m.group(1)))
+    return tuple(parts) if parts else (0,)
+
+
+def check_for_update(timeout: float = 5.0) -> dict:
+    """Fragt GitHub Releases API ab. Gibt dict zurück:
+    {available: bool, current: str, latest: str, url: str, name: str, body: str}
+    Ergebnis wird gecacht (einmal pro App-Start).
+    """
+    global _update_cache
+    if _update_cache is not None:
+        return _update_cache
+
+    result = {"available": False, "current": SCANNER_VERSION,
+              "latest": SCANNER_VERSION, "url": "", "name": "", "body": ""}
+    try:
+        from urllib.request import urlopen, Request
+        req = Request(
+            f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
+            headers={"Accept": "application/vnd.github+json", "User-Agent": "Sims4DupScanner"}
+        )
+        with urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        tag = data.get("tag_name", "")
+        latest = _parse_version(tag)
+        current = _parse_version(SCANNER_VERSION)
+        result["latest"] = tag.lstrip("vV")
+        result["name"] = data.get("name", "")
+        result["body"] = data.get("body", "")
+        result["url"] = data.get("html_url", f"https://github.com/{GITHUB_REPO}/releases")
+        # Auch Download-URL der .exe suchen
+        for asset in data.get("assets", []):
+            if asset.get("name", "").lower().endswith(".exe"):
+                result["download_url"] = asset.get("browser_download_url", "")
+                break
+        if latest > current:
+            result["available"] = True
+            print(f"[UPDATE] Neue Version verfügbar: {tag} (aktuell: {SCANNER_VERSION})", flush=True)
+        else:
+            print(f"[UPDATE] Aktuelle Version {SCANNER_VERSION} ist aktuell (latest: {tag})", flush=True)
+    except Exception as ex:
+        print(f"[UPDATE] Check fehlgeschlagen: {type(ex).__name__}: {ex}", flush=True)
+
+    _update_cache = result
+    return result
+
 # -----------------------------------------------------------
 
 
@@ -3045,6 +3105,18 @@ class LocalServer:
                     self._json(200, {"ok": True, "data": d})
                     return
 
+                if u.path == "/api/update-check":
+                    qs = parse_qs(u.query)
+                    if qs.get("token", [""])[0] != token:
+                        self._json(403, {"ok": False, "error": "bad token"})
+                        return
+                    try:
+                        info = check_for_update(timeout=6.0)
+                        self._json(200, {"ok": True, **info})
+                    except Exception as ex:
+                        self._json(200, {"ok": True, "available": False, "current": SCANNER_VERSION, "error": str(ex)})
+                    return
+
                 if u.path == "/api/errors":
                     qs = parse_qs(u.query)
                     if qs.get("token", [""])[0] != token:
@@ -5014,6 +5086,13 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
   <button class="nav-btn nav-btn-bug" onclick="openBugReport()" title="Bug melden">🐛 Bug melden</button>
   <div class="nav-sep"></div>
   <a class="nav-btn nav-btn-coffee" href="https://buymeacoffee.com/MrBlackMautz" target="_blank" title="Unterstütze den Entwickler">☕ Buy me a Coffee</a>
+</div>
+
+<!-- Update-Banner (wird per JS eingeblendet wenn Update verfügbar) -->
+<div id="update-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;padding:10px 18px;text-align:center;font-weight:700;font-size:14px;position:relative;z-index:900;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(245,158,11,0.3);">
+  <span id="update-text"></span>
+  <a id="update-link" href="#" target="_blank" style="display:inline-block;margin-left:12px;background:#451a03;color:#fff;padding:4px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;">⬇ Herunterladen</a>
+  <button onclick="document.getElementById('update-banner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#1a1a1a;font-size:18px;cursor:pointer;font-weight:bold;">✕</button>
 </div>
 
 <!-- Floating Discord Support Button -->
@@ -8781,6 +8860,22 @@ reloadData().then(()=>{
 // Fehler-Analyse immer laden (unabhängig von Duplikat-Daten)
 loadErrors();
 
+// ---- Auto-Update Check ----
+(async function checkForUpdate() {
+  try {
+    const r = await fetch('/api/update-check?token=' + encodeURIComponent(TOKEN));
+    const j = await r.json();
+    if (j.ok && j.available) {
+      const banner = document.getElementById('update-banner');
+      document.getElementById('update-text').textContent =
+        '🔔 Neue Version verfügbar: v' + j.latest + '  (du hast v' + j.current + ')';
+      const link = document.getElementById('update-link');
+      link.href = j.download_url || j.url || '#';
+      banner.style.display = 'block';
+    }
+  } catch(e) { /* silent */ }
+})();
+
 // ---- Fehler-Analyse ----
 
 async function loadErrors() {
@@ -9302,6 +9397,45 @@ class App(tk.Tk):
         self._load_config_into_ui()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.bind("<Map>", self._on_map)
+
+        # Auto-Update Check im Hintergrund
+        self._update_banner_frame = None
+        threading.Thread(target=self._check_update_bg, daemon=True).start()
+
+    def _check_update_bg(self):
+        """Prüft im Hintergrund auf Updates und zeigt ggf. Banner."""
+        try:
+            info = check_for_update(timeout=6.0)
+            if info.get("available"):
+                self.after(0, lambda: self._show_update_banner(info))
+        except Exception:
+            pass
+
+    def _show_update_banner(self, info: dict):
+        """Zeigt ein gelbes Update-Banner oben im Fenster."""
+        if self._update_banner_frame:
+            return  # bereits sichtbar
+        f = tk.Frame(self, bg="#f59e0b", cursor="hand2")
+        f.pack(fill="x", before=list(self.winfo_children())[0])
+
+        txt = f"🔔  Neue Version verfügbar: v{info.get('latest', '?')}  (du hast v{SCANNER_VERSION})"
+        lbl = tk.Label(f, text=txt, bg="#f59e0b", fg="#1a1a1a",
+                       font=("Segoe UI", 11, "bold"), pady=6)
+        lbl.pack(side="left", padx=(12, 0))
+
+        btn_dl = tk.Button(f, text="⬇ Herunterladen", bg="#451a03", fg="white",
+                           font=("Segoe UI", 10, "bold"), bd=0, padx=10, pady=3,
+                           cursor="hand2",
+                           command=lambda: webbrowser.open(info.get("url", "")))
+        btn_dl.pack(side="left", padx=(12, 0))
+
+        btn_close = tk.Button(f, text="✕", bg="#f59e0b", fg="#1a1a1a",
+                              font=("Segoe UI", 12, "bold"), bd=0,
+                              cursor="hand2",
+                              command=lambda: (f.pack_forget(), setattr(self, '_update_banner_frame', None)))
+        btn_close.pack(side="right", padx=(0, 8))
+
+        self._update_banner_frame = f
 
     def _build_ui(self):
         pad = 10
