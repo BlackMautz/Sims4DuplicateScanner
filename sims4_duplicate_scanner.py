@@ -2151,6 +2151,31 @@ class Dataset:
                 cat_counts['Unbekannt'] = cat_counts.get('Unbekannt', 0) + 1
         cat_counts_sorted = sorted(cat_counts.items(), key=lambda x: -x[1])
 
+        # --- Mod-Aktivitäts-Heatmap (Installationsdaten aus mtime) ---
+        activity_heatmap = {}
+        _heatmap_names = {}  # day -> list of mod names
+        for f in cat_source:
+            mt_str = f.get('mtime', '?')
+            if mt_str == '?':
+                continue
+            try:
+                day = mt_str[:10]  # "2026-02-09"
+                activity_heatmap[day] = activity_heatmap.get(day, 0) + 1
+                # Mod-Name extrahieren (nur Dateiname ohne Pfad)
+                fname = (f.get('rel', '') or f.get('path', '')).replace('\\', '/').split('/')[-1]
+                if fname:
+                    if day not in _heatmap_names:
+                        _heatmap_names[day] = []
+                    _heatmap_names[day].append(fname)
+            except Exception:
+                pass
+        # Format: {day: {count, mods: [name, ...]}}
+        activity_heatmap_full = {}
+        for day, count in activity_heatmap.items():
+            total = count
+            names = _heatmap_names.get(day, [])
+            activity_heatmap_full[day] = {"count": total, "mods": names, "more": total - len(names)}
+
         # Abhängigkeiten
         deps = getattr(self, 'dependencies', [])
 
@@ -2180,6 +2205,7 @@ class Dataset:
                 "category_counts": cat_counts_sorted,
                 "top10_biggest": top10,
                 "top10_folders": top10_folders,
+                "activity_heatmap": activity_heatmap_full,
             },
             "groups": self.groups,
             "corrupt": self.corrupt,
@@ -5458,6 +5484,11 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
     <h3 style="margin:0 0 8px; font-size:14px;">📀 Top 10 größte Mods</h3>
     <div id="stats-biggest"></div>
   </div>
+  <div style="margin-top:20px;">
+    <h3 style="margin:0 0 8px; font-size:14px;">📅 Mod-Aktivität (Installations-Heatmap)</h3>
+    <div class="info-hint">💡 Zeigt wann du Mods installiert/geändert hast — wie auf GitHub! Dunklere Kästchen = mehr Mod-Aktivität an dem Tag.</div>
+    <div id="stats-heatmap" style="overflow-x:auto; padding:8px 0;"></div>
+  </div>
 </div>
 
 <div class="box" id="creators-section">
@@ -7485,6 +7516,126 @@ function renderStats(data) {
     </div>`;
   }).join('');
   document.getElementById('stats-biggest').innerHTML = bigHtml || '<span class="muted small">Keine Daten</span>';
+
+  // --- Mod-Aktivitäts-Heatmap (GitHub-Style) ---
+  const heatmap = stats.activity_heatmap || {};
+  const heatmapEl = document.getElementById('stats-heatmap');
+  const hmKeys = Object.keys(heatmap);
+  if (hmKeys.length === 0) {
+    heatmapEl.innerHTML = '<span class="muted small">Keine Datums-Daten verfügbar</span>';
+  } else {
+    // Letzte 365 Tage berechnen
+    const today = new Date();
+    const days = [];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const entry = heatmap[key] || { count: 0, mods: [], more: 0 };
+      // Compat: falls noch altes Format (nur Zahl)
+      const count = typeof entry === 'number' ? entry : (entry.count || 0);
+      const mods = typeof entry === 'object' ? (entry.mods || []) : [];
+      const more = typeof entry === 'object' ? (entry.more || 0) : 0;
+      days.push({ date: d, key, count, mods, more });
+    }
+    // Max-Wert für Farbskalierung
+    const maxCount = Math.max(1, ...days.map(d => d.count));
+    // Farbstufen (5 Stufen)
+    function hmColor(count) {
+      if (count === 0) return '#161b22';
+      const ratio = count / maxCount;
+      if (ratio <= 0.15) return '#0e4429';
+      if (ratio <= 0.35) return '#006d32';
+      if (ratio <= 0.6) return '#26a641';
+      return '#39d353';
+    }
+    // Monate für Beschriftung
+    const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const startDay = days[0].date.getDay();
+    const offset = startDay === 0 ? 6 : startDay - 1;
+    const cellSize = 13;
+    const cellGap = 3;
+    const step = cellSize + cellGap;
+    const weeksCount = Math.ceil((days.length + offset) / 7);
+    const svgW = weeksCount * step + 40;
+    const svgH = 7 * step + 30;
+    let svg = `<svg width="${svgW}" height="${svgH}" style="font-family:system-ui;font-size:10px;">`;
+    // Wochentag-Labels
+    const dayLabels = ['Mo','','Mi','','Fr','','So'];
+    dayLabels.forEach((lbl, i) => {
+      if (lbl) svg += `<text x="0" y="${28 + i * step + cellSize - 2}" fill="#8b949e" font-size="10">${lbl}</text>`;
+    });
+    // Monats-Labels
+    let lastMonth = -1;
+    days.forEach((d, i) => {
+      const col = Math.floor((i + offset) / 7);
+      const m = d.date.getMonth();
+      if (m !== lastMonth) {
+        lastMonth = m;
+        svg += `<text x="${30 + col * step}" y="12" fill="#8b949e" font-size="10">${monthNames[m]}</text>`;
+      }
+    });
+    // Zellen (mit data-Attribut für Tooltip)
+    days.forEach((d, i) => {
+      const col = Math.floor((i + offset) / 7);
+      const row = (i + offset) % 7;
+      const x = 30 + col * step;
+      const y = 20 + row * step;
+      const color = hmColor(d.count);
+      svg += `<rect class="hm-cell" x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" ry="2" fill="${color}" style="outline:1px solid #21262d;cursor:${d.count > 0 ? 'pointer' : 'default'};" data-idx="${i}"></rect>`;
+    });
+    svg += '</svg>';
+
+    // Custom Tooltip div
+    const tooltipId = 'hm-tooltip';
+    const tooltipHtml = `<div id="${tooltipId}" style="display:none;position:fixed;z-index:9999;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;max-width:340px;font-size:12px;color:#e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,0.5);pointer-events:auto;">
+      <div id="hm-tt-title" style="font-weight:bold;font-size:13px;margin-bottom:4px;"></div>
+      <div id="hm-tt-list" style="max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#475569 #1e293b;padding-right:4px;"></div>
+    </div>`;
+
+    // Legende
+    const legend = `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#8b949e;">
+      <span>Weniger</span>
+      <span style="display:inline-block;width:12px;height:12px;background:#161b22;border-radius:2px;border:1px solid #21262d;"></span>
+      <span style="display:inline-block;width:12px;height:12px;background:#0e4429;border-radius:2px;"></span>
+      <span style="display:inline-block;width:12px;height:12px;background:#006d32;border-radius:2px;"></span>
+      <span style="display:inline-block;width:12px;height:12px;background:#26a641;border-radius:2px;"></span>
+      <span style="display:inline-block;width:12px;height:12px;background:#39d353;border-radius:2px;"></span>
+      <span>Mehr</span>
+    </div>`;
+    heatmapEl.innerHTML = svg + tooltipHtml + legend;
+
+    // Tooltip Event-Handler
+    const tooltip = document.getElementById(tooltipId);
+    const ttTitle = document.getElementById('hm-tt-title');
+    const ttList = document.getElementById('hm-tt-list');
+    let hideTimeout = null;
+    function showTooltip() { clearTimeout(hideTimeout); tooltip.style.display = 'block'; }
+    function scheduleHide() { hideTimeout = setTimeout(() => { tooltip.style.display = 'none'; }, 200); }
+    tooltip.addEventListener('mouseenter', showTooltip);
+    tooltip.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    heatmapEl.querySelectorAll('.hm-cell').forEach(rect => {
+      const idx = parseInt(rect.getAttribute('data-idx'));
+      const d = days[idx];
+      rect.addEventListener('mouseenter', (e) => {
+        showTooltip();
+        if (d.count === 0) {
+          ttTitle.textContent = `${d.key} — Keine Mods`;
+          ttList.innerHTML = '';
+        } else {
+          ttTitle.textContent = `📅 ${d.key} — ${d.count} Mod${d.count !== 1 ? 's' : ''}`;
+          let listHtml = d.mods.map(m => `<div style="padding:2px 0;border-bottom:1px solid #1e293b;">📦 ${esc(m)}</div>`).join('');
+          if (d.more > 0) listHtml += `<div style="padding:2px 0;color:#8b949e;font-style:italic;">… und ${d.more} weitere</div>`;
+          ttList.innerHTML = listHtml;
+          ttList.scrollTop = 0;
+        }
+        const r = rect.getBoundingClientRect();
+        tooltip.style.left = Math.min(r.left, window.innerWidth - 360) + 'px';
+        tooltip.style.top = (r.bottom + 8) + 'px';
+      });
+      rect.addEventListener('mouseleave', scheduleHide);
+    });
+  }
 }
 
 // ---- Quarantäne-Manager ----
