@@ -24,7 +24,10 @@ Ein leistungsstarkes Werkzeug zum Finden, Vergleichen und Entfernen doppelter Si
   - HTML-Report als Anhang mit allen Details: Exceptions, Mod-Liste, Konflikte, Scanner-Log
   - Klappbare Sektionen, Dark-Theme, Tabellen, Farbcodierung
 - 📖 **Interaktives Tutorial** — Schritt-für-Schritt Einführung beim ersten Start mit animiertem Plumbob
-- 🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (Bug-Reports nur mit User-Klick)
+- � **Discord Support** — schwebender Support-Button in der Web-UI, direkt zum [Discord Server](https://discord.gg/HWWEr7pQpR)
+- ☕ **Buy me a Coffee** — Unterstützungs-Link in der Navbar ([buymeacoffee.com/MrBlackMautz](https://buymeacoffee.com/MrBlackMautz))
+- 🟢 **Großer Start-Button** — auffälliger grüner Button im Hauptfenster
+- �🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (Bug-Reports nur mit User-Klick)
 - ✨ **Einzelne EXE** — kein Python nötig, einfach Doppelklick
 
 ## 📥 Installation & Verwendung
@@ -124,6 +127,12 @@ Ignoriert automatisch: Symlinks, Junctions, `__pycache__`, Cache-Ordner
 - **Quarantäne** verschiebt Dateien statt sie zu löschen — sicherer als direktes Löschen
 - **100% lokal** — keine Internet-Verbindung nötig, keine Daten werden gesendet
 
-## 📜 Lizenz
+## � Support & Community
+
+- **Discord**: [discord.gg/HWWEr7pQpR](https://discord.gg/HWWEr7pQpR)
+- **GitHub Issues**: [Issues](https://github.com/BlackMautz/Sims4DuplicateScanner/issues)
+- **Buy me a Coffee**: [buymeacoffee.com/MrBlackMautz](https://buymeacoffee.com/MrBlackMautz)
+
+## �📜 Lizenz
 
 MIT License — siehe [LICENSE](LICENSE)
