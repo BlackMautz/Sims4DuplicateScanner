@@ -35,7 +35,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
-SCANNER_VERSION = "2.5.0"
+SCANNER_VERSION = "2.6.0"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1470190485824868544/eDQYj0eHWK8EbeIeiuDdAWirjWZLWtYHDPHE6YuhhkVLfoGdiXaxfP2fOYX_3f9r4rKe"
 
 # ---- Persistente Einstellungen (Ordner/Optionen merken) ----
