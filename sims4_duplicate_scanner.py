@@ -4629,6 +4629,8 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
   .nav-btn-tutorial:hover { background:linear-gradient(135deg,#3730a3,#312e81) !important; color:#e0e7ff !important; }
   .nav-btn-bug { background:linear-gradient(135deg,#7f1d1d,#1e1b4b) !important; border-color:#dc2626 !important; color:#fca5a5 !important; }
   .nav-btn-bug:hover { background:linear-gradient(135deg,#991b1b,#312e81) !important; color:#fecaca !important; }
+  .nav-btn-coffee { background:linear-gradient(135deg,#78350f,#451a03) !important; border-color:#f59e0b !important; color:#fde68a !important; text-decoration:none !important; }
+  .nav-btn-coffee:hover { background:linear-gradient(135deg,#92400e,#78350f) !important; color:#fef3c7 !important; transform:scale(1.05); }
 
   /* Bug Report Modal */
   #bugreport-overlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
@@ -5003,6 +5005,8 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
   <div class="nav-sep"></div>
   <button class="nav-btn nav-btn-tutorial" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
   <button class="nav-btn nav-btn-bug" onclick="openBugReport()" title="Bug melden">🐛 Bug melden</button>
+  <div class="nav-sep"></div>
+  <a class="nav-btn nav-btn-coffee" href="https://buymeacoffee.com/MrBlackMautz" target="_blank" title="Unterstütze den Entwickler">☕ Buy me a Coffee</a>
 </div>
 
 <!-- Bug Report Modal -->
@@ -9327,11 +9331,19 @@ class App(tk.Tk):
         ttk.Checkbutton(opt, text="Duplikate nach Inhalt (SHA-256)", variable=self.var_do_content).pack(anchor="w")
         ttk.Checkbutton(opt, text="Ressource-Konflikte (DBPF-IDs)", variable=self.var_do_conflicts).pack(anchor="w", pady=(0, 10))
 
-        self.btn_run = ttk.Button(opt, text="Scan & Web-UI öffnen", command=self.run_scan)
-        self.btn_run.pack(fill="x")
-
         self.btn_backup = ttk.Button(opt, text="📦 Backup erstellen", command=self.create_backup)
-        self.btn_backup.pack(fill="x", pady=(10, 0))
+        self.btn_backup.pack(fill="x")
+
+        # --- Großer Start-Button ---
+        self.btn_run = tk.Button(
+            opt, text="▶  Scan & Web-UI\n     öffnen",
+            command=self.run_scan,
+            bg="#2ecc71", fg="white",
+            activebackground="#27ae60", activeforeground="white",
+            font=("Segoe UI", 18, "bold"),
+            relief="raised", bd=3, cursor="hand2",
+        )
+        self.btn_run.pack(fill="both", expand=True, pady=(12, 0))
 
         # Sims 4 Verzeichnis für Fehler-Analyse
         s4frame = ttk.LabelFrame(self, text="Sims 4 Verzeichnis (für Fehler-Analyse)")
