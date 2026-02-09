@@ -27,7 +27,8 @@ Ein leistungsstarkes Werkzeug zum Finden, Vergleichen und Entfernen doppelter Si
 - � **Discord Support** — schwebender Support-Button in der Web-UI, direkt zum [Discord Server](https://discord.gg/HWWEr7pQpR)
 - ☕ **Buy me a Coffee** — Unterstützungs-Link in der Navbar ([buymeacoffee.com/MrBlackMautz](https://buymeacoffee.com/MrBlackMautz))
 - 🟢 **Großer Start-Button** — auffälliger grüner Button im Hauptfenster
-- �🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (Bug-Reports nur mit User-Klick)
+- 🔄 **Auto-Update Check** — prüft beim Start automatisch auf neue Versionen (GitHub Releases API), Banner in GUI + Web-UI
+- 🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (außer Update-Check & Bug-Reports, nur mit User-Klick)
 - ✨ **Einzelne EXE** — kein Python nötig, einfach Doppelklick
 
 ## 📥 Installation & Verwendung

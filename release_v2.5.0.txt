@@ -1,0 +1,22 @@
+## 🎮 v2.5.0 — Auto-Update Check, Discord Support & mehr
+
+### Neu
+- 🔄 **Auto-Update Check** — prüft beim Start automatisch über GitHub ob eine neue Version verfügbar ist
+  - Gelbes Banner in der Tkinter-GUI mit "Herunterladen"-Button
+  - Goldenes Banner in der Web-UI mit direktem Download-Link zur .exe
+  - Kein Lag — läuft im Hintergrund, Ergebnis wird gecacht
+- 💬 **Discord Support Button** — schwebender Button in der Web-UI, immer sichtbar, direkt zum Discord Server
+- ☕ **Buy me a Coffee** — Support-Link in der Web-UI Navigationsleiste
+- 🟢 **Großer Start-Button** — auffälliger grüner "Scan & Web-UI öffnen" Button im Hauptfenster
+
+### Verbesserungen
+- 🐛 Discord Webhook Bug-Report System (aus v2.3.0)
+- 📊 Auto-Analyse für Fehler-Logs
+- 📎 HTML-Report als Anhang bei Bug-Reports
+- 🎨 Tutorial & Bug-Report Buttons mit eigenem Styling
+- 🔧 Mod-Typ Erkennung verbessert
+
+### Download
+📥 `Sims4DuplicateScanner.exe` herunterladen und starten — fertig!
+
+> ⚠️ **Windows Defender** kann beim ersten Start warnen. Das ist normal bei nicht-signierten Programmen. Klicke auf "Weitere Informationen" → "Trotzdem ausführen".
