@@ -35,7 +35,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
-SCANNER_VERSION = "2.6.0"
+SCANNER_VERSION = "2.6.1"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1470190485824868544/eDQYj0eHWK8EbeIeiuDdAWirjWZLWtYHDPHE6YuhhkVLfoGdiXaxfP2fOYX_3f9r4rKe"
 
 # ---- Persistente Einstellungen (Ordner/Optionen merken) ----
@@ -3090,12 +3090,17 @@ class LocalServer:
             def _send(self, status: int, content: bytes, ctype="text/html; charset=utf-8"):
                 self.send_response(status)
                 self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(content)))
                 self.send_header("Cache-Control", "no-store")
                 self.end_headers()
                 self.wfile.write(content)
 
             def _json(self, status: int, obj: dict):
-                self._send(status, json.dumps(obj).encode("utf-8"), "application/json; charset=utf-8")
+                try:
+                    raw = json.dumps(obj, ensure_ascii=False, allow_nan=False, default=str).encode("utf-8")
+                except (ValueError, TypeError) as exc:
+                    raw = json.dumps({"ok": False, "error": f"JSON-Serialisierung fehlgeschlagen: {exc}"}, ensure_ascii=False).encode("utf-8")
+                self._send(status, raw, "application/json; charset=utf-8")
 
             def _read_json(self):
                 try:
@@ -9758,7 +9763,8 @@ class App(tk.Tk):
     def _save_config_now(self):
         """Speichere aktuelle Einstellungen in die Konfiguration."""
         folders = list(self.listbox.get(0, "end"))
-        cfg = {
+        cfg = load_config()  # Bestehende Config laden (inkl. ignored_groups etc.)
+        cfg.update({
             "folders": folders,
             "exts": self.var_exts.get(),
             "ignore": self.var_ignore.get(),
@@ -9766,7 +9772,7 @@ class App(tk.Tk):
             "cf_path": self.var_cf_path.get(),
             "minimize_on_close": self.var_minimize_on_close.get(),
             "tutorial_seen": getattr(self, '_tutorial_seen', False),
-        }
+        })
         save_config(cfg)
 
     def on_close(self):

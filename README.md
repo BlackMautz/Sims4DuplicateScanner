@@ -28,8 +28,8 @@ Ein leistungsstarkes Werkzeug zum Finden, Vergleichen und Entfernen doppelter Si
 - ☕ **Buy me a Coffee** — Unterstützungs-Link in der Navbar ([buymeacoffee.com/MrBlackMautz](https://buymeacoffee.com/MrBlackMautz))
 - 🟢 **Großer Start-Button** — auffälliger grüner Button im Hauptfenster
 - 🔄 **Auto-Update Check** — prüft beim Start automatisch auf neue Versionen (GitHub Releases API), Banner in GUI + Web-UI
-- � **Mod-Aktivitäts-Heatmap** — GitHub-Style Heatmap zeigt wann du Mods installiert/geändert hast (letzte 365 Tage, Farbskala, Tooltip mit Mod-Namen)
-- �🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (außer Update-Check & Bug-Reports, nur mit User-Klick)
+- � **Mod-Aktivitäts-Heatmap** — GitHub-Style Heatmap zeigt wann du Mods installiert/geändert hast (letzte 365 Tage, Farbskala, Tooltip mit Mod-Namen)- 🛡️ **Zuverlässige JSON-API** — Content-Length Header und sichere Serialisierung für fehlerfreie Browser-Kommunikation
+- 💾 **Persistente "Ist korrekt"-Markierung** — als korrekt markierte Gruppen bleiben auch nach Neustart gespeichert- �🔒 **100% Offline** — keine Daten werden gesendet, alles lokal (außer Update-Check & Bug-Reports, nur mit User-Klick)
 - ✨ **Einzelne EXE** — kein Python nötig, einfach Doppelklick
 
 ## 📥 Installation & Verwendung
