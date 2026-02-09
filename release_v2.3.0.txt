@@ -1,0 +1,18 @@
+## 🎮 v2.3.0 — Bug-Report System, Start-Button & Buy me a Coffee
+
+### Neu
+- 🐛 **Discord Webhook Bug-Report** — Fehlerberichte direkt aus der Web-UI an Discord senden
+- 📊 **Auto-Analyse** — Fehler-Logs werden automatisch analysiert und zusammengefasst
+- 📎 **HTML-Report als Anhang** — detaillierter Fehlerbericht wird an den Webhook angehängt
+- 🟢 **Großer Start-Button** — auffälliger grüner "Scan & Web-UI öffnen" Button im Hauptfenster
+- ☕ **Buy me a Coffee** — Support-Link in der Web-UI Navigationsleiste
+
+### Verbesserungen
+- 🎨 Tutorial & Bug-Report Buttons in der Navbar mit eigenem Styling
+- 🔧 Mod-Typ Erkennung verbessert (zählt jetzt alle Dateien korrekt)
+- 💡 Bessere Fehlermeldungen bei der Auto-Analyse
+
+### Download
+📥 `Sims4DuplicateScanner.exe` herunterladen und starten — fertig!
+
+> ⚠️ **Windows Defender** kann beim ersten Start warnen. Das ist normal bei nicht-signierten Programmen. Klicke auf "Weitere Informationen" → "Trotzdem ausführen".

@@ -4631,6 +4631,13 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
   .nav-btn-bug:hover { background:linear-gradient(135deg,#991b1b,#312e81) !important; color:#fecaca !important; }
   .nav-btn-coffee { background:linear-gradient(135deg,#78350f,#451a03) !important; border-color:#f59e0b !important; color:#fde68a !important; text-decoration:none !important; }
   .nav-btn-coffee:hover { background:linear-gradient(135deg,#92400e,#78350f) !important; color:#fef3c7 !important; transform:scale(1.05); }
+  .nav-btn-discord { background:linear-gradient(135deg,#5865F2,#4752C4) !important; border-color:#7289da !important; color:#fff !important; text-decoration:none !important; font-size:0.95em !important; padding:7px 18px !important; }
+  .nav-btn-discord:hover { background:linear-gradient(135deg,#7289da,#5865F2) !important; transform:scale(1.08); }
+  @keyframes discord-glow { 0%,100%{box-shadow:0 0 8px rgba(88,101,242,0.4)} 50%{box-shadow:0 0 18px rgba(88,101,242,0.7)} }
+  #discord-float { position:fixed; bottom:70px; right:24px; z-index:9999; display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,#5865F2,#4752C4); color:#fff; text-decoration:none; padding:14px 22px; border-radius:50px; font-size:1.05em; font-weight:bold; box-shadow:0 4px 20px rgba(88,101,242,0.6); animation:discord-glow 2s ease-in-out infinite; transition:all 0.3s ease; cursor:pointer; border:2px solid #7289da; }
+  #discord-float:hover { transform:scale(1.08) translateY(-2px); box-shadow:0 6px 28px rgba(88,101,242,0.8); background:linear-gradient(135deg,#7289da,#5865F2); }
+  #discord-float .discord-icon { font-size:1.4em; }
+  @media(max-width:600px) { #discord-float span { display:none; } #discord-float { padding:14px 16px; border-radius:50%; } }
 
   /* Bug Report Modal */
   #bugreport-overlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
@@ -5008,6 +5015,12 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
   <div class="nav-sep"></div>
   <a class="nav-btn nav-btn-coffee" href="https://buymeacoffee.com/MrBlackMautz" target="_blank" title="Unterstütze den Entwickler">☕ Buy me a Coffee</a>
 </div>
+
+<!-- Floating Discord Support Button -->
+<a id="discord-float" href="https://discord.gg/HWWEr7pQpR" target="_blank" title="Discord Support Server">
+  <span class="discord-icon">💬</span>
+  <span>Discord Support</span>
+</a>
 
 <!-- Bug Report Modal -->
 <div id="bugreport-overlay">
