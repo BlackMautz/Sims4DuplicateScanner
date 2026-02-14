@@ -908,6 +908,141 @@ class LocalServer:
                     self._send(200, svg, "image/svg+xml")
                     return
 
+                # ── Cache-Info GET ──
+                if u.path == "/api/cache-info":
+                    if self._check_token_qs(u): return
+                    sims_dir = Path(server_ref.sims4_dir) if server_ref.sims4_dir else None
+                    caches = []
+                    if sims_dir and sims_dir.is_dir():
+                        cache_defs = [
+                            ("localthumbcache", sims_dir / "localthumbcache.package", "Thumbnail-Cache"),
+                            ("cachestr", sims_dir / "cachestr", "String-Cache"),
+                            ("onlinethumbnailcache", sims_dir / "onlinethumbnailcache", "Online-Thumbnails"),
+                            ("avatarcache", sims_dir / "avatarcache.package", "Avatar-Cache"),
+                            ("localsimtexturecache", sims_dir / "localsimtexturecache.package", "Sim-Textur-Cache"),
+                        ]
+                        for key, p, label in cache_defs:
+                            if p.is_file():
+                                caches.append({"key": key, "label": label, "size": p.stat().st_size, "exists": True, "type": "file"})
+                            elif p.is_dir():
+                                dir_sz = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+                                fc = sum(1 for f in p.rglob("*") if f.is_file())
+                                caches.append({"key": key, "label": label, "size": dir_sz, "exists": True, "type": "dir", "file_count": fc})
+                            else:
+                                caches.append({"key": key, "label": label, "size": 0, "exists": False})
+                    total = sum(c["size"] for c in caches)
+                    self._json(200, {"ok": True, "caches": caches, "total_size": total})
+                    return
+
+                # ── Package-Detail GET ──
+                if u.path == "/api/package-detail":
+                    if self._check_token_qs(u): return
+                    qs = parse_qs(u.query)
+                    pkg_path = qs.get("path", [""])[0]
+                    if not pkg_path or not os.path.isfile(pkg_path):
+                        self._json(400, {"ok": False, "error": "Datei nicht gefunden"})
+                        return
+                    try:
+                        from .dbpf import read_dbpf_entries, check_package_integrity
+                        from .constants import RESOURCE_TYPE_NAMES
+                        integrity = check_package_integrity(pkg_path)
+                        entries = read_dbpf_entries(pkg_path) if integrity == "ok" else []
+                        type_counts: dict[str, int] = {}
+                        for e in entries:
+                            tname = RESOURCE_TYPE_NAMES.get(e["type"], f"0x{e['type']:08X}")
+                            type_counts[tname] = type_counts.get(tname, 0) + 1
+                        total_comp = sum(e["comp_size"] for e in entries)
+                        total_uncomp = sum(e["uncomp_size"] for e in entries)
+                        self._json(200, {
+                            "ok": True, "path": pkg_path,
+                            "file_size": os.path.getsize(pkg_path),
+                            "integrity": integrity,
+                            "resource_count": len(entries),
+                            "type_counts": type_counts,
+                            "total_compressed": total_comp,
+                            "total_uncompressed": total_uncomp,
+                            "entries": [{"type": RESOURCE_TYPE_NAMES.get(e["type"], f"0x{e['type']:08X}"),
+                                         "type_id": f"0x{e['type']:08X}",
+                                         "group": f"0x{e['group']:08X}",
+                                         "instance": f"0x{e['instance']:016X}",
+                                         "comp_size": e["comp_size"],
+                                         "uncomp_size": e["uncomp_size"],
+                                         "compression": e["compression"]}
+                                        for e in entries[:500]],
+                        })
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                # ── Save-Gesundheitscheck GET ──
+                if u.path == "/api/save-health":
+                    if self._check_token_qs(u): return
+                    cache = server_ref._savegame_cache
+                    if not cache or not cache.get("sims"):
+                        self._json(200, {"ok": True, "status": "no_data", "message": "Kein Speicherstand analysiert"})
+                        return
+                    sims = cache.get("sims", [])
+                    households = cache.get("households", [])
+                    worlds = cache.get("worlds", [])
+                    issues = []
+                    # 1. Sims ohne Haushalt
+                    homeless = [s for s in sims if not s.get("household")]
+                    if homeless:
+                        issues.append({"type": "warning", "category": "Obdachlose Sims",
+                                       "message": f"{len(homeless)} Sim(s) ohne Haushalt",
+                                       "details": [s.get("full_name", "?") for s in homeless[:20]]})
+                    # 2. Sims ohne Namen
+                    nameless = [s for s in sims if not s.get("first_name") and not s.get("last_name")]
+                    if nameless:
+                        issues.append({"type": "error", "category": "Namenlose Sims",
+                                       "message": f"{len(nameless)} Sim(s) ohne Namen",
+                                       "details": [f"ID {s.get('sim_id', '?')}" for s in nameless[:20]]})
+                    # 3. Sims mit sehr vielen Beziehungen
+                    high_rel = [s for s in sims if (s.get("relationship_count") or 0) > 50]
+                    if high_rel:
+                        issues.append({"type": "info", "category": "Viele Beziehungen",
+                                       "message": f"{len(high_rel)} Sim(s) mit >50 Beziehungen (kann Lag verursachen)",
+                                       "details": [f"{s.get('full_name','?')} ({s.get('relationship_count',0)})" for s in high_rel[:20]]})
+                    # 4. Große Speicherstände
+                    save_mb = cache.get("active_save_size_mb", 0)
+                    if save_mb > 100:
+                        issues.append({"type": "warning", "category": "Großer Speicherstand",
+                                       "message": f"Speicherstand ist {save_mb:.0f} MB groß",
+                                       "details": ["Ab ~100 MB können Ladezeiten und Bugs zunehmen"]})
+                    # 5. Sehr viele Sims
+                    if len(sims) > 500:
+                        issues.append({"type": "info", "category": "Viele Sims",
+                                       "message": f"Speicherstand enthält {len(sims)} Sims",
+                                       "details": ["Viele Sims können die Performance beeinträchtigen"]})
+                    # 6. Doppelte Sim-Namen
+                    name_counts: dict[str, int] = {}
+                    for s in sims:
+                        fn = s.get("full_name", "")
+                        if fn:
+                            name_counts[fn] = name_counts.get(fn, 0) + 1
+                    dupes = {n: c for n, c in name_counts.items() if c > 1}
+                    if dupes:
+                        issues.append({"type": "warning", "category": "Doppelte Sim-Namen",
+                                       "message": f"{len(dupes)} Namen kommen mehrfach vor",
+                                       "details": [f"{n} ({c}x)" for n, c in sorted(dupes.items(), key=lambda x: -x[1])[:20]]})
+                    # 7. Sims mit negativen Tagen
+                    neg_days = [s for s in sims if (s.get("sim_age_days") or 0) < 0]
+                    if neg_days:
+                        issues.append({"type": "error", "category": "Negative Lebenstage",
+                                       "message": f"{len(neg_days)} Sim(s) mit negativen Lebenstagen (wahrscheinlich korrupt)",
+                                       "details": [f"{s.get('full_name','?')} ({s.get('sim_age_days',0)} Tage)" for s in neg_days[:20]]})
+
+                    health_score = max(0, 100 - len(issues) * 10)
+                    for i in issues:
+                        if i["type"] == "error":
+                            health_score -= 10
+                    health_score = max(0, min(100, health_score))
+                    self._json(200, {"ok": True, "status": "done", "issues": issues,
+                                     "issue_count": len(issues), "health_score": health_score,
+                                     "sim_count": len(sims), "household_count": len(households),
+                                     "world_count": len(worlds), "save_size_mb": save_mb})
+                    return
+
                 self._send(404, b"not found", "text/plain; charset=utf-8")
 
             def do_POST(self):
@@ -1438,8 +1573,277 @@ class LocalServer:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return
 
+                # ── Mod-Backup (Web-UI) ──
+                if action == "create_backup":
+                    try:
+                        ds = server_ref.dataset
+                        if not ds or not ds.roots:
+                            self._json(400, {"ok": False, "error": "Kein Scan vorhanden"})
+                            return
+                        import zipfile as _zipfile
+                        from datetime import datetime as _dt
+                        ts = _dt.now().strftime("%Y%m%d_%H%M%S")
+                        backup_dir = Path(ds.roots[0]).parent / "ModBackups"
+                        backup_dir.mkdir(parents=True, exist_ok=True)
+                        zip_path = backup_dir / f"ModBackup_{ts}.zip"
+                        file_count = 0
+                        total_size = 0
+                        with _zipfile.ZipFile(str(zip_path), "w", _zipfile.ZIP_DEFLATED) as zf:
+                            for root in ds.roots:
+                                root_p = Path(root)
+                                for f in root_p.rglob("*"):
+                                    if f.is_file() and f.suffix.lower() in ('.package', '.ts4script', '.cfg', '.ini'):
+                                        try:
+                                            rel = f.relative_to(root_p.parent)
+                                        except Exception:
+                                            rel = f.name
+                                        zf.write(str(f), str(rel))
+                                        file_count += 1
+                                        total_size += f.stat().st_size
+                        zip_size = zip_path.stat().st_size
+                        print(f"[BACKUP] Created {zip_path} ({file_count} files, {zip_size / 1048576:.1f} MB)", flush=True)
+                        append_log(f"BACKUP created={zip_path}")
+                        self._json(200, {"ok": True, "path": str(zip_path), "file_count": file_count,
+                                         "original_size": total_size, "zip_size": zip_size})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                # ── Broken CC Finder ──
+                if action == "find_broken_cc":
+                    try:
+                        ds = server_ref.dataset
+                        if not ds or not ds.roots:
+                            self._json(200, {"ok": True, "broken": [], "message": "Kein Scan"})
+                            return
+                        from .dbpf import read_dbpf_entries, check_package_integrity
+                        from .constants import RESOURCE_TYPE_NAMES
+                        broken = []
+                        checked = 0
+                        # CAS Part = 0x034AEECB, Thumbnail = 0x3C1AF1F2, Mesh = 0x00000000 (various)
+                        CAS_PART_TYPE = 0x034AEECB
+                        THUMB_TYPE = 0x3C1AF1F2
+                        for root in ds.roots:
+                            root_p = Path(root)
+                            for pkg in root_p.rglob("*.package"):
+                                checked += 1
+                                try:
+                                    integrity = check_package_integrity(str(pkg))
+                                    if integrity == "empty" or integrity == "too_small":
+                                        broken.append({
+                                            "path": str(pkg), "name": pkg.name,
+                                            "issue": "Leere/zu kleine Datei",
+                                            "severity": "error", "size": pkg.stat().st_size,
+                                        })
+                                        continue
+                                    if integrity == "no_dbpf" or integrity == "wrong_version":
+                                        broken.append({
+                                            "path": str(pkg), "name": pkg.name,
+                                            "issue": f"Ungültiges Package-Format ({integrity})",
+                                            "severity": "error", "size": pkg.stat().st_size,
+                                        })
+                                        continue
+                                    if integrity == "unreadable":
+                                        broken.append({
+                                            "path": str(pkg), "name": pkg.name,
+                                            "issue": "Datei nicht lesbar",
+                                            "severity": "error", "size": pkg.stat().st_size,
+                                        })
+                                        continue
+                                    entries = read_dbpf_entries(str(pkg))
+                                    if len(entries) == 0:
+                                        broken.append({
+                                            "path": str(pkg), "name": pkg.name,
+                                            "issue": "Package hat 0 Ressourcen (leer)",
+                                            "severity": "warning", "size": pkg.stat().st_size,
+                                        })
+                                        continue
+                                    # CAS Parts ohne Thumbnails
+                                    types_in_pkg = set(e["type"] for e in entries)
+                                    has_cas = CAS_PART_TYPE in types_in_pkg
+                                    has_thumb = THUMB_TYPE in types_in_pkg
+                                    if has_cas and not has_thumb:
+                                        cas_count = sum(1 for e in entries if e["type"] == CAS_PART_TYPE)
+                                        broken.append({
+                                            "path": str(pkg), "name": pkg.name,
+                                            "issue": f"{cas_count} CAS-Teil(e) ohne Thumbnail",
+                                            "severity": "warning", "size": pkg.stat().st_size,
+                                        })
+                                except Exception:
+                                    broken.append({
+                                        "path": str(pkg), "name": pkg.name,
+                                        "issue": "Fehler beim Lesen",
+                                        "severity": "error", "size": pkg.stat().st_size if pkg.exists() else 0,
+                                    })
+                        broken.sort(key=lambda x: (0 if x["severity"] == "error" else 1, x["name"]))
+                        self._json(200, {"ok": True, "broken": broken, "broken_count": len(broken), "checked": checked})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
                 if action == "send_bug_report":
                     self._handle_bug_report(payload, server_ref, token, append_log)
+                    return
+
+                # ── Cache-Cleaner ──
+                if action == "clean_cache":
+                    try:
+                        sims_dir = Path(server_ref.sims4_dir) if server_ref.sims4_dir else None
+                        if not sims_dir or not sims_dir.is_dir():
+                            self._json(400, {"ok": False, "error": "Sims 4 Ordner nicht gefunden"})
+                            return
+                        targets = payload.get("targets", [])
+                        results = []
+                        total_freed = 0
+                        cache_defs = {
+                            "localthumbcache": sims_dir / "localthumbcache.package",
+                            "cachestr": sims_dir / "cachestr",
+                            "onlinethumbnailcache": sims_dir / "onlinethumbnailcache",
+                            "avatarcache": sims_dir / "avatarcache.package",
+                            "localsimtexturecache": sims_dir / "localsimtexturecache.package",
+                        }
+                        for t in targets:
+                            p = cache_defs.get(t)
+                            if not p:
+                                continue
+                            if p.is_file():
+                                sz = p.stat().st_size
+                                p.unlink()
+                                total_freed += sz
+                                results.append({"name": t, "freed": sz, "status": "deleted"})
+                            elif p.is_dir():
+                                dir_sz = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+                                import shutil
+                                shutil.rmtree(p, ignore_errors=True)
+                                total_freed += dir_sz
+                                results.append({"name": t, "freed": dir_sz, "status": "deleted"})
+                            else:
+                                results.append({"name": t, "freed": 0, "status": "not_found"})
+                        print(f"[CACHE] Cleaned: {len(results)} targets, freed {total_freed / 1048576:.1f} MB", flush=True)
+                        append_log(f"CACHE_CLEAN freed={total_freed}")
+                        self._json(200, {"ok": True, "results": results, "total_freed": total_freed})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                # ── Tray-Cleaner ──
+                if action == "clean_tray":
+                    try:
+                        sims_dir = Path(server_ref.sims4_dir) if server_ref.sims4_dir else None
+                        if not sims_dir or not sims_dir.is_dir():
+                            self._json(400, {"ok": False, "error": "Sims 4 Ordner nicht gefunden"})
+                            return
+                        tray_dir = sims_dir / "Tray"
+                        if not tray_dir.is_dir():
+                            self._json(200, {"ok": True, "orphans": [], "message": "Kein Tray-Ordner"})
+                            return
+                        # Sammle alle Tray-Dateien und ihre household-IDs
+                        household_ids = set()
+                        tray_files: dict[str, list[Path]] = {}  # id -> files
+                        for f in tray_dir.iterdir():
+                            if not f.is_file():
+                                continue
+                            stem = f.stem  # z.B. "0x0000000012345678"
+                            # Tray-Files haben Suffixe wie .trayitem, .householdbinary, .blueprint, .bpi, .room, .lot
+                            ext = f.suffix.lower()
+                            if ext == ".trayitem":
+                                household_ids.add(stem)
+                            base_id = stem.split("_")[0] if "_" in stem else stem
+                            tray_files.setdefault(base_id, []).append(f)
+
+                        # Orphans = Dateien deren Basis-ID kein .trayitem hat
+                        orphans = []
+                        orphan_size = 0
+                        for base_id, files in tray_files.items():
+                            has_trayitem = any(f.suffix.lower() == ".trayitem" for f in files)
+                            if not has_trayitem:
+                                for f in files:
+                                    if f.suffix.lower() in ('.householdbinary', '.blueprint', '.bpi', '.room', '.lot'):
+                                        sz = f.stat().st_size
+                                        orphans.append({"path": str(f), "name": f.name, "size": sz})
+                                        orphan_size += sz
+
+                        do_delete = payload.get("delete", False)
+                        deleted = 0
+                        if do_delete and orphans:
+                            for o in orphans:
+                                try:
+                                    Path(o["path"]).unlink()
+                                    deleted += 1
+                                except Exception:
+                                    pass
+                            print(f"[TRAY-CLEAN] Deleted {deleted} orphan files", flush=True)
+                            append_log(f"TRAY_CLEAN deleted={deleted}")
+
+                        self._json(200, {"ok": True, "orphans": orphans, "orphan_count": len(orphans),
+                                         "orphan_size": orphan_size, "deleted": deleted})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                # ── Script-Sicherheitscheck ──
+                if action == "script_security_check":
+                    try:
+                        ds = server_ref.dataset
+                        if not ds or not ds.roots:
+                            self._json(200, {"ok": True, "scripts": [], "message": "Kein Scan"})
+                            return
+                        import zipfile as _zipfile
+                        suspicious_patterns = [
+                            ("os.remove", "Löscht Dateien"),
+                            ("os.unlink", "Löscht Dateien"),
+                            ("shutil.rmtree", "Löscht ganze Ordner"),
+                            ("shutil.move", "Verschiebt Dateien"),
+                            ("subprocess", "Startet externe Programme"),
+                            ("eval(", "Führt beliebigen Code aus"),
+                            ("exec(", "Führt beliebigen Code aus"),
+                            ("__import__", "Dynamischer Import"),
+                            ("ctypes", "Zugriff auf System-APIs"),
+                            ("socket", "Netzwerk-Zugriff"),
+                            ("urllib", "Internet-Download"),
+                            ("requests", "Internet-Download"),
+                            ("keylog", "Tastatur-Überwachung"),
+                            ("winreg", "Windows-Registry-Zugriff"),
+                            ("cryptograph", "Kryptografie-Bibliothek"),
+                        ]
+                        script_results = []
+                        for root in ds.roots:
+                            root_p = Path(root)
+                            for sf in root_p.rglob("*.ts4script"):
+                                findings = []
+                                try:
+                                    with _zipfile.ZipFile(str(sf), 'r') as zf:
+                                        for zi in zf.infolist():
+                                            if zi.filename.endswith(('.py', '.pyc')):
+                                                try:
+                                                    raw = zf.read(zi.filename)
+                                                    if zi.filename.endswith('.py'):
+                                                        text = raw.decode('utf-8', errors='replace')
+                                                    else:
+                                                        text = raw.decode('latin-1', errors='replace')
+                                                    for pattern, desc in suspicious_patterns:
+                                                        if pattern.lower() in text.lower():
+                                                            findings.append({"pattern": pattern, "desc": desc,
+                                                                             "file": zi.filename})
+                                                except Exception:
+                                                    pass
+                                except Exception:
+                                    findings.append({"pattern": "UNLESBAR", "desc": "Script-Archiv kann nicht geöffnet werden", "file": sf.name})
+                                if findings:
+                                    try:
+                                        rel = sf.relative_to(root_p)
+                                    except Exception:
+                                        rel = sf.name
+                                    script_results.append({
+                                        "path": str(sf), "name": sf.name, "rel": str(rel),
+                                        "size": sf.stat().st_size,
+                                        "findings": findings, "finding_count": len(findings),
+                                    })
+                        script_results.sort(key=lambda x: -x["finding_count"])
+                        safe_count = sum(1 for r in ds.roots for _ in Path(r).rglob("*.ts4script")) - len(script_results)
+                        self._json(200, {"ok": True, "scripts": script_results, "suspicious_count": len(script_results), "safe_count": max(0, safe_count)})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
                     return
 
                 self._json(404, {"ok": False, "error": "unknown action"})

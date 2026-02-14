@@ -569,7 +569,7 @@ def build_html_page() -> str:
   <button class="nav-tab" onclick="switchTab('analysis')" id="nav-analysis">🔍 Analyse <span class="nav-badge badge-zero" id="nav-badge-analysis">0</span><span class="nav-sub">Veraltet · Abhängigkeiten · Fehler</span></button>
   <button class="nav-tab" onclick="switchTab('traycc')" id="nav-tray">🎭 Tray &amp; CC<span class="nav-sub">Sims · Häuser · CC-Galerie · Savegames</span></button>
   <button class="nav-tab" onclick="switchTab('overview')" id="nav-overview">📊 Übersicht<span class="nav-sub">Statistik · Creators · Alle Mods</span></button>
-  <button class="nav-tab" onclick="switchTab('tools')" id="nav-tools">🛠 Werkzeuge<span class="nav-sub">Import · Quarantäne · Log</span></button>
+  <button class="nav-tab" onclick="switchTab('tools')" id="nav-tools">🛠 Werkzeuge<span class="nav-sub">Cache · Backup · Sicherheit · CC-Check · Browser</span></button>
   <button class="nav-tab" onclick="switchTab('history')" id="nav-history">📚 Verlauf<span class="nav-sub">Mod-Inventar · Änderungen</span></button>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
@@ -1397,6 +1397,123 @@ def build_html_page() -> str:
   <div class="info-hint">💡 <b>Was ist das?</b> Hier siehst du alle Dateien, die du in Quarantäne verschoben hast. Du kannst sie einzeln <b>zurückholen</b> (zurück in den Mods-Ordner) oder <b>endgültig löschen</b>.</div>
   <div id="quarantine-summary" class="muted">Lade…</div>
   <div id="quarantine-list" style="margin-top:12px;"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ CACHE-CLEANER ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="cache-cleaner-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>🧹 Cache-Cleaner</h2>
+    <button class="btn btn-ghost" onclick="loadCacheInfo()">↻ Aktualisieren</button>
+  </div>
+  <div class="info-hint">💡 <b>Was ist das?</b> Caches können mit der Zeit groß werden und Probleme verursachen. Das Spiel erstellt sie beim nächsten Start automatisch neu. <b>Schließe das Spiel vor dem Bereinigen!</b></div>
+  <div id="cache-list" style="margin-top:12px;">
+    <div class="muted">Klicke ↻ um Cache-Infos zu laden…</div>
+  </div>
+  <div id="cache-actions" style="margin-top:12px; display:none;">
+    <button class="btn btn-ok" onclick="cleanSelectedCaches()">🧹 Ausgewählte bereinigen</button>
+    <button class="btn btn-ghost" onclick="cleanAllCaches()">🧹 Alle bereinigen</button>
+    <span id="cache-result" class="muted small" style="margin-left:12px;"></span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ MOD-BACKUP ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="backup-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>💾 Mod-Backup</h2>
+  </div>
+  <div class="info-hint">💡 Erstellt ein ZIP-Backup aller Mods (.package, .ts4script, .cfg, .ini) im Unterordner <code>ModBackups</code>.</div>
+  <div style="margin-top:12px;">
+    <button class="btn btn-ok" id="btn-create-backup" onclick="createModBackup()">💾 Backup erstellen</button>
+    <span id="backup-status" class="muted small" style="margin-left:12px;"></span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ TRAY-CLEANER ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="tray-cleaner-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>🗂️ Tray-Cleaner</h2>
+    <button class="btn btn-ghost" onclick="scanTrayOrphans()">🔍 Verwaiste Dateien suchen</button>
+  </div>
+  <div class="info-hint">💡 Findet verwaiste Tray-Dateien (Hausdaten, Blueprints etc. ohne zugehöriges TrayItem). Diese können bedenkenlos gelöscht werden.</div>
+  <div id="tray-clean-result" style="margin-top:12px;">
+    <div class="muted">Klicke 🔍 um verwaiste Dateien zu suchen…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ SCRIPT-SICHERHEITSCHECK ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="script-security-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>🛡️ Script-Sicherheitscheck</h2>
+    <button class="btn btn-ghost" onclick="runScriptSecurityCheck()">🔍 Scripts prüfen</button>
+  </div>
+  <div class="info-hint">💡 Analysiert alle <code>.ts4script</code>-Dateien auf verdächtige Muster (Netzwerk-Zugriff, Datei-Löschung, eval etc.). <b>Nicht jeder Fund ist schädlich</b> — aber du solltest die Ergebnisse prüfen.</div>
+  <div id="script-security-result" style="margin-top:12px;">
+    <div class="muted">Klicke 🔍 um Scripts zu prüfen…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ BROKEN CC FINDER ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="broken-cc-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>🔨 Kaputte CC finden</h2>
+    <button class="btn btn-ghost" onclick="findBrokenCC()">🔍 Packages prüfen</button>
+  </div>
+  <div class="info-hint">💡 Durchsucht alle .package-Dateien nach: leere Dateien, ungültiges Format, 0 Ressourcen, CAS-Teile ohne Thumbnails.</div>
+  <div id="broken-cc-result" style="margin-top:12px;">
+    <div class="muted">Klicke 🔍 um kaputte CC zu finden…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ PACKAGE-BROWSER ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="package-browser-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>📦 Package-Browser</h2>
+  </div>
+  <div class="info-hint">💡 Analysiert eine einzelne .package-Datei und zeigt alle enthaltenen Ressourcen (Typen, Größen, Kompression).</div>
+  <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <input type="text" id="package-browse-path" placeholder="Pfad zur .package-Datei eingeben…" style="flex:1; min-width:300px; padding:8px 12px; background:#0f1115; border:1px solid #334155; border-radius:6px; color:#e7e7e7; font-size:14px;">
+    <button class="btn btn-ok" onclick="browsePackage()">📦 Analysieren</button>
+  </div>
+  <div id="package-browse-result" style="margin-top:12px;"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ SAVE-GESUNDHEITSCHECK ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="save-health-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>❤️ Save-Gesundheitscheck</h2>
+    <button class="btn btn-ghost" onclick="checkSaveHealth()">🩺 Speicherstand prüfen</button>
+  </div>
+  <div class="info-hint">💡 Analysiert den geladenen Speicherstand auf Probleme: obdachlose Sims, fehlende Namen, doppelte Namen, negative Lebenstage, und mehr. <b>Lade erst den Speicherstand im Tray &amp; CC Tab.</b></div>
+  <div id="save-health-result" style="margin-top:12px;">
+    <div class="muted">Klicke 🩺 um den Speicherstand zu prüfen…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ SPEICHERPLATZ-VISUALISIERUNG ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="disk-usage-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>📊 Speicherplatz-Analyse</h2>
+  </div>
+  <div class="info-hint">💡 Zeigt wohin dein Speicherplatz geht — aufgeteilt nach Ordnern und Dateitypen. Daten werden aus dem letzten Scan geladen.</div>
+  <div id="disk-usage-chart" style="margin-top:12px;">
+    <div class="muted">Wird automatisch nach dem Scan angezeigt…</div>
+  </div>
 </div>
 
 <script>
@@ -3698,6 +3815,353 @@ function renderQuarantine(qdata) {
   document.getElementById('quarantine-list').innerHTML = cards;
 }
 
+// ═══════════════════════════════════════════════════
+// ═══ CACHE-CLEANER ═══
+// ═══════════════════════════════════════════════════
+async function loadCacheInfo() {
+  const el = document.getElementById('cache-list');
+  el.innerHTML = '<div class="muted">Lade Cache-Infos…</div>';
+  try {
+    const resp = await fetch('/api/cache-info?token=' + TOKEN);
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const caches = json.caches || [];
+    if (caches.length === 0) {
+      el.innerHTML = '<div class="muted">Keine Caches gefunden.</div>';
+      document.getElementById('cache-actions').style.display = 'none';
+      return;
+    }
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<tr style="border-bottom:1px solid #334155;"><th style="text-align:left;padding:6px;">☑</th><th style="text-align:left;padding:6px;">Cache</th><th style="text-align:right;padding:6px;">Größe</th><th style="padding:6px;">Status</th></tr>';
+    for (const c of caches) {
+      const sizeStr = c.size > 1048576 ? (c.size / 1048576).toFixed(1) + ' MB' : (c.size / 1024).toFixed(0) + ' KB';
+      const exists = c.exists ? '<span style="color:#22c55e;">✓ vorhanden</span>' : '<span class="muted">— fehlt</span>';
+      const checked = c.exists ? 'checked' : 'disabled';
+      html += `<tr style="border-bottom:1px solid #1e293b;"><td style="padding:6px;"><input type="checkbox" class="cache-cb" value="${esc(c.key)}" ${checked}></td><td style="padding:6px;">${esc(c.label)}</td><td style="text-align:right;padding:6px;">${sizeStr}</td><td style="padding:6px;text-align:center;">${exists}</td></tr>`;
+    }
+    html += '</table>';
+    html += `<div class="muted small" style="margin-top:8px;">Gesamt: <b>${(json.total_size / 1048576).toFixed(1)} MB</b></div>`;
+    el.innerHTML = html;
+    document.getElementById('cache-actions').style.display = 'flex';
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function cleanSelectedCaches() {
+  const cbs = document.querySelectorAll('.cache-cb:checked');
+  const targets = Array.from(cbs).map(cb => cb.value);
+  if (targets.length === 0) { showToast('Keine Caches ausgewählt', 'warning'); return; }
+  await doCleanCaches(targets);
+}
+
+async function cleanAllCaches() {
+  await doCleanCaches(['localthumbcache', 'cachestr', 'onlinethumbnailcache', 'avatarcache', 'localsimtexturecache']);
+}
+
+async function doCleanCaches(targets) {
+  const el = document.getElementById('cache-result');
+  el.textContent = 'Bereinige…';
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'clean_cache', targets})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const freed = (json.total_freed / 1048576).toFixed(1);
+    el.innerHTML = `<span style="color:#22c55e;">✅ ${json.results.length} Cache(s) bereinigt — ${freed} MB freigegeben</span>`;
+    showToast(`Cache bereinigt: ${freed} MB frei`, 'success');
+    loadCacheInfo();
+  } catch(e) {
+    el.innerHTML = '<span style="color:#ef4444;">Fehler: ' + esc(e.message) + '</span>';
+    showToast('Cache-Bereinigung fehlgeschlagen', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ MOD-BACKUP ═══
+// ═══════════════════════════════════════════════════
+async function createModBackup() {
+  const btn = document.getElementById('btn-create-backup');
+  const status = document.getElementById('backup-status');
+  btn.disabled = true;
+  status.innerHTML = '<span style="color:#60a5fa;">⏳ Backup wird erstellt… (kann bei vielen Mods dauern)</span>';
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'create_backup'})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const zipMB = (json.zip_size / 1048576).toFixed(1);
+    status.innerHTML = `<span style="color:#22c55e;">✅ Backup erstellt: ${json.file_count} Dateien, ${zipMB} MB</span><br><span class="muted small" style="word-break:break-all;">${esc(json.path)}</span>`;
+    showToast(`Backup erstellt: ${json.file_count} Dateien, ${zipMB} MB`, 'success');
+  } catch(e) {
+    status.innerHTML = '<span style="color:#ef4444;">Fehler: ' + esc(e.message) + '</span>';
+    showToast('Backup fehlgeschlagen', 'error');
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ TRAY-CLEANER ═══
+// ═══════════════════════════════════════════════════
+async function scanTrayOrphans() {
+  const el = document.getElementById('tray-clean-result');
+  el.innerHTML = '<div class="muted">Suche verwaiste Tray-Dateien…</div>';
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'clean_tray', delete:false})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const orphans = json.orphans || [];
+    if (orphans.length === 0) {
+      el.innerHTML = '<div style="color:#22c55e;">✅ Keine verwaisten Tray-Dateien gefunden — alles sauber!</div>';
+      return;
+    }
+    const totalMB = (json.orphan_size / 1048576).toFixed(1);
+    let html = `<div style="margin-bottom:8px;"><b>${orphans.length}</b> verwaiste Dateien gefunden (${totalMB} MB)</div>`;
+    html += '<div style="max-height:200px;overflow-y:auto;border:1px solid #334155;border-radius:6px;padding:8px;background:#0f172a;">';
+    for (const o of orphans.slice(0, 100)) {
+      const sz = (o.size / 1024).toFixed(0);
+      html += `<div class="muted small" style="padding:2px 0;">${esc(o.name)} <span style="opacity:0.5;">(${sz} KB)</span></div>`;
+    }
+    if (orphans.length > 100) html += `<div class="muted small">…und ${orphans.length - 100} weitere</div>`;
+    html += '</div>';
+    html += `<div style="margin-top:8px;"><button class="btn btn-danger" onclick="deleteTrayOrphans()">🗑 ${orphans.length} verwaiste Dateien löschen</button></div>`;
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function deleteTrayOrphans() {
+  const el = document.getElementById('tray-clean-result');
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'clean_tray', delete:true})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    el.innerHTML = `<div style="color:#22c55e;">✅ ${json.deleted} verwaiste Tray-Dateien gelöscht!</div>`;
+    showToast(`${json.deleted} Tray-Dateien gelöscht`, 'success');
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+    showToast('Tray-Bereinigung fehlgeschlagen', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ SCRIPT-SICHERHEITSCHECK ═══
+// ═══════════════════════════════════════════════════
+async function runScriptSecurityCheck() {
+  const el = document.getElementById('script-security-result');
+  el.innerHTML = '<div class="muted">⏳ Analysiere Scripts… (kann bei vielen Mods dauern)</div>';
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'script_security_check'})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const scripts = json.scripts || [];
+    if (scripts.length === 0) {
+      el.innerHTML = `<div style="color:#22c55e;">✅ Keine verdächtigen Muster gefunden! (${json.safe_count || 0} Scripts geprüft)</div>`;
+      return;
+    }
+    let html = `<div style="margin-bottom:8px;">
+      <span style="color:#f59e0b;">⚠️ <b>${json.suspicious_count}</b> Script(s) mit verdächtigen Mustern</span>
+      <span class="muted"> | ${json.safe_count || 0} unauffällig</span>
+    </div>`;
+    for (const s of scripts) {
+      const sizeKB = (s.size / 1024).toFixed(0);
+      html += `<div style="margin-bottom:8px;padding:8px 12px;background:#0f172a;border:1px solid #92400e;border-radius:8px;">
+        <div style="font-weight:bold;font-size:12px;" title="${esc(s.path)}">${esc(s.name)} <span class="muted">(${sizeKB} KB)</span></div>
+        <div style="margin-top:4px;">`;
+      for (const f of s.findings) {
+        html += `<div style="font-size:11px;padding:2px 0;"><span style="color:#f59e0b;font-family:monospace;">${esc(f.pattern)}</span> <span class="muted">— ${esc(f.desc)}</span> <span style="opacity:0.5;font-size:10px;">in ${esc(f.file)}</span></div>`;
+      }
+      html += '</div></div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ BROKEN CC FINDER ═══
+// ═══════════════════════════════════════════════════
+async function findBrokenCC() {
+  const el = document.getElementById('broken-cc-result');
+  el.innerHTML = '<div class="muted">⏳ Prüfe alle Packages… (kann bei vielen Mods länger dauern)</div>';
+  try {
+    const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'find_broken_cc'})});
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const broken = json.broken || [];
+    if (broken.length === 0) {
+      el.innerHTML = `<div style="color:#22c55e;">✅ Alle ${json.checked} Packages sind in Ordnung!</div>`;
+      return;
+    }
+    let html = `<div style="margin-bottom:8px;">
+      <span style="color:#ef4444;">🔨 <b>${json.broken_count}</b> problematische Package(s)</span>
+      <span class="muted"> von ${json.checked} geprüft</span>
+    </div>`;
+    html += '<div style="max-height:400px;overflow-y:auto;">';
+    for (const b of broken) {
+      const sizeKB = (b.size / 1024).toFixed(0);
+      const sevColor = b.severity === 'error' ? '#ef4444' : '#f59e0b';
+      const sevIcon = b.severity === 'error' ? '❌' : '⚠️';
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;margin-bottom:3px;">
+        <span>${sevIcon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(b.path)}">${esc(b.name)}</div>
+          <div style="font-size:11px;color:${sevColor};">${esc(b.issue)} <span class="muted">(${sizeKB} KB)</span></div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ PACKAGE-BROWSER ═══
+// ═══════════════════════════════════════════════════
+async function browsePackage() {
+  const pathInput = document.getElementById('package-browse-path');
+  const pkgPath = pathInput.value.trim();
+  const el = document.getElementById('package-browse-result');
+  if (!pkgPath) { showToast('Bitte Pfad eingeben', 'warning'); return; }
+  el.innerHTML = '<div class="muted">⏳ Analysiere Package…</div>';
+  try {
+    const resp = await fetch('/api/package-detail?token=' + TOKEN + '&path=' + encodeURIComponent(pkgPath));
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    const fileMB = (json.file_size / 1048576).toFixed(2);
+    const compMB = (json.total_compressed / 1048576).toFixed(2);
+    const uncompMB = (json.total_uncompressed / 1048576).toFixed(2);
+    let html = `<div style="margin-bottom:8px;">
+      <b>📦 ${esc(pkgPath.split(/[\\/]/).pop())}</b><br>
+      <span class="muted">Integrität: </span><span style="color:${json.integrity === 'ok' ? '#22c55e' : '#ef4444'};">${esc(json.integrity)}</span> |
+      <span class="muted">Dateigröße:</span> ${fileMB} MB |
+      <span class="muted">Ressourcen:</span> <b>${json.resource_count}</b> |
+      <span class="muted">Komprimiert:</span> ${compMB} MB |
+      <span class="muted">Unkomprimiert:</span> ${uncompMB} MB
+    </div>`;
+    // Type-Zusammenfassung
+    const tc = json.type_counts || {};
+    const types = Object.entries(tc).sort((a,b) => b[1] - a[1]);
+    if (types.length > 0) {
+      html += '<div style="margin-bottom:8px;"><b>Ressourcen-Typen:</b></div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">';
+      for (const [name, count] of types) {
+        html += `<span class="pill" style="font-size:11px;">${esc(name)}: ${count}</span>`;
+      }
+      html += '</div>';
+    }
+    // Entries-Tabelle
+    const entries = json.entries || [];
+    if (entries.length > 0) {
+      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #334155;border-radius:6px;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+      html += '<tr style="position:sticky;top:0;background:#1e293b;"><th style="padding:4px 8px;text-align:left;">Typ</th><th style="padding:4px 8px;text-align:left;">Type-ID</th><th style="padding:4px 8px;text-align:left;">Instance</th><th style="padding:4px 8px;text-align:right;">Größe</th><th style="padding:4px 8px;text-align:right;">Unkomprimiert</th></tr>';
+      for (const e of entries) {
+        html += `<tr style="border-top:1px solid #1e293b;"><td style="padding:3px 8px;">${esc(e.type)}</td><td style="padding:3px 8px;font-family:monospace;opacity:0.6;">${esc(e.type_id)}</td><td style="padding:3px 8px;font-family:monospace;font-size:10px;">${esc(e.instance)}</td><td style="padding:3px 8px;text-align:right;">${(e.comp_size/1024).toFixed(1)} KB</td><td style="padding:3px 8px;text-align:right;">${(e.uncomp_size/1024).toFixed(1)} KB</td></tr>`;
+      }
+      if (json.resource_count > 500) {
+        html += `<tr><td colspan="5" class="muted" style="padding:6px 8px;text-align:center;">…und ${json.resource_count - 500} weitere Ressourcen</td></tr>`;
+      }
+      html += '</table></div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ SAVE-GESUNDHEITSCHECK ═══
+// ═══════════════════════════════════════════════════
+async function checkSaveHealth() {
+  const el = document.getElementById('save-health-result');
+  el.innerHTML = '<div class="muted">⏳ Prüfe Speicherstand…</div>';
+  try {
+    const resp = await fetch('/api/save-health?token=' + TOKEN);
+    const json = await resp.json();
+    if (!json.ok) throw new Error(json.error);
+    if (json.status === 'no_data') {
+      el.innerHTML = '<div class="muted">⚠️ Kein Speicherstand geladen. Lade erst den Speicherstand im <b>Tray & CC</b> Tab.</div>';
+      return;
+    }
+    const issues = json.issues || [];
+    const scoreColor = json.health_score >= 80 ? '#22c55e' : json.health_score >= 50 ? '#f59e0b' : '#ef4444';
+    let html = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+      <div style="font-size:36px;font-weight:bold;color:${scoreColor};">${json.health_score}%</div>
+      <div>
+        <div style="font-weight:bold;">Gesundheits-Score</div>
+        <div class="muted">${json.sim_count} Sims · ${json.household_count} Haushalte · ${json.world_count} Welten · ${json.save_size_mb.toFixed(1)} MB</div>
+      </div>
+    </div>`;
+    if (issues.length === 0) {
+      html += '<div style="color:#22c55e;">✅ Keine Probleme gefunden — dein Speicherstand ist gesund!</div>';
+    } else {
+      for (const i of issues) {
+        const typeIcon = i.type === 'error' ? '❌' : i.type === 'warning' ? '⚠️' : 'ℹ️';
+        const typeColor = i.type === 'error' ? '#ef4444' : i.type === 'warning' ? '#f59e0b' : '#60a5fa';
+        html += `<div style="padding:8px 12px;margin-bottom:4px;background:#0f172a;border-left:3px solid ${typeColor};border-radius:4px;">
+          <div style="font-weight:bold;font-size:13px;">${typeIcon} ${esc(i.category)}</div>
+          <div style="font-size:12px;color:${typeColor};">${esc(i.message)}</div>`;
+        if (i.details && i.details.length > 0) {
+          html += '<div style="margin-top:4px;font-size:11px;opacity:0.7;">';
+          for (const d of i.details.slice(0, 10)) {
+            html += esc(d) + '<br>';
+          }
+          if (i.details.length > 10) html += `…und ${i.details.length - 10} weitere`;
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ SPEICHERPLATZ-VISUALISIERUNG ═══
+// ═══════════════════════════════════════════════════
+function renderDiskUsage(data) {
+  const el = document.getElementById('disk-usage-chart');
+  const folderSizes = data.folder_sizes || {};
+  const entries = Object.entries(folderSizes).filter(([k,v]) => v > 0).sort((a,b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="muted">Keine Ordner-Daten vorhanden.</div>';
+    return;
+  }
+  const total = entries.reduce((s, [k,v]) => s + v, 0);
+  const colors = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#22c55e','#06b6d4','#ef4444','#6366f1','#14b8a6','#f97316','#a855f7','#10b981'];
+  let html = `<div style="margin-bottom:12px;"><b>Gesamt:</b> ${(total / 1048576).toFixed(1)} MB</div>`;
+  // Bar chart
+  html += '<div style="display:flex;height:32px;border-radius:8px;overflow:hidden;margin-bottom:12px;">';
+  for (let i = 0; i < entries.length; i++) {
+    const [name, size] = entries[i];
+    const pct = (size / total * 100);
+    if (pct < 0.5) continue;
+    const color = colors[i % colors.length];
+    html += `<div style="width:${pct.toFixed(1)}%;background:${color};min-width:2px;" title="${esc(name)}: ${(size / 1048576).toFixed(1)} MB (${pct.toFixed(1)}%)"></div>`;
+  }
+  html += '</div>';
+  // Legend
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px 16px;">';
+  for (let i = 0; i < entries.length; i++) {
+    const [name, size] = entries[i];
+    const pct = (size / total * 100).toFixed(1);
+    const sizeMB = (size / 1048576).toFixed(1);
+    const color = colors[i % colors.length];
+    html += `<div style="display:flex;align-items:center;gap:4px;font-size:12px;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${color};display:inline-block;"></span>
+      <span>${esc(name)}</span>
+      <span class="muted">${sizeMB} MB (${pct}%)</span>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 let _allModsShown = 50;
 let _allModsFiltered = [];
 
@@ -4381,6 +4845,7 @@ async function reloadData() {
   renderAllMods(data);
   renderGallery(data);
   renderNonModFiles(data);
+  renderDiskUsage(data);
   // Tray-Daten aktualisieren falls im Scan enthalten
   if (data.tray) {
     _trayData = data.tray;
