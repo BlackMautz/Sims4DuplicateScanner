@@ -13,7 +13,14 @@ env/
 # PyInstaller
 build/
 dist/
-*.spec
+# *.spec — Spec-Datei wird versioniert
+
+# Debug/Test-Dateien
+_debug*.py
+_test*.py
+_gen_*.py
+_export_*.txt
+_wiki_portraits_cache/
 
 # IDE
 .vscode/
