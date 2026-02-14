@@ -1520,6 +1520,7 @@ class LocalServer:
 
                     all_exc_files_data: list[tuple[str, str]] = []
                     all_ui_exc_files_data: list[tuple[str, str]] = []
+                    all_other_exc_files_data: list[tuple[str, str]] = []
                     error_messages: list[str] = []
                     broken_mods: list[str] = []
 
@@ -1575,6 +1576,19 @@ class LocalServer:
                             except Exception:
                                 all_ui_exc_files_data.append((uf.name, "NICHT LESBAR"))
 
+                        # Sonstige *Exception*.txt (Mod-spezifische)
+                        known_exc_names = {e[0] for e in all_exc_files_data} | {e[0] for e in all_ui_exc_files_data}
+                        other_exc_files = sorted(
+                            [f for f in sims4_path.glob("*Exception*.txt") if f.name not in known_exc_names],
+                            key=lambda f: f.stat().st_mtime if f.exists() else 0, reverse=True
+                        )
+                        for oef in other_exc_files[:5]:
+                            try:
+                                content = _sanitize_paths(oef.read_text(encoding='utf-8', errors='replace'))
+                                all_other_exc_files_data.append((oef.name, content[:100000]))
+                            except Exception:
+                                all_other_exc_files_data.append((oef.name, "NICHT LESBAR"))
+
                     scanner_log_full = ""
                     if server_ref.log_file and server_ref.log_file.exists():
                         try:
@@ -1582,9 +1596,22 @@ class LocalServer:
                         except Exception:
                             pass
 
+                    # Mod-Logs aus mod_logs/ Ordner lesen
+                    mod_logs_data: list[tuple[str, str]] = []
+                    if sims4_path and sims4_path.exists():
+                        mod_logs_dir = sims4_path / "mod_logs"
+                        if mod_logs_dir.is_dir():
+                            for ml_file in sorted(mod_logs_dir.glob("*.txt"), key=lambda f: f.stat().st_mtime if f.exists() else 0, reverse=True)[:5]:
+                                try:
+                                    ml_content = _sanitize_paths(ml_file.read_text(encoding='utf-8', errors='replace'))
+                                    mod_logs_data.append((ml_file.name, ml_content[:50000]))
+                                except Exception:
+                                    mod_logs_data.append((ml_file.name, "NICHT LESBAR"))
+
                     # Auto-Analyse
                     has_exc = len(all_exc_files_data) > 0
                     has_ui_exc = len(all_ui_exc_files_data) > 0
+                    has_other_exc = len(all_other_exc_files_data) > 0
                     broken_mods = list(dict.fromkeys(broken_mods))[:10]
 
                     has_corrupt = False
@@ -1623,6 +1650,8 @@ class LocalServer:
                         hints.append("⚠️ Exception vorhanden — wahrscheinlich Mod-Konflikt")
                     if has_ui_exc:
                         hints.append("⚠️ UI-Exception vorhanden — möglicherweise UI-Mod-Problem")
+                    if has_other_exc:
+                        hints.append(f"📄 {len(all_other_exc_files_data)} Mod-Exception-Dateien gefunden")
                     if error_messages:
                         for em in error_messages[:3]:
                             hints.append(f"💬 {em[:200]}")
@@ -1636,7 +1665,7 @@ class LocalServer:
                         hints.append(f"📄 {len(all_exc_files_data)} Exception-Dateien gefunden (siehe .txt)")
                     if len(all_ui_exc_files_data) > 1:
                         hints.append(f"📄 {len(all_ui_exc_files_data)} UI-Exception-Dateien gefunden (siehe .txt)")
-                    if not has_exc and not has_ui_exc and not has_corrupt and not has_conflicts:
+                    if not has_exc and not has_ui_exc and not has_other_exc and not has_corrupt and not has_conflicts:
                         hints.append("✅ Keine Fehler in Logs — alles sauber")
                     if len(description) < 10 and not symptoms:
                         hints.append("🤷 Sehr wenig Info vom User — evtl. verwirrt")
@@ -1661,14 +1690,22 @@ class LocalServer:
                     user_notes = load_mod_notes()
                     user_tags = load_mod_tags()
 
+                    # Savegame-Daten sammeln (Sims, Haushalte, Welten)
+                    savegame_data = server_ref._savegame_cache if server_ref._savegame_cache else None
+
+                    # Tray / CC-Daten sammeln
+                    tray_data = server_ref._tray_cache if server_ref._tray_cache else None
+
                     # Build HTML report
                     report_html = _build_bug_report_html(
                         cat_label, symptom_text, desc_text, sys_info, game_ver, mod_folders, mod_type_stats,
                         severity, verdict, hints, broken_mods, error_messages,
-                        all_exc_files_data, all_ui_exc_files_data, scanner_log_full,
+                        all_exc_files_data, all_ui_exc_files_data, all_other_exc_files_data, scanner_log_full,
                         ds, d_full, s, dupe_count, corrupt_count, conflict_count,
                         has_corrupt, has_dupes, has_conflicts,
                         user_creators=user_creators, user_notes=user_notes, user_tags=user_tags,
+                        savegame_data=savegame_data, tray_data=tray_data,
+                        mod_logs_data=mod_logs_data,
                     )
                     report_bytes = report_html.encode('utf-8')
 
@@ -1693,6 +1730,36 @@ class LocalServer:
                         mod_summary_lines.append(f"📝 {len(user_notes)} Mod-Notizen vom User")
                     mod_summary_text = '\n'.join(mod_summary_lines) if mod_summary_lines else 'Keine erweiterten Daten'
 
+                    # Sims-Zusammenfassung fuer Discord
+                    sims_summary_text = 'Keine Spielstand-Analyse'
+                    if savegame_data:
+                        sg_sims = savegame_data.get('sims', [])
+                        sg_hh = savegame_data.get('households', {})
+                        sg_worlds = savegame_data.get('worlds', [])
+                        sg_dupes = savegame_data.get('duplicate_sims', [])
+                        sg_save = savegame_data.get('active_save', '?')
+                        sg_lines = [f"Save: {sg_save}"]
+                        sg_lines.append(f"Sims: {len(sg_sims)} | Haushalte: {len(sg_hh)} | Welten: {len(sg_worlds)}")
+                        if sg_dupes:
+                            sg_lines.append(f"⚠️ {len(sg_dupes)} doppelte Sim-Namen!")
+                        age_stats = savegame_data.get('age_stats', {})
+                        if age_stats:
+                            sg_lines.append('Alter: ' + ', '.join(f"{k}: {v}" for k, v in sorted(age_stats.items(), key=lambda x: -x[1])))
+                        sims_summary_text = '\n'.join(sg_lines)
+
+                    # CC-Zusammenfassung fuer Discord
+                    cc_summary_text = 'Keine CC-Analyse'
+                    if tray_data:
+                        t_sum = tray_data.get('summary', {})
+                        cc_items = t_sum.get('items_with_cc', 0)
+                        cc_total_mods = t_sum.get('total_mods_used', 0)
+                        cc_max = t_sum.get('max_cc_item', '')
+                        cc_max_cnt = t_sum.get('max_cc_count', 0)
+                        cc_lines = [f"Items mit CC: {cc_items} | CC-Mods genutzt: {cc_total_mods}"]
+                        if cc_max:
+                            cc_lines.append(f"Meiste CC: {cc_max} ({cc_max_cnt} Teile)")
+                        cc_summary_text = '\n'.join(cc_lines)
+
                     embed1 = {
                         "title": "\U0001f41b Bug Report — Sims 4 Duplikate Scanner",
                         "color": 0xFF4444,
@@ -1706,6 +1773,8 @@ class LocalServer:
                             {"name": "📁 Mod-Typen", "value": mod_type_stats[:1024], "inline": False},
                             {"name": "📂 Mod-Ordner", "value": mod_folders[:1024], "inline": False},
                             {"name": "🗂️ Mod-Analyse", "value": mod_summary_text[:1024], "inline": False},
+                            {"name": "👥 Spielstand (Sims)", "value": sims_summary_text[:1024], "inline": False},
+                            {"name": "🎨 CC-Analyse", "value": cc_summary_text[:1024], "inline": False},
                         ],
                         "footer": {"text": f"Scanner v{SCANNER_VERSION} | {report_time} | 📎 Details in .html Anhang"},
                     }
@@ -1808,15 +1877,17 @@ class LocalServer:
 def _build_bug_report_html(
     cat_label, symptom_text, desc_text, sys_info, game_ver, mod_folders, mod_type_stats,
     severity, verdict, hints, broken_mods, error_messages,
-    all_exc_files_data, all_ui_exc_files_data, scanner_log_full,
+    all_exc_files_data, all_ui_exc_files_data, all_other_exc_files_data, scanner_log_full,
     ds, d_full, s, dupe_count, corrupt_count, conflict_count,
     has_corrupt, has_dupes, has_conflicts,
     *, user_creators=None, user_notes=None, user_tags=None,
+    savegame_data=None, tray_data=None, mod_logs_data=None,
 ) -> str:
     """Builds the full HTML bug report page with enriched mod list."""
     user_creators = user_creators or {}
     user_notes = user_notes or {}
     user_tags = user_tags or {}
+    mod_logs_data = mod_logs_data or []
     report_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def _h(text):
@@ -1955,7 +2026,7 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
     if has_conflicts and ds:
         conflicts = d_full.get('conflicts', [])
         conf_html = ''
-        for c_item in conflicts[:80]:
+        for c_item in conflicts:
             c_files = c_item.get('files', [])
             res_name = c_item.get('resource', '?')
             rows = ''.join(f'<tr><td>{_h(cf.get("path","?"))}</td></tr>' for cf in c_files)
@@ -1976,10 +2047,220 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
 <div class="collapsed"><h2 onclick="toggle(this)">🖥️ lastUIException #{i+1}: {_h(fname)}</h2>
 <div class="section"><pre>{_h(fcontent)}</pre></div></div>
 ''')
+    for i, (fname, fcontent) in enumerate(all_other_exc_files_data):
+        parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📄 Mod-Exception #{i+1}: {_h(fname)}</h2>
+<div class="section"><pre>{_h(fcontent)}</pre></div></div>
+''')
+
+    # ── Spielstand-Analyse (Sims) ──
+    if savegame_data:
+        sg_sims = savegame_data.get('sims', [])
+        sg_hh = savegame_data.get('households', {})
+        sg_worlds = savegame_data.get('worlds', [])
+        sg_dupes = savegame_data.get('duplicate_sims', [])
+        sg_active = savegame_data.get('active_save', '?')
+        sg_age = savegame_data.get('age_stats', {})
+        sg_gender = savegame_data.get('gender_stats', {})
+        sg_species = savegame_data.get('species_stats', {})
+        sg_skin = savegame_data.get('skin_stats', {})
+        sg_partner = savegame_data.get('partner_count', 0)
+        sg_save_size = savegame_data.get('active_save_size_mb', '?')
+
+        # Statistik-Karten
+        sg_stats = f'''<div class="stats-bar">
+<div class="stat-card"><div class="stat-num">{len(sg_sims)}</div><div class="stat-label">Sims</div></div>
+<div class="stat-card"><div class="stat-num">{len(sg_hh)}</div><div class="stat-label">Haushalte</div></div>
+<div class="stat-card"><div class="stat-num">{len(sg_worlds)}</div><div class="stat-label">Welten</div></div>
+<div class="stat-card"><div class="stat-num">{sg_partner}</div><div class="stat-label">Partner</div></div>
+<div class="stat-card"><div class="stat-num">{sg_save_size} MB</div><div class="stat-label">Save-Größe</div></div>
+</div>'''
+
+        # Demografie
+        demo_parts = []
+        if sg_age:
+            demo_parts.append('<b>Alter:</b> ' + ', '.join(f'{_h(k)}: {v}' for k, v in sorted(sg_age.items(), key=lambda x: -x[1])))
+        if sg_gender:
+            demo_parts.append('<b>Geschlecht:</b> ' + ', '.join(f'{_h(k)}: {v}' for k, v in sorted(sg_gender.items(), key=lambda x: -x[1])))
+        if sg_species:
+            demo_parts.append('<b>Spezies:</b> ' + ', '.join(f'{_h(k)}: {v}' for k, v in sorted(sg_species.items(), key=lambda x: -x[1])))
+        if sg_skin:
+            top_skin = sorted(sg_skin.items(), key=lambda x: -x[1])[:5]
+            demo_parts.append('<b>Hautfarbe:</b> ' + ', '.join(f'{_h(k)}: {v}' for k, v in top_skin))
+        demo_html = '<br>'.join(demo_parts) if demo_parts else ''
+
+        # Doppelte Sims
+        dupe_sims_html = ''
+        if sg_dupes:
+            dupe_sims_html = '<h3 style="color:#ff6b6b;margin:15px 0 8px">⚠️ Doppelte Sim-Namen</h3>'
+            dupe_sims_html += '<table><tr><th>Name</th><th>Anzahl</th><th>In Haushalten</th></tr>'
+            for d in sg_dupes:
+                dupe_sims_html += f'<tr><td>{_h(d.get("name", "?"))}</td><td>{d.get("count", 0)}</td><td>{_h(", ".join(d.get("households", [])))}</td></tr>'
+            dupe_sims_html += '</table>'
+
+        # Sim-Liste (vollständig mit allen Details)
+        sim_table_html = ''
+        if sg_sims:
+            sim_table_html = '<h3 style="color:#61dafb;margin:15px 0 8px">📋 Sim-Liste</h3>'
+            sim_table_html += '<div class="mod-list"><table><tr><th>Name</th><th>Haushalt</th><th>Welt</th><th>Alter</th><th>Geschl.</th><th>Spezies</th><th>Partner</th><th>Traits</th><th>Skills</th><th>Bez.</th><th>Stimmung</th><th>Tage</th><th>Gespielt</th></tr>'
+            for sim in sorted(sg_sims, key=lambda x: (x.get('household', ''), x.get('full_name', ''))):
+                played_icon = '✅' if sim.get('is_played') else '—'
+                mood = sim.get('mood_emoji', '') + ' ' + sim.get('mood_label', '') if sim.get('mood_label') else '—'
+                partner = sim.get('partner', '') or '—'
+                age_days = sim.get('sim_age_days', 0)
+                age_days_str = f'{age_days}d' if age_days else '—'
+                sim_table_html += f'<tr><td>{_h(sim.get("full_name", "?"))}</td><td>{_h(sim.get("household", "?"))}</td><td>{_h(sim.get("world", "") or "—")}</td><td>{_h(sim.get("age", "?"))}</td><td>{_h(sim.get("gender", "?"))}</td><td>{_h(sim.get("species", "") or "—")}</td><td>{_h(partner)}</td><td>{sim.get("trait_count", 0)}</td><td>{sim.get("skill_count", 0)}</td><td>{sim.get("relationship_count", 0)}</td><td>{_h(mood)}</td><td>{_h(age_days_str)}</td><td>{played_icon}</td></tr>'
+            sim_table_html += '</table></div>'
+
+        # Welten-Übersicht (worlds ist eine Liste von Strings, Sims zählen wir selbst)
+        worlds_html = ''
+        if sg_worlds:
+            # Sim-Count pro Welt aus der Sim-Liste berechnen
+            world_sim_counts: dict[str, int] = {}
+            world_hh_sets: dict[str, set] = {}
+            for sim in sg_sims:
+                sw = sim.get('world', '')
+                if sw:
+                    world_sim_counts[sw] = world_sim_counts.get(sw, 0) + 1
+                    if sw not in world_hh_sets:
+                        world_hh_sets[sw] = set()
+                    world_hh_sets[sw].add(sim.get('household', ''))
+            worlds_html = '<h3 style="color:#81c784;margin:15px 0 8px">🌍 Welten</h3>'
+            worlds_html += '<table><tr><th>Welt</th><th>Sims</th><th>Haushalte</th></tr>'
+            for w_name in sorted(sg_worlds, key=lambda x: -world_sim_counts.get(x, 0)):
+                worlds_html += f'<tr><td>{_h(w_name)}</td><td>{world_sim_counts.get(w_name, 0)}</td><td>{len(world_hh_sets.get(w_name, set()))}</td></tr>'
+            worlds_html += '</table>'
+
+        # Verfügbare Spielstände
+        saves_html = ''
+        sg_saves = savegame_data.get('available_saves', [])
+        if sg_saves:
+            saves_html = '<h3 style="color:#64b5f6;margin:15px 0 8px">💾 Verfügbare Spielstände</h3>'
+            saves_html += '<table><tr><th>Datei</th><th>Größe</th><th>Datum</th></tr>'
+            for sv in sg_saves:
+                saves_html += f'<tr><td>{_h(sv.get("file", "?"))}</td><td class="size-col">{sv.get("size_mb", "?")} MB</td><td>{_h(sv.get("date", "?"))}</td></tr>'
+            saves_html += '</table>'
+
+        # Enrichment-Daten
+        enrichment_html = ''
+
+        # Basegame-Sims (vorinstallierte Sims die im Save sind)
+        bg_names = savegame_data.get('basegame_names', [])
+        if bg_names:
+            enrichment_html += '<h3 style="color:#ffab40;margin:15px 0 8px">🏠 Basegame-Sims im Spielstand</h3>'
+            enrichment_html += f'<p style="color:#aaa">{len(bg_names)} vorinstallierte Sims erkannt:</p>'
+            enrichment_html += '<p style="color:#ccc">' + ', '.join(_h(n) for n in sorted(bg_names)) + '</p>'
+
+        # Townies (NPC-Sims die das Spiel generiert hat)
+        townie_names = savegame_data.get('townie_names', [])
+        if townie_names:
+            enrichment_html += '<h3 style="color:#ce93d8;margin:15px 0 8px">👤 Erkannte Townies / NPCs</h3>'
+            enrichment_html += f'<p style="color:#aaa">{len(townie_names)} Townies erkannt:</p>'
+            enrichment_html += '<p style="color:#ccc">' + ', '.join(_h(n) for n in sorted(townie_names)) + '</p>'
+
+        # Portrait-Namen (Sims mit Portrait-Bildern im Tray)
+        portrait_names = savegame_data.get('portrait_names', [])
+        if portrait_names:
+            enrichment_html += '<h3 style="color:#64b5f6;margin:15px 0 8px">🖼️ Sims mit Portrait im Tray</h3>'
+            enrichment_html += f'<p style="color:#aaa">{len(portrait_names)} Portraits gefunden:</p>'
+            enrichment_html += '<p style="color:#ccc">' + ', '.join(_h(n) for n in sorted(portrait_names)) + '</p>'
+
+        # Bibliothek-Sims
+        library_names = savegame_data.get('library_sim_names', [])
+        if library_names:
+            enrichment_html += '<h3 style="color:#81c784;margin:15px 0 8px">📚 Sims in der Bibliothek</h3>'
+            enrichment_html += f'<p style="color:#aaa">{len(library_names)} Bibliothek-Sims:</p>'
+            enrichment_html += '<p style="color:#ccc">' + ', '.join(_h(n) for n in sorted(library_names)) + '</p>'
+
+        parts.append(f'''
+<div><h2 onclick="toggle(this)">👥 Spielstand-Analyse ({len(sg_sims)} Sims, Save: {_h(sg_active)})</h2>
+<div class="section">
+{sg_stats}
+<div style="margin:10px 0;padding:10px;background:#1e1e3a;border-radius:8px">{demo_html}</div>
+{dupe_sims_html}
+{worlds_html}
+{saves_html}
+{enrichment_html}
+{sim_table_html}
+</div></div>
+''')
+
+    # ── CC-Analyse (Tray) ──
+    if tray_data:
+        t_items = tray_data.get('items', [])
+        t_sum = tray_data.get('summary', {})
+        t_usage = tray_data.get('mod_usage', {})
+
+        cc_stats = f'''<div class="stats-bar">
+<div class="stat-card"><div class="stat-num">{t_sum.get('total_items', 0)}</div><div class="stat-label">Tray-Items</div></div>
+<div class="stat-card"><div class="stat-num">{t_sum.get('households', 0)}</div><div class="stat-label">Haushalte</div></div>
+<div class="stat-card"><div class="stat-num">{t_sum.get('items_with_cc', 0)}</div><div class="stat-label">Mit CC</div></div>
+<div class="stat-card"><div class="stat-num">{t_sum.get('total_mods_used', 0)}</div><div class="stat-label">CC-Mods</div></div>
+</div>'''
+
+        # CC pro Haushalt (nur die mit CC)
+        cc_items = [i for i in t_items if i.get('cc_count', 0) > 0]
+        cc_items.sort(key=lambda x: -x.get('cc_count', 0))
+        cc_table_html = ''
+        if cc_items:
+            cc_table_html = '<h3 style="color:#ce93d8;margin:15px 0 8px">🎨 Items mit CC</h3>'
+            cc_table_html += '<table><tr><th>Name</th><th>Typ</th><th>CC-Teile</th><th>Verwendete Mods</th></tr>'
+            type_labels = {0: 'Lot', 1: 'Haushalt', 2: 'Raum', 3: 'Sim'}
+            for ci in cc_items:
+                ci_name = ci.get('name', '?')
+                ci_type = type_labels.get(ci.get('type', -1), '?')
+                ci_cc = ci.get('cc_count', 0)
+                ci_mods = ci.get('used_mods', [])
+                mod_names = ', '.join(m.get('name', '?') for m in ci_mods[:8])
+                if len(ci_mods) > 8:
+                    mod_names += f' (+{len(ci_mods) - 8})'
+                cc_table_html += f'<tr><td>{_h(ci_name)}</td><td>{_h(ci_type)}</td><td>{ci_cc}</td><td style="font-size:0.85em;color:#aaa">{_h(mod_names)}</td></tr>'
+            cc_table_html += '</table>'
+
+        # Meistgenutzte CC-Mods
+        top_mods_html = ''
+        if t_usage:
+            sorted_mods = sorted(t_usage.items(), key=lambda x: -(x[1].get('used_count', 0) if isinstance(x[1], dict) else 0))[:30]
+            if sorted_mods:
+                top_mods_html = '<h3 style="color:#64b5f6;margin:15px 0 8px">📊 Meistgenutzte CC-Mods</h3>'
+                top_mods_html += '<table><tr><th>Mod</th><th>Verwendet in</th></tr>'
+                for mod_path, usage_info in sorted_mods:
+                    mod_name = usage_info.get('name', Path(mod_path).name) if isinstance(usage_info, dict) else str(mod_path)
+                    cnt = usage_info.get('used_count', 0) if isinstance(usage_info, dict) else 0
+                    top_mods_html += f'<tr><td>{_h(mod_name)}</td><td>{cnt}x</td></tr>'
+                top_mods_html += '</table>'
+
+        # CC pro Haushalt im Savegame
+        cc_by_hh_html = ''
+        if savegame_data:
+            cc_hh = savegame_data.get('cc_by_household', {})
+            if cc_hh:
+                cc_by_hh_html = '<h3 style="color:#ffab40;margin:15px 0 8px">🏠 CC pro Haushalt (Spielstand)</h3>'
+                cc_by_hh_html += '<table><tr><th>Haushalt</th><th>CC-Mods</th></tr>'
+                for hh_name, mods in sorted(cc_hh.items(), key=lambda x: -len(x[1])):
+                    mod_list = ', '.join(m.get('name', '?') for m in mods[:10])
+                    if len(mods) > 10:
+                        mod_list += f' (+{len(mods) - 10})'
+                    cc_by_hh_html += f'<tr><td>{_h(hh_name)}</td><td style="font-size:0.85em;color:#aaa">{_h(mod_list)} ({len(mods)} Teile)</td></tr>'
+                cc_by_hh_html += '</table>'
+
+        parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">🎨 CC-Analyse ({t_sum.get('items_with_cc', 0)} Items mit CC)</h2>
+<div class="section">
+{cc_stats}
+{cc_table_html}
+{top_mods_html}
+{cc_by_hh_html}
+</div></div>
+''')
 
     # Mod-Logs
-    mod_log_data = ""
-    # (This part was referencing sims4_path inline in original — simplified here)
+    if mod_logs_data:
+        for ml_name, ml_content in mod_logs_data:
+            parts.append(f'''
+<div class="collapsed"><h2 onclick="toggle(this)">📝 Mod-Log: {_h(ml_name)}</h2>
+<div class="section"><pre>{_h(ml_content)}</pre></div></div>
+''')
 
     # --- Intelligente Mod-Liste mit Hinweisen ---
     # Lookup-Maps fuer schnellen Zugriff
@@ -2006,13 +2287,11 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
         for o in d_full.get('outdated', []):
             outdated_map[o.get('path', '')] = o
 
-    dep_providers: set[str] = set()
-    dep_dependents: set[str] = set()
+    dep_file_set: set[str] = set()  # Dateien die in einer Abhängigkeit stehen
     if d_full:
         for dep in d_full.get('dependencies', []):
-            dep_providers.add(dep.get('provider', ''))
-            for dp in dep.get('dependents', []):
-                dep_dependents.add(dp)
+            for f_path in dep.get('files', []):
+                dep_file_set.add(f_path)
 
     # all_files aus dem Dataset nutzen (mit deep-Analyse)
     all_files_data = d_full.get('all_files', []) if d_full else []
@@ -2072,10 +2351,8 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
                     if risk == 'hoch':
                         outdated_high_count += 1
                         has_problem = True
-                if fp in dep_providers:
-                    badges.append('<span class="badge badge-dep">\U0001f517 Wird ben\u00f6tigt</span>')
-                if fp in dep_dependents:
-                    badges.append('<span class="badge badge-dep">\U0001f517 Ben\u00f6tigt andere Mods</span>')
+                if fp in dep_file_set:
+                    badges.append('<span class="badge badge-dep">\U0001f517 Hat Abhängigkeit</span>')
                 if fp.lower().endswith('.ts4script'):
                     badges.append('<span class="badge badge-script">\U0001f4dc Script</span>')
 
@@ -2145,28 +2422,28 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
     if outdated_list:
         outdated_section_html += '<h3 style="color:#ce93d8;margin:15px 0 8px">\u23f0 Veraltete Mods (vor letztem Patch)</h3>'
         outdated_section_html += '<table><tr><th>Datei</th><th>Risiko</th><th>Grund</th><th>Tage vor Patch</th></tr>'
-        for o in outdated_list[:50]:
+        for o in outdated_list:
             risk = o.get('risk', '')
             risk_icon = {'hoch': '\U0001f534', 'mittel': '\U0001f7e1', 'niedrig': '\U0001f7e2'}.get(risk, '\u2754')
             risk_style = 'color:#f44336' if risk == 'hoch' else ('color:#ff9800' if risk == 'mittel' else 'color:#81c784')
             outdated_section_html += f'<tr><td>{_h(o.get("rel", o.get("path", "?")))}</td><td style="{risk_style}">{risk_icon} {_h(risk)}</td><td>{_h(o.get("risk_reason", ""))}</td><td class="size-col">{o.get("days_before_patch", "?")}</td></tr>'
         outdated_section_html += '</table>'
-        if len(outdated_list) > 50:
-            outdated_section_html += f'<p style="color:#888">... und {len(outdated_list) - 50} weitere</p>'
 
     # Abhaengigkeiten
     deps_section_html = ''
     deps_list = d_full.get('dependencies', []) if d_full else []
     if deps_list:
         deps_section_html += '<h3 style="color:#4dd0e1;margin:15px 0 8px">\U0001f517 Erkannte Abh\u00e4ngigkeiten</h3>'
-        deps_section_html += '<table><tr><th>Ben\u00f6tigt</th><th>Wird verwendet von</th></tr>'
-        for dep in deps_list[:30]:
-            prov = dep.get('provider', '?')
-            depds = dep.get('dependents', [])
-            depd_str = ', '.join(str(d) for d in depds[:5])
-            if len(depds) > 5:
-                depd_str += f' (+{len(depds) - 5})'
-            deps_section_html += f'<tr><td>{_h(prov)}</td><td>{_h(depd_str)}</td></tr>'
+        deps_section_html += '<table><tr><th>Typ</th><th>Beschreibung</th><th>Dateien</th></tr>'
+        for dep in deps_list:
+            dep_icon = dep.get('icon', '🔗')
+            dep_label = dep.get('label', '?')
+            dep_hint = dep.get('hint', '')
+            dep_files = dep.get('files', [])
+            dep_files_str = ', '.join(Path(f).name for f in dep_files[:5])
+            if len(dep_files) > 5:
+                dep_files_str += f' (+{len(dep_files) - 5})'
+            deps_section_html += f'<tr><td>{_h(dep_icon)} {_h(dep_label)}</td><td style="font-size:0.85em;color:#aaa">{_h(dep_hint)}</td><td style="font-size:0.85em">{_h(dep_files_str)}</td></tr>'
         deps_section_html += '</table>'
 
     parts.append(f'''
@@ -2181,9 +2458,10 @@ function toggle(el){{el.parentElement.classList.toggle('collapsed')}}
 ''')
 
     # Scanner-Log
+    scanner_log_display = scanner_log_full if scanner_log_full else 'Keine Aktionen durchgeführt (Log wird bei Quarantäne/Lösch-Aktionen angelegt)'
     parts.append(f'''
 <div class="collapsed"><h2 onclick="toggle(this)">📋 Scanner-Log</h2>
-<div class="section"><pre>{_h(scanner_log_full) if scanner_log_full else 'Kein Log vorhanden'}</pre></div></div>
+<div class="section"><pre>{_h(scanner_log_display)}</pre></div></div>
 ''')
 
     # Footer

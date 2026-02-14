@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Auto-Update-Check über die GitHub Releases API."""
+"""Auto-Update-Check und -Download über die GitHub Releases API."""
 
 from __future__ import annotations
 
+import os
 import re
+import sys
 import json
+import tempfile
+import subprocess
 
 from .constants import SCANNER_VERSION, GITHUB_REPO
 
@@ -31,6 +35,7 @@ def check_for_update(timeout: float = 5.0) -> dict:
     result: dict = {
         "available": False, "current": SCANNER_VERSION,
         "latest": SCANNER_VERSION, "url": "", "name": "", "body": "",
+        "download_url": "",
     }
     try:
         from urllib.request import urlopen, Request
@@ -61,3 +66,129 @@ def check_for_update(timeout: float = 5.0) -> dict:
 
     _update_cache = result
     return result
+
+
+def _get_exe_path() -> str:
+    """Gibt den Pfad der laufenden EXE zurück (oder '' wenn nicht als EXE gestartet)."""
+    if getattr(sys, 'frozen', False):
+        return sys.executable
+    return ''
+
+
+def download_update(download_url: str, progress_cb=None) -> str:
+    """Lädt die neue EXE herunter. Gibt den Pfad der heruntergeladenen Datei zurück.
+
+    progress_cb(downloaded_bytes, total_bytes) wird regelmäßig aufgerufen.
+    """
+    from urllib.request import urlopen, Request
+
+    exe_path = _get_exe_path()
+    if not exe_path:
+        raise RuntimeError("Update nur als EXE möglich, nicht im Entwicklungsmodus")
+
+    # Neben die aktuelle EXE als .update herunterladen
+    update_path = exe_path + ".update"
+
+    print(f"[UPDATE] Lade herunter: {download_url}", flush=True)
+    req = Request(download_url, headers={"User-Agent": "Sims4DupScanner"})
+    resp = urlopen(req, timeout=60)
+
+    total = int(resp.headers.get("Content-Length", 0))
+    downloaded = 0
+    chunk_size = 256 * 1024  # 256 KB
+
+    with open(update_path, "wb") as f:
+        while True:
+            chunk = resp.read(chunk_size)
+            if not chunk:
+                break
+            f.write(chunk)
+            downloaded += len(chunk)
+            if progress_cb:
+                progress_cb(downloaded, total)
+
+    resp.close()
+
+    # Prüfe ob die Datei eine gültige EXE ist (PE-Header)
+    with open(update_path, "rb") as f:
+        header = f.read(2)
+    if header != b"MZ":
+        os.remove(update_path)
+        raise RuntimeError("Heruntergeladene Datei ist keine gültige EXE")
+
+    file_size = os.path.getsize(update_path)
+    print(f"[UPDATE] Download abgeschlossen: {file_size / 1048576:.1f} MB → {update_path}", flush=True)
+    return update_path
+
+
+def apply_update_and_restart(update_path: str):
+    """Erstellt ein Batch-Script das die alte EXE ersetzt und die neue startet.
+
+    Ablauf:
+    1. Warte bis die aktuelle EXE nicht mehr gesperrt ist
+    2. Lösche die alte EXE
+    3. Benenne die neue (.update) in den alten Namen um
+    4. Starte die neue EXE
+    5. Lösche das Batch-Script
+    """
+    exe_path = _get_exe_path()
+    if not exe_path:
+        raise RuntimeError("Update nur als EXE möglich")
+
+    exe_name = os.path.basename(exe_path)
+    exe_dir = os.path.dirname(exe_path)
+
+    # Batch-Script im selben Ordner erstellen
+    bat_path = os.path.join(exe_dir, "_update.bat")
+    update_name = os.path.basename(update_path)
+
+    # Das Script wartet max 30 Sekunden (60 x 0.5s) bis die alte EXE frei ist
+    bat_content = f'''@echo off
+echo Sims 4 Duplikate Scanner wird aktualisiert...
+echo Bitte warte einen Moment...
+cd /d "{exe_dir}"
+
+set RETRIES=0
+:WAIT_LOOP
+if %RETRIES% GEQ 60 (
+    echo Update fehlgeschlagen - Programm laeuft noch.
+    pause
+    goto END
+)
+del "{exe_name}" >nul 2>&1
+if exist "{exe_name}" (
+    set /a RETRIES+=1
+    ping -n 2 127.0.0.1 >nul 2>&1
+    goto WAIT_LOOP
+)
+
+echo Installiere neue Version...
+rename "{update_name}" "{exe_name}"
+if errorlevel 1 (
+    echo Umbenennung fehlgeschlagen!
+    pause
+    goto END
+)
+
+echo Update abgeschlossen! Starte Scanner...
+start "" "{exe_name}"
+
+:END
+del "%~f0" >nul 2>&1
+'''
+
+    with open(bat_path, "w", encoding="ascii", errors="replace") as f:
+        f.write(bat_content)
+
+    print(f"[UPDATE] Starte Update-Script: {bat_path}", flush=True)
+
+    # Bat minimiert starten
+    subprocess.Popen(
+        ["cmd.exe", "/c", bat_path],
+        cwd=exe_dir,
+        creationflags=subprocess.CREATE_NEW_CONSOLE,
+    )
+
+    # App beenden damit die EXE freigegeben wird
+    print("[UPDATE] App wird beendet für Update...", flush=True)
+    os._exit(0)

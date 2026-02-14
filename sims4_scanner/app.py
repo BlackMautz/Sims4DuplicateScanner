@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import threading
 import time
 import webbrowser
@@ -21,7 +22,7 @@ from .dataset import Dataset
 from .server import LocalServer
 from .errors import find_sims4_userdir
 from .tray import analyze_tray, build_mod_instance_index
-from .update import check_for_update
+from .update import check_for_update, download_update, apply_update_and_restart
 from .history import save_scan_history, save_mod_snapshot
 
 
@@ -58,22 +59,97 @@ class App(tk.Tk):
 
         # Auto-Update Check im Hintergrund
         self._update_banner_frame = None
+        self._update_info = None
         threading.Thread(target=self._check_update_bg, daemon=True).start()
 
     # ------------------------------------------------------------------
-    # Update-Banner
+    # Update-Banner + Auto-Update
     # ------------------------------------------------------------------
     def _check_update_bg(self):
-        """Prueft im Hintergrund auf Updates und zeigt ggf. Banner."""
+        """Prueft im Hintergrund auf Updates und startet ggf. Auto-Update."""
         try:
             info = check_for_update(timeout=6.0)
             if info.get("available"):
-                self.after(0, lambda: self._show_update_banner(info))
+                self._update_info = info
+                dl_url = info.get("download_url", "")
+                if dl_url and getattr(sys, 'frozen', False):
+                    # Auto-Update: direkt herunterladen
+                    self.after(0, lambda: self._start_auto_update(info))
+                else:
+                    # Fallback: Banner mit Link (z.B. im Dev-Modus oder keine EXE im Release)
+                    self.after(0, lambda: self._show_update_banner(info))
         except Exception:
             pass
 
+    def _start_auto_update(self, info: dict):
+        """Zeigt Download-Banner und startet den Download im Hintergrund."""
+        if self._update_banner_frame:
+            return
+        f = tk.Frame(self, bg="#2563eb", cursor="arrow")
+        f.pack(fill="x", before=list(self.winfo_children())[0])
+
+        self._update_lbl = tk.Label(f,
+            text=f"\u2b07  Lade Update v{info.get('latest', '?')} herunter...",
+            bg="#2563eb", fg="white", font=("Segoe UI", 11, "bold"), pady=6)
+        self._update_lbl.pack(side="left", padx=(12, 0))
+
+        self._update_progress = tk.Label(f, text="0%", bg="#2563eb", fg="#93c5fd",
+                                         font=("Segoe UI", 10), pady=6)
+        self._update_progress.pack(side="left", padx=(8, 0))
+
+        self._update_banner_frame = f
+
+        threading.Thread(target=self._do_auto_update, args=(info,), daemon=True).start()
+
+    def _do_auto_update(self, info: dict):
+        """Download + Apply im Hintergrund-Thread."""
+        try:
+            dl_url = info.get("download_url", "")
+
+            def on_progress(downloaded, total):
+                if total > 0:
+                    pct = int(downloaded * 100 / total)
+                    mb = downloaded / 1048576
+                    total_mb = total / 1048576
+                    txt = f"{pct}%  ({mb:.1f} / {total_mb:.1f} MB)"
+                else:
+                    mb = downloaded / 1048576
+                    txt = f"{mb:.1f} MB"
+                self.after(0, lambda t=txt: self._update_progress.config(text=t))
+
+            update_path = download_update(dl_url, progress_cb=on_progress)
+
+            # UI aktualisieren: "Installiere..."
+            self.after(0, lambda: self._update_lbl.config(
+                text=f"\u2705  Update v{info.get('latest', '?')} heruntergeladen! Installiere..."))
+            self.after(0, lambda: self._update_progress.config(text=""))
+            self.after(0, lambda: self._update_banner_frame.config(bg="#16a34a"))
+            self.after(0, lambda: self._update_lbl.config(bg="#16a34a"))
+            self.after(0, lambda: self._update_progress.config(bg="#16a34a"))
+
+            # Kurz warten damit User die Nachricht sieht
+            import time
+            time.sleep(2)
+
+            # Server stoppen falls aktiv
+            if hasattr(self, 'server') and self.server:
+                try:
+                    self.server.stop()
+                except Exception:
+                    pass
+
+            # Update anwenden und neustarten
+            apply_update_and_restart(update_path)
+
+        except Exception as ex:
+            print(f"[UPDATE] Auto-Update fehlgeschlagen: {ex}", flush=True)
+            # Fallback: normales Banner mit Link anzeigen
+            self.after(0, lambda: self._update_banner_frame.pack_forget() if self._update_banner_frame else None)
+            self._update_banner_frame = None
+            self.after(0, lambda: self._show_update_banner(info))
+
     def _show_update_banner(self, info: dict):
-        """Zeigt ein gelbes Update-Banner oben im Fenster."""
+        """Zeigt ein gelbes Update-Banner oben im Fenster (Fallback)."""
         if self._update_banner_frame:
             return
         f = tk.Frame(self, bg="#f59e0b", cursor="hand2")
