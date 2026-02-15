@@ -336,6 +336,23 @@ class LocalServer:
                     self.end_headers()
                     return
 
+                if u.path == "/three.min.js":
+                    # Three.js für den Ladescreen-Plumbob
+                    import importlib.resources as _res
+                    try:
+                        js_bytes = _res.read_binary("sims4_scanner.web", "three.min.js")
+                    except Exception:
+                        _p = os.path.join(os.path.dirname(__file__), "web", "three.min.js")
+                        with open(_p, "rb") as _f:
+                            js_bytes = _f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                    self.send_header("Content-Length", str(len(js_bytes)))
+                    self.send_header("Cache-Control", "public, max-age=86400")
+                    self.end_headers()
+                    self.wfile.write(js_bytes)
+                    return
+
                 if u.path == "/":
                     self._send(200, HTML_PAGE.encode("utf-8"))
                     return
@@ -1453,6 +1470,8 @@ class LocalServer:
                     return
 
                 if action == "delete":
+                    # Safety: "delete" now quarantines instead of permanently removing.
+                    # Permanent deletion is only possible from the quarantine tab (delete_q).
                     try:
                         if not p.exists():
                             server_ref.dataset.remove_file(str(p))
@@ -1466,11 +1485,20 @@ class LocalServer:
                             server_ref._log_action("DELETE", str(p), None, "ERROR", "not a file")
                             return
                         size, _ = safe_stat(p)
-                        p.unlink()
+                        idx = best_root_index(p, server_ref.dataset.roots)
+                        label = f"Ordner{idx + 1}" if idx is not None else "Unbekannt"
+                        if idx is not None:
+                            rel = p.resolve().relative_to(server_ref.dataset.roots[idx].resolve())
+                            dest = quarantine_dir / label / rel
+                        else:
+                            dest = quarantine_dir / label / p.name
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        dest = ensure_unique_path(dest)
+                        shutil.move(str(p), str(dest))
                         server_ref.dataset.remove_file(str(p))
-                        self._json(200, {"ok": True, "deleted": True, "path": str(p)})
-                        print(f"[DELETE] OK: {p}", flush=True)
-                        server_ref._log_action("DELETE", str(p), size, "OK", "")
+                        self._json(200, {"ok": True, "deleted": True, "moved": True, "to": str(dest), "path": str(p)})
+                        print(f"[DELETE->QUARANTINE] OK: {p} -> {dest}", flush=True)
+                        server_ref._log_action("DELETE", str(p), size, "OK", f"quarantined to {dest}")
                     except Exception as ex:
                         self._json(500, {"ok": False, "error": str(ex)})
                         print(f"[DELETE][ERR] {p} :: {ex}", flush=True)
@@ -1741,46 +1769,73 @@ class LocalServer:
                         if not tray_dir.is_dir():
                             self._json(200, {"ok": True, "orphans": [], "message": "Kein Tray-Ordner"})
                             return
-                        # Sammle alle Tray-Dateien und ihre household-IDs
-                        household_ids = set()
-                        tray_files: dict[str, list[Path]] = {}  # id -> files
+
+                        # ── Gruppierung nach Instance-ID (Teil nach dem '!') ──
+                        # Dateinamen: "0x00000001!0x000015720ea50381.trayitem"
+                        #   Prefix:   "0x00000001"        → variiert je nach Dateityp
+                        #   Instance: "0x000015720ea50381" → gleich für zusammengehörige Dateien
+                        BINARY_EXTS = {'.householdbinary', '.hhi', '.blueprint', '.bpi', '.sgi', '.room', '.rmi'}
+                        groups = {}  # instance_hex -> {'has_trayitem': bool, 'binaries': [Path]}
+
                         for f in tray_dir.iterdir():
                             if not f.is_file():
                                 continue
-                            stem = f.stem  # z.B. "0x0000000012345678"
-                            # Tray-Files haben Suffixe wie .trayitem, .householdbinary, .blueprint, .bpi, .room, .lot
+                            fn = f.name
+                            if '!' not in fn:
+                                continue
+                            parts = fn.split('!')
+                            if len(parts) != 2:
+                                continue
+                            # Instance-ID = Teil nach '!' ohne Extension
+                            instance_hex = parts[1].rsplit('.', 1)[0]
                             ext = f.suffix.lower()
-                            if ext == ".trayitem":
-                                household_ids.add(stem)
-                            base_id = stem.split("_")[0] if "_" in stem else stem
-                            tray_files.setdefault(base_id, []).append(f)
 
-                        # Orphans = Dateien deren Basis-ID kein .trayitem hat
+                            if instance_hex not in groups:
+                                groups[instance_hex] = {'has_trayitem': False, 'binaries': []}
+
+                            if ext == '.trayitem':
+                                groups[instance_hex]['has_trayitem'] = True
+                            elif ext in BINARY_EXTS:
+                                groups[instance_hex]['binaries'].append(f)
+
+                        # Orphans = Binärdateien deren Instance-ID KEIN .trayitem hat
                         orphans = []
                         orphan_size = 0
-                        for base_id, files in tray_files.items():
-                            has_trayitem = any(f.suffix.lower() == ".trayitem" for f in files)
-                            if not has_trayitem:
-                                for f in files:
-                                    if f.suffix.lower() in ('.householdbinary', '.blueprint', '.bpi', '.room', '.lot'):
+                        for instance_hex, info in groups.items():
+                            if not info['has_trayitem'] and info['binaries']:
+                                for f in info['binaries']:
+                                    try:
                                         sz = f.stat().st_size
-                                        orphans.append({"path": str(f), "name": f.name, "size": sz})
-                                        orphan_size += sz
+                                    except Exception:
+                                        sz = 0
+                                    orphans.append({"path": str(f), "name": f.name, "size": sz, "instance": instance_hex})
+                                    orphan_size += sz
 
                         do_delete = payload.get("delete", False)
                         deleted = 0
+                        quarantined_to = None
                         if do_delete and orphans:
+                            # Quarantäne statt direktem Löschen!
+                            q_dir = tray_dir / "_tray_quarantine"
+                            q_dir.mkdir(exist_ok=True)
+                            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            batch_dir = q_dir / ts
+                            batch_dir.mkdir(exist_ok=True)
                             for o in orphans:
                                 try:
-                                    Path(o["path"]).unlink()
-                                    deleted += 1
+                                    src = Path(o["path"])
+                                    if src.exists():
+                                        shutil.move(str(src), str(batch_dir / src.name))
+                                        deleted += 1
                                 except Exception:
                                     pass
-                            print(f"[TRAY-CLEAN] Deleted {deleted} orphan files", flush=True)
-                            append_log(f"TRAY_CLEAN deleted={deleted}")
+                            quarantined_to = str(batch_dir)
+                            print(f"[TRAY-CLEAN] Quarantined {deleted} orphan files to {batch_dir}", flush=True)
+                            append_log(f"TRAY_CLEAN quarantined={deleted} dest={batch_dir}")
 
                         self._json(200, {"ok": True, "orphans": orphans, "orphan_count": len(orphans),
-                                         "orphan_size": orphan_size, "deleted": deleted})
+                                         "orphan_size": orphan_size, "deleted": deleted,
+                                         "quarantined_to": quarantined_to})
                     except Exception as ex:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return

@@ -542,9 +542,206 @@ def build_html_page() -> str:
   .toast-close:hover { opacity:1; }
   @keyframes toastIn { from { transform:translateX(120%); opacity:0; } to { transform:translateX(0); opacity:1; } }
   @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(-10px); } }
+
+  /* ═══ LADESCREEN ═══ */
+  #sims-loader {
+    position:fixed; inset:0; z-index:100000;
+    background:linear-gradient(135deg, #0a1628 0%, #1a3a5c 30%, #1e5a8a 50%, #1a3a5c 70%, #0a1628 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'Segoe UI', system-ui, sans-serif;
+    color:#fff;
+    transition:opacity 0.8s ease, visibility 0.8s ease;
+    overflow:hidden;
+  }
+  #sims-loader.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+  #sims-loader::before {
+    content:''; position:absolute; inset:0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 50%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.5) 50%, transparent 100%),
+      radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.3) 50%, transparent 100%),
+      radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.4) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 15% 85%, rgba(255,255,255,0.35) 50%, transparent 100%),
+      radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.3) 50%, transparent 100%),
+      radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.4) 50%, transparent 100%);
+    animation:twinkle 4s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { 0%{opacity:0.5;} 100%{opacity:1;} }
+  #plumbob-canvas { position:relative; z-index:2; margin-bottom:20px; }
+  .loader-title { font-size:28px; font-weight:300; letter-spacing:6px; text-transform:uppercase; margin-bottom:8px; text-shadow:0 0 20px rgba(76,218,100,0.4); z-index:2; }
+  .loader-version { font-size:13px; font-weight:300; letter-spacing:3px; color:rgba(255,255,255,0.5); margin-bottom:50px; z-index:2; }
+  .loader-bar-wrap { width:380px; max-width:80vw; height:4px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; margin-bottom:20px; z-index:2; }
+  .loader-bar { height:100%; width:0%; background:linear-gradient(90deg,#3bc455,#4cda64,#7be89a); border-radius:4px; transition:width 0.4s ease; box-shadow:0 0 12px rgba(76,218,100,0.5); }
+  .loader-tip { font-size:14px; font-weight:300; color:rgba(255,255,255,0.7); letter-spacing:1px; min-height:22px; z-index:2; transition:opacity 0.4s ease; }
+  .loader-particle { position:absolute; width:3px; height:3px; background:rgba(76,218,100,0.4); border-radius:50%; animation:particle-rise linear infinite; }
+  @keyframes particle-rise { 0%{transform:translateY(0) scale(1); opacity:0.6;} 100%{transform:translateY(-100vh) scale(0); opacity:0;} }
+  .loader-brand { position:absolute; bottom:30px; left:40px; font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.25); z-index:2; }
+  .loader-skip { position:absolute; bottom:30px; right:40px; font-size:12px; color:rgba(255,255,255,0.35); cursor:pointer; z-index:2; transition:color 0.2s; border:none; background:none; letter-spacing:1px; font-family:inherit; }
+  .loader-skip:hover { color:rgba(255,255,255,0.7); }
 </style>
 </head>
 <body>
+<!-- ═══ SIMS 4 LADESCREEN ═══ -->
+<div id="sims-loader">
+  <canvas id="plumbob-canvas"></canvas>
+  <div class="loader-title">Duplicate Scanner</div>
+  <div class="loader-version">v3.1.0</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
+  <div class="loader-tip" id="loader-tip"></div>
+  <div class="loader-brand">SIMS 4 TOOLS</div>
+  <button class="loader-skip" onclick="dismissLoader()">Überspringen ›</button>
+</div>
+<script src="/three.min.js"></script>
+<script>
+// ═══ PLUMBOB 3D + LADESCREEN LOGIK ═══
+var _loaderDismissed = false;
+function dismissLoader() {
+  if (_loaderDismissed) return;
+  _loaderDismissed = true;
+  var el = document.getElementById('sims-loader');
+  if (el) { el.classList.add('hidden'); setTimeout(function(){ el.remove(); }, 900); }
+}
+// Fortschrittsbalken von außen steuerbar
+var _loaderProgress = 0;
+function setLoaderProgress(pct) {
+  _loaderProgress = Math.min(100, Math.max(0, pct));
+  var b = document.getElementById('loader-bar');
+  if (b) b.style.width = _loaderProgress + '%';
+  if (_loaderProgress >= 100) setTimeout(dismissLoader, 500);
+}
+
+(function(){
+  // ─── Partikel ───
+  var loader = document.getElementById('sims-loader');
+  for (var i = 0; i < 20; i++) {
+    var p = document.createElement('div');
+    p.className = 'loader-particle';
+    p.style.left = Math.random()*100 + '%';
+    p.style.bottom = '-10px';
+    p.style.animationDuration = (4+Math.random()*6) + 's';
+    p.style.animationDelay = (Math.random()*8) + 's';
+    p.style.width = p.style.height = (2+Math.random()*3) + 'px';
+    loader.appendChild(p);
+  }
+
+  // ─── Lade-Tipps ───
+  var tips = [
+    "Retikuliere Splines \u2026", "Sortiere Simoleons \u2026", "Platziere M\u00f6bel \u2026",
+    "Z\u00e4hle Plumbobs \u2026", "Kalibriere Wunschbrunnen \u2026", "Lade Nachbarschaften \u2026",
+    "Analysiere Mod-Dateien \u2026", "Katalogisiere Custom Content \u2026",
+    "Durchsuche Spielst\u00e4nde \u2026", "Erstelle Sim-Portraits \u2026",
+    "Berechne Duplikate \u2026", "Pr\u00fcfe Script-Mods \u2026",
+    "Lade Tray-Daten \u2026", "Indexiere Package-Dateien \u2026",
+    "\u00dcbersetze Sim-Namen \u2026", "Untersuche DBPF-Container \u2026",
+    "Dekomprimiere QFS-Daten \u2026", "Scanne Ordnerstruktur \u2026",
+    "Baue Vorschaubilder auf \u2026"
+  ];
+  var tipIdx = Math.floor(Math.random()*tips.length);
+  var tipEl = document.getElementById('loader-tip');
+  tipEl.textContent = tips[tipIdx];
+  setInterval(function(){
+    tipEl.style.opacity = '0';
+    setTimeout(function(){
+      tipIdx = (tipIdx+1) % tips.length;
+      tipEl.textContent = tips[tipIdx];
+      tipEl.style.opacity = '1';
+    }, 400);
+  }, 2800);
+
+  // ─── Sanfter Auto-Fortschritt (stoppt bei 85%, Rest kommt von echtem Load) ───
+  var autoP = 0;
+  function autoAdvance(){
+    if (_loaderDismissed || autoP >= 85) return;
+    if (autoP < 30) autoP += 1.5 + Math.random()*2;
+    else if (autoP < 60) autoP += 0.5 + Math.random()*1.5;
+    else autoP += 0.3 + Math.random()*0.8;
+    if (autoP > 85) autoP = 85;
+    var b = document.getElementById('loader-bar');
+    if (b) b.style.width = autoP + '%';
+    setTimeout(autoAdvance, 200 + Math.random()*400);
+  }
+  setTimeout(autoAdvance, 300);
+
+  // ─── THREE.JS PLUMBOB ───
+  if (typeof THREE !== 'undefined') {
+    var canvas = document.getElementById('plumbob-canvas');
+    var W = 220, H = 280;
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(35, W/H, 0.1, 100);
+    camera.position.set(0, 0.3, 4.5);
+    camera.lookAt(0, 0, 0);
+
+    var renderer = new THREE.WebGLRenderer({ canvas:canvas, alpha:true, antialias:true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+
+    // Hexagonal bipyramid
+    var topY=1.35, botY=-1.0, midY=0.05, rad=0.7;
+    var verts=[], idx=[];
+    verts.push(0, topY, 0);
+    for(var j=0;j<6;j++){
+      var a=(j/6)*Math.PI*2 - Math.PI/6;
+      verts.push(Math.cos(a)*rad, midY, Math.sin(a)*rad);
+    }
+    verts.push(0, botY, 0);
+    for(var j=0;j<6;j++){ var n1=(j%6)+1, n2=((j+1)%6)+1; idx.push(0,n1,n2); }
+    for(var j=0;j<6;j++){ var n1=(j%6)+1, n2=((j+1)%6)+1; idx.push(7,n2,n1); }
+
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+
+    var mat = new THREE.MeshPhongMaterial({
+      color:0x3ed85e, emissive:0x1a6b2a, emissiveIntensity:0.35,
+      specular:0xaaffcc, shininess:90,
+      transparent:true, opacity:0.82,
+      side:THREE.DoubleSide, flatShading:true
+    });
+    var pb = new THREE.Mesh(geo, mat);
+    scene.add(pb);
+
+    var innerMat = new THREE.MeshBasicMaterial({
+      color:0x7af59a, transparent:true, opacity:0.18,
+      side:THREE.DoubleSide, blending:THREE.AdditiveBlending
+    });
+    var inner = new THREE.Mesh(geo.clone(), innerMat);
+    inner.scale.set(0.92,0.92,0.92);
+    scene.add(inner);
+
+    var wireMat = new THREE.MeshBasicMaterial({
+      color:0x8fffa8, transparent:true, opacity:0.12, wireframe:true
+    });
+    var wire = new THREE.Mesh(geo.clone(), wireMat);
+    scene.add(wire);
+
+    var kl = new THREE.DirectionalLight(0xffffff, 1.0); kl.position.set(2,4,3); scene.add(kl);
+    var rl = new THREE.DirectionalLight(0x88ffaa, 0.6); rl.position.set(-2,-1,-3); scene.add(rl);
+    scene.add(new THREE.AmbientLight(0x3a7a4a, 0.5));
+    var bl = new THREE.PointLight(0x44dd66, 0.4, 8); bl.position.set(0,-2,1); scene.add(bl);
+
+    var t=0;
+    function anim(){
+      if (_loaderDismissed) return;
+      requestAnimationFrame(anim);
+      t += 0.012;
+      pb.rotation.y = inner.rotation.y = wire.rotation.y = t*0.8;
+      var fy = Math.sin(t*1.1)*0.15;
+      pb.position.y = inner.position.y = wire.position.y = fy;
+      var tl = Math.sin(t*0.7)*0.06;
+      pb.rotation.z = inner.rotation.z = wire.rotation.z = tl;
+      innerMat.opacity = 0.15 + Math.sin(t*2)*0.08;
+      renderer.render(scene, camera);
+    }
+    anim();
+  }
+})();
+</script>
 <div id="toast-container"></div>
 <div id="batch-progress-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99998; display:none; align-items:center; justify-content:center;">
   <div style="background:#1e293b; border-radius:12px; padding:24px 32px; min-width:400px; max-width:500px; box-shadow:0 8px 32px rgba(0,0,0,0.5);">
@@ -648,8 +845,8 @@ def build_html_page() -> str:
     <div>
       <div style="font-size:15px;font-weight:bold;color:#93c5fd;margin-bottom:6px;">Wichtig bevor du loslegst!</div>
       <div style="font-size:13px;color:#cbd5e1;line-height:1.8;">
-        <div style="margin-bottom:6px;"><span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:6px;font-weight:bold;">📦 Quarantäne = SICHER</span> Dateien werden nur <b>verschoben</b>, nicht gelöscht. Du kannst sie jederzeit im Tab <b>🗃️ Quarantäne</b> zurückholen. <b>Nutze immer zuerst Quarantäne!</b></div>
-        <div style="margin-bottom:6px;"><span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:6px;font-weight:bold;">🗑️ Löschen = ENDGÜLTIG</span> Die Datei wird <b>unwiderruflich</b> vom PC gelöscht. <b>Kann nicht rückgängig gemacht werden!</b> Nur nutzen wenn du dir 100% sicher bist.</div>
+        <div style="margin-bottom:6px;"><span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:6px;font-weight:bold;">📦 Quarantäne = SICHER</span> Dateien werden nur <b>verschoben</b>, nicht gelöscht. Du kannst sie jederzeit im Tab <b>🗃️ Quarantäne</b> zurückholen.</div>
+        <div style="margin-bottom:6px;"><span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:6px;font-weight:bold;">🔒 Sicherheit</span> Es wird <b>niemals etwas sofort gelöscht</b> — alle Aktionen verschieben Dateien zuerst in die Quarantäne. Endgültig löschen kannst du nur im Tab <b>🗃️ Quarantäne</b>.</div>
         <div><span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:6px;font-weight:bold;">💡 Tipp</span> Erstelle im Tab <b>💾 Backup</b> eine Sicherung deiner Mods <b>bevor</b> du aufräumst. Falls etwas schiefgeht, kannst du alles wiederherstellen.</div>
       </div>
       <button class="btn btn-ghost" style="margin-top:8px;font-size:11px;padding:4px 12px;" onclick="this.closest('#dash-safety').style.display='none';localStorage.setItem('dash_safety_hidden','1');">✓ Verstanden, nicht mehr anzeigen</button>
@@ -881,7 +1078,7 @@ def build_html_page() -> str:
 </div>
 
 <div class="box notice" data-tab="import">
-  <b>🛡️ Sicherheitshinweis:</b> Nutze immer <b>📦 Quarantäne</b> statt Löschen! Quarantäne = Dateien werden nur verschoben, du kannst sie jederzeit zurückholen. <b>🗑 Löschen</b> ist endgültig und nicht rückgängig zu machen!
+  <b>🛡️ Sicherheitshinweis:</b> Alle Aktionen verschieben Dateien in die <b>📦 Quarantäne</b> — nichts wird sofort gelöscht! Du kannst alles jederzeit im Tab <b>🗃️ Quarantäne</b> zurückholen.
 </div>
 
 <div class="box" id="import-section" data-tab="import" style="border:1px solid #2563eb;background:linear-gradient(135deg,#0f172a 60%,#1e1b4b);">
@@ -935,12 +1132,11 @@ def build_html_page() -> str:
       <b>📋 Sammel-Aktionen</b>
       <span class="pill" id="selcount">0 ausgewählt</span><br>
       <span class="muted small">Hier kannst du alle Dateien, bei denen du ein <b>Häkchen ☑️</b> gesetzt hast, auf einmal verarbeiten.</span><br>
-      <span class="muted small" style="color:#86efac;">🛡️ <b>Tipp:</b> Nutze immer <b>📦 Quarantäne</b> statt Löschen! Quarantäne kannst du jederzeit rückgängig machen.</span><br>
+      <span class="muted small" style="color:#86efac;">🛡️ <b>Sicher:</b> Alle Dateien werden in die <b>📦 Quarantäne</b> verschoben — nichts wird sofort gelöscht. Du kannst alles jederzeit zurückholen.</span><br>
       <span class="muted small" style="opacity:0.6;">Log-Datei: <code id="logfile"></code></span>
     </div>
     <div class="flex">
       <button class="btn btn-ok" id="btn_q_sel" title="SICHER: Verschiebt alle markierten Dateien in einen Quarantäne-Ordner. Du kannst sie jederzeit wiederherstellen!">📦 In Quarantäne verschieben</button>
-      <button class="btn btn-danger" id="btn_d_sel" title="ACHTUNG: Löscht alle markierten Dateien ENDGÜLTIG vom PC! Nicht rückgängig machbar!">🗑 Endgültig löschen</button>
       <button class="btn btn-ghost" id="btn_clear_sel" title="Entfernt alle Häkchen — keine Dateien werden verändert">✖ Auswahl leeren</button>
       <button class="btn btn-ghost" id="reload" title="Scannt alle Mod-Ordner komplett neu — kann bei vielen Mods ein paar Minuten dauern">↻ Neu scannen</button>
       <button class="btn btn-ghost" id="btn_save_html" title="Speichert eine Kopie dieser Seite als HTML-Datei auf dem Desktop — praktisch zum Teilen oder Archivieren">📄 Bericht speichern</button>
@@ -1001,7 +1197,7 @@ def build_html_page() -> str:
       <button data-view="perfile" title="Zeigt alle Infos pro einzelner Datei auf einer Karte">📋 Pro Datei</button>
     </div>
   </div>
-  <div class="info-hint" style="margin-top:8px;">💡 <b>So funktioniert es:</b> Jede Gruppe zeigt Dateien die zusammengehören (z.B. Duplikate). Setze ein <b>Häkchen ☑️</b> bei der Datei, die du <b>nicht brauchst</b>, und nutze dann oben <b>📦 Quarantäne</b>. Die Buttons <b>"🗑 Rest in Quarantäne"</b> helfen dir: sie markieren automatisch alle außer der besten Datei.</div>
+  <div class="info-hint" style="margin-top:8px;">💡 <b>So funktioniert es:</b> Jede Gruppe zeigt Dateien die zusammengehören (z.B. Duplikate). Setze ein <b>Häkchen ☑️</b> bei der Datei, die du <b>nicht brauchst</b>, und nutze dann oben <b>📦 Quarantäne</b>. Der Button <b>"📦 Rest in Quarantäne"</b> hilft dir: er verschiebt automatisch alle außer der besten Datei.</div>
 </div>
 
 <div id="groups-view" data-tab="duplicates">
@@ -2042,8 +2238,7 @@ function renderFileRow(f, gi) {
   const trayWarn = getTrayWarning(f.path);
 
   const btns = `
-    <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
-    <button class="btn btn-danger" data-act="delete" data-path="${esc(f.path)}" title="Unwiderruflich löschen!">🗑 Löschen</button>
+    <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben — du kannst die Datei jederzeit zurückholen">📦 Quarantäne</button>
     <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Öffnet den Ordner im Windows Explorer">📂 Ordner öffnen</button>
     <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Kopiert den Dateipfad in die Zwischenablage">📋 Pfad kopieren</button>
   `;
@@ -2136,8 +2331,7 @@ function renderGroups(data) {
         <button class="btn" style="background:#1e293b;color:#c084fc;border:1px solid #7c3aed;" onclick="openCompareGallery(${gi})" title="Zeigt alle Vorschaubilder dieser Gruppe nebeneinander zum Vergleichen">🖼️ Bilder vergleichen</button>
         <button class="btn btn-ghost" data-gact="select_all" data-gi="${gi}" title="Setzt bei allen Dateien dieser Gruppe ein Häkchen">✅ Alle markieren</button>
         <button class="btn btn-ghost" data-gact="select_rest" data-gi="${gi}" title="Markiert alle außer der empfohlenen Datei">✅ Rest markieren (1 behalten)</button>
-        <button class="btn btn-ok" data-gact="quarantine_rest" data-gi="${gi}" title="Verschiebt alle bis auf die beste Datei sicher in Quarantäne">📦 Rest in Quarantäne</button>
-        <button class="btn btn-danger" data-gact="delete_rest" data-gi="${gi}" title="Löscht alle bis auf die beste — kann nicht rückgängig gemacht werden!">🗑 Rest löschen</button>
+        <button class="btn btn-ok" data-gact="quarantine_rest" data-gi="${gi}" title="Verschiebt alle bis auf die beste Datei sicher in Quarantäne — du kannst sie jederzeit zurückholen">📦 Rest in Quarantäne</button>
         ${ignored
           ? `<button class="btn" style="background:#065f46;color:#6ee7b7;border:1px solid #059669;" data-gact="unignore_group" data-gi="${gi}" data-gkey="${esc(g.key)}" data-gtype="${esc(g.type)}" title="Diese Gruppe wird wieder als potentielles Problem gezählt">↩️ Wieder melden</button>`
           : `<button class="btn" style="background:#1e3a5f;color:#60a5fa;border:1px solid #2563eb;" data-gact="ignore_group" data-gi="${gi}" data-gkey="${esc(g.key)}" data-gtype="${esc(g.type)}" title="Markiert diese Gruppe als 'Ist korrekt' — wird nicht mehr als Problem gezählt">✅ Ist korrekt</button>`
@@ -2282,8 +2476,7 @@ function renderAddons(data) {
         ${fullLine}
         ${renderTagsUI(f.path)}
         <div class="flex" style="margin-top:8px;">
-          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
-          <button class="btn btn-danger" data-act="delete" data-path="${esc(f.path)}" title="Unwiderruflich löschen!">🗑 Löschen</button>
+          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben — du kannst die Datei jederzeit zurückholen">📦 Quarantäne</button>
           <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Öffnet den Ordner im Windows Explorer">📂 Ordner öffnen</button>
           <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Kopiert den Dateipfad in die Zwischenablage">📋 Pfad kopieren</button>
         </div>
@@ -2372,8 +2565,7 @@ function renderContainedIn(data) {
         ${fullLine}
         ${renderTagsUI(f.path)}
         <div class="flex" style="margin-top:8px;">
-          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
-          <button class="btn btn-danger" data-act="delete" data-path="${esc(f.path)}" title="Unwiderruflich löschen!">🗑 Löschen</button>
+          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben — du kannst die Datei jederzeit zurückholen">📦 Quarantäne</button>
           <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Öffnet den Ordner im Windows Explorer">📂 Ordner öffnen</button>
           <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Kopiert den Dateipfad in die Zwischenablage">📋 Pfad kopieren</button>
         </div>
@@ -2494,8 +2686,7 @@ function renderConflicts(data) {
         ${fullLine}
         ${renderTagsUI(f.path)}
         <div class="flex" style="margin-top:10px;">
-          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
-          <button class="btn btn-danger" data-act="delete" data-path="${esc(f.path)}" title="Unwiderruflich löschen!">🗑 Löschen</button>
+          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben — du kannst die Datei jederzeit zurückholen">📦 Quarantäne</button>
           <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Öffnet den Ordner im Windows Explorer">📂 Ordner öffnen</button>
           <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Kopiert den Dateipfad in die Zwischenablage">📋 Pfad kopieren</button>
         </div>
@@ -3376,7 +3567,7 @@ const TUTORIAL_STEPS = [
   {icon:'⚔️',title:'Konflikte & Schweregrade',body:'Konflikte werden nach <b>Schweregrad</b> farblich markiert:<br><br><span style="background:#ef4444;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚠️ Kritisch</span> <span style="color:#ef4444;">3+ Tuning-Ressourcen</span> — Kann Gameplay-Fehler verursachen, aufräumen!<br><br><span style="background:#fbbf24;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚡ Mittel</span> <span style="color:#fbbf24;">CAS/Sim-Data betroffen</span> — Könnte Darstellungsfehler verursachen<br><br><span style="background:#22c55e;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Niedrig</span> <span style="color:#22c55e;">Nur Texturen/Meshes</span> — Meistens gewollt, behalten<br><br><span style="background:#94a3b8;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">💤 Harmlos</span> <span style="color:#94a3b8;">1-2 geteilte Keys</span> — Mods teilen einzelne Assets, kein Problem<br><br><span style="background:#60a5fa;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Gewollt</span> <span style="color:#60a5fa;">Zusammengehörige Dateien</span> — Gleicher Mod, behalten!'},
   {icon:'⏰',title:'Analyse-Tabs',body:'Die Analyse deiner Mods ist auf eigene Tabs aufgeteilt:<br><ul><li><b>⏰ Veraltet</b> — Mods die vor dem letzten Spiel-Patch erstellt wurden</li><li><b>🔗 Abhängigkeiten</b> — Welche Mods andere Mods brauchen</li><li><b>📋 Fehler</b> — Ausgewertete Fehlerlogs (lastException.txt)</li></ul>Hier erkennst du auf einen Blick, welche Mods Probleme verursachen könnten!'},
   {icon:'🎭',title:'Tray, Galerie & Savegames',body:'Deine gespeicherten Inhalte haben eigene Tabs:<br><ul><li><b>🎭 Tray</b> — Welche Mods deine Sims und Häuser brauchen</li><li><b>🖼️ CC-Galerie</b> — Alle Custom Content Vorschaubilder</li><li><b>💾 Savegames</b> — Spielstand-Analyse</li></ul>⚠️ Wenn du einen Mod löschen willst, der von einem gespeicherten Sim benutzt wird, wirst du <b>gewarnt</b>!'},
-  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen dir Aktionen zur Verfügung:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li><li><b>🗑️ Löschen</b> — Löscht die Datei endgültig</li><li><b>📂 Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Tipp:</b> Nutze immer Quarantäne statt Löschen! Im Tab <b>🗃️ Quarantäne</b> kannst du Dateien wiederherstellen.'},
+  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen dir Aktionen zur Verfügung:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li><li><b>� Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Sicher:</b> Es wird niemals sofort etwas gelöscht! Alle Dateien landen zuerst in der Quarantäne. Endgültig löschen kannst du nur im Tab <b>🗃️ Quarantäne</b>.'},
   {icon:'🛠',title:'Werkzeug-Tabs',body:'Praktische Helfer haben eigene Tabs:<br><ul><li><b>📥 Import</b> — Neue Mods sicher importieren</li><li><b>🗃️ Quarantäne</b> — Verschobene Dateien verwalten/wiederherstellen</li><li><b>⚡ Batch</b> — Alle markierten Dateien auf einmal verarbeiten</li><li><b>📜 Log</b> — Alle durchgeführten Aktionen nachverfolgen</li></ul>Über die <b>Checkboxen</b> bei jeder Datei und dann <b>Batch-Quarantäne</b> kannst du schnell aufräumen.'},
   {icon:'🔎',title:'Globale Suche',body:'Die <b>Globale Suche</b> unterhalb der Tab-Leiste durchsucht <b>ALLES</b> auf einmal:<br><ul><li>Dateinamen und Pfade</li><li>Notizen und Tags</li><li>Creator-Informationen</li><li>CurseForge-Daten</li></ul>Einfach eintippen — die Ergebnisse erscheinen sofort!'},
   {icon:'🏷️',title:'Notizen & Tags',body:'Du kannst zu jeder Mod <b>persönliche Notizen</b> und <b>Tags</b> hinzufügen:<br><br><b>📝 Notizen</b> — Freitext, z.B. "Funktioniert super mit XY Mod"<br><b>🏷️ Tags</b> — Kategorie-Labels wie "Favorit", "Testen", "Behalten"<br><br>Alles wird gespeichert und überlebt Rescans! Nutze Tags um deine Mods zu organisieren.'},
@@ -4065,10 +4256,21 @@ async function scanTrayOrphans() {
         <span style="font-size:22px;">🗂️</span>
         <div>
           <div style="font-weight:bold;color:#fbbf24;"><b>${orphans.length}</b> verwaiste Dateien gefunden (${totalMB} MB)</div>
-          <div class="muted" style="font-size:12px; margin-top:4px;">Das sind Reste von gelöschten Sims, Häusern oder Zimmern. Sie machen nichts kaputt, belegen aber unnötig Speicherplatz. Du kannst sie bedenkenlos löschen.</div>
+          <div class="muted" style="font-size:12px; margin-top:4px;">Das sind Reste von gelöschten Sims, Häusern oder Zimmern, die kein zugehöriges .trayitem mehr haben. Sie belegen unnötig Speicherplatz.</div>
         </div>
       </div>
     </div>`;
+    // Gruppiert nach Dateityp
+    const extCounts = {};
+    for (const o of orphans) {
+      const ext = o.name.split('.').pop() || 'unbekannt';
+      extCounts[ext] = (extCounts[ext] || 0) + 1;
+    }
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    for (const [ext, cnt] of Object.entries(extCounts)) {
+      html += `<span style="background:#1e293b;padding:3px 10px;border-radius:12px;font-size:11px;">.${esc(ext)} <b>${cnt}</b></span>`;
+    }
+    html += '</div>';
     html += '<div style="max-height:200px;overflow-y:auto;border:1px solid #334155;border-radius:6px;padding:8px;background:#0f172a;">';
     for (const o of orphans.slice(0, 100)) {
       const sz = (o.size / 1024).toFixed(0);
@@ -4077,9 +4279,9 @@ async function scanTrayOrphans() {
     if (orphans.length > 100) html += `<div class="muted small">…und ${orphans.length - 100} weitere</div>`;
     html += '</div>';
     html += `<div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
-      <button class="btn btn-danger" onclick="deleteTrayOrphans()">🗑 ${orphans.length} verwaiste Dateien löschen (${totalMB} MB freigeben)</button>
-      <span class="muted" style="font-size:11px;">Deine gespeicherten Sims & Häuser bleiben erhalten!</span>
-    </div>`;
+      <button class="btn" style="background:#f59e0b;color:#000;" onclick="deleteTrayOrphans()">📦 ${orphans.length} verwaiste Dateien in Quarantäne verschieben (${totalMB} MB)</button>
+    </div>
+    <div class="muted" style="font-size:11px;margin-top:6px;">🛡️ Die Dateien werden <b>nicht gelöscht</b>, sondern in den Ordner <code>Tray/_tray_quarantine/</code> verschoben. Du kannst sie dort jederzeit wiederherstellen.</div>`;
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
@@ -4087,13 +4289,19 @@ async function scanTrayOrphans() {
 }
 
 async function deleteTrayOrphans() {
+  if (!confirm('📦 Verwaiste Tray-Dateien in Quarantäne verschieben?\n\nDie Dateien werden NICHT gelöscht, sondern in den Ordner Tray/_tray_quarantine/ verschoben.\nDu kannst sie dort jederzeit wiederherstellen.\n\nFortfahren?')) return;
   const el = document.getElementById('tray-clean-result');
   try {
     const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'clean_tray', delete:true})});
     const json = await resp.json();
     if (!json.ok) throw new Error(json.error);
-    el.innerHTML = `<div style="color:#22c55e;">✅ ${json.deleted} verwaiste Tray-Dateien gelöscht!</div>`;
-    showToast(`${json.deleted} Tray-Dateien gelöscht`, 'success');
+    el.innerHTML = `<div style="background:#22c55e15; border:1px solid #22c55e40; border-radius:8px; padding:16px; text-align:center;">
+      <div style="font-size:24px;">✅</div>
+      <div style="color:#22c55e; font-weight:bold;">📦 ${json.deleted} Dateien in Quarantäne verschoben!</div>
+      <div class="muted" style="margin-top:4px;">Die Dateien liegen in: <code>${esc(json.quarantined_to || 'Tray/_tray_quarantine/')}</code></div>
+      <div class="muted" style="font-size:11px; margin-top:4px;">Falls im Spiel etwas fehlt, verschiebe die Dateien einfach zurück in den Tray-Ordner.</div>
+    </div>`;
+    showToast(`📦 ${json.deleted} Tray-Dateien in Quarantäne`, 'success');
   } catch(e) {
     el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
     showToast('Tray-Bereinigung fehlgeschlagen', 'error');
@@ -4340,7 +4548,7 @@ async function findBrokenCC() {
         html += `<div style="padding:8px 12px 12px 36px; border-top:1px solid #1e293b;">`;
         html += `<div style="font-size:12px; color:#cbd5e1; margin-bottom:4px;">📋 <b>Was bedeutet das?</b> ${esc(info.explain)}</div>`;
         html += `<div style="font-size:12px; color:#22c55e;">💡 <b>Tipp:</b> ${esc(info.tip)}</div>`;
-        html += `<div style="margin-top:8px;"><button class="btn btn-danger" style="font-size:11px; padding:3px 10px;" data-bcc-path="${esc(b.path)}" onclick="doDelete(this.getAttribute('data-bcc-path'));">🗑️ Löschen</button> <button class="btn btn-ghost" style="font-size:11px; padding:3px 10px;" data-bcc-path="${esc(b.path)}" onclick="doQuarantine(this.getAttribute('data-bcc-path'));">📦 Quarantäne</button></div>`;
+        html += `<div style="margin-top:8px;"><button class="btn btn-ok" style="font-size:11px; padding:3px 10px;" data-bcc-path="${esc(b.path)}" onclick="doQuarantine(this.getAttribute('data-bcc-path'));">📦 Quarantäne</button></div>`;
         html += `</div></details>`;
       }
       html += `</div>`;
@@ -5245,8 +5453,7 @@ function renderPerFile(data) {
       ${recommendation}
       ${renderNotesUI(f.path)}
       <div class="flex" style="margin-top:10px;">
-        <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
-        <button class="btn btn-danger" data-act="delete" data-path="${esc(f.path)}" title="Unwiderruflich löschen!">🗑 Löschen</button>
+        <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben — du kannst die Datei jederzeit zurückholen">📦 Quarantäne</button>
         <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Öffnet den Ordner im Windows Explorer">📂 Ordner öffnen</button>
         <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Kopiert den Dateipfad in die Zwischenablage">📋 Pfad kopieren</button>
       </div>
@@ -5362,26 +5569,9 @@ async function doQuarantine(path) {
 }
 
 async function doDelete(path) {
-  // Tray-warning check
-  let trayMsg = '';
-  if (_trayData && _trayData.mod_usage) {
-    const np = path.toLowerCase().replace(/\\\\/g, '/');
-    for (const [mp, info] of Object.entries(_trayData.mod_usage)) {
-      const nmp = mp.toLowerCase().replace(/\\\\/g, '/');
-      if (np === nmp || np.endsWith('/' + nmp.split('/').pop())) {
-        const names = (info.used_by || []).slice(0, 5).join(', ');
-        trayMsg = `\\n\\n⚠️ ACHTUNG: Dieser Mod wird von ${info.used_count} Sims/Häusern verwendet!\\nVerwendet von: ${names}`;
-        break;
-      }
-    }
-  }
-  if (!confirm('⚠️ ENDGÜLTIG LÖSCHEN — Nicht rückgängig machbar!\\n\\nDiese Datei wird unwiderruflich von deinem PC gelöscht.\\nWenn du dir unsicher bist, nutze lieber 📦 Quarantäne (kannst du jederzeit rückgängig machen).\\n\\n' + path + trayMsg)) return;
-  const res = await postAction('delete', path, {});
-  console.log('[DELETE]', path, res);
-  setLast('🗑 Löschen: ' + path + ' (deleted=' + String(res.deleted) + ')');
-  addLog('DELETE ' + (res.deleted ? 'OK' : 'NOTE') + ' :: ' + path + (res.note ? (' :: ' + res.note) : ''));
-  removeRowsForPath(path);
-  await reloadData();
+  // Safety redirect: "delete" now goes through quarantine.
+  // Permanent deletion is only possible from the quarantine tab.
+  await doQuarantine(path);
 }
 
 async function doRestore(path) {
@@ -5478,7 +5668,7 @@ async function batchAction(action, paths, confirmText=null) {
   const text = document.getElementById('batch-progress-text');
   const file = document.getElementById('batch-progress-file');
   const title = document.getElementById('batch-progress-title');
-  title.textContent = (action === 'quarantine' ? '📦 Quarantäne' : '🗑 Löschen') + '…';
+  title.textContent = '📦 Quarantäne…';
   bar.style.width = '0%';
   text.textContent = '0 / ' + paths.length;
   file.textContent = '';
@@ -5493,11 +5683,9 @@ async function batchAction(action, paths, confirmText=null) {
       text.textContent = (i + 1) + ' / ' + paths.length + (fail > 0 ? ' (' + fail + ' Fehler)' : '');
       file.textContent = p.split(/[/\\]/).pop();
       try {
-        if (action === 'delete') {
-          const res = await postAction('delete', p, {});
-          console.log('[BATCH_DELETE]', p, res);
-          addLog(`BATCH DELETE ${res.deleted ? 'OK' : 'NOTE'} :: ${p}` + (res.note ? (' :: ' + res.note) : ''));
-        } else if (action === 'quarantine') {
+        // All actions go through quarantine — 'delete' is redirected for safety
+        const actualAction = (action === 'delete') ? 'quarantine' : action;
+        if (actualAction === 'quarantine') {
           const res = await postAction('quarantine', p, {});
           console.log('[BATCH_QUARANTINE]', p, res);
           addLog(`BATCH QUARANTINE ${res.moved ? 'OK' : 'NOTE'} :: ${p}` + (res.to ? (' -> ' + res.to) : '') + (res.note ? (' :: ' + res.note) : ''));
@@ -5524,9 +5712,7 @@ document.getElementById('btn_q_sel').addEventListener('click', async () => {
   await batchAction('quarantine', Array.from(selected), `📦 ${selected.size} Dateien in Quarantäne verschieben?\n\nDie Dateien werden nur verschoben, nicht gelöscht. Du kannst sie im Tab 🗃️ Quarantäne jederzeit zurückholen.`);
 });
 
-document.getElementById('btn_d_sel').addEventListener('click', async () => {
-  await batchAction('delete', Array.from(selected), `⚠️ ENDGÜLTIG LÖSCHEN — ${selected.size} Dateien!\n\nAlle ${selected.size} markierten Dateien werden unwiderruflich von deinem PC gelöscht!\nDas kann man NICHT rückgängig machen!\n\nWenn du dir unsicher bist, nutze lieber 📦 Quarantäne (kannst du jederzeit zurückholen).\n\nWirklich alle ${selected.size} Dateien löschen?`);
-});
+// btn_d_sel removed — all actions go through quarantine now
 
 document.getElementById('reload').addEventListener('click', async () => {
   try {
@@ -6100,7 +6286,7 @@ document.getElementById('groups').addEventListener('click', async (ev) => {
     else if (gact === 'delete_rest') {
       const keep = preferKeepPath(g.files);
       const rest = g.files.filter(f => f.path !== keep).map(f => f.path);
-      await batchAction('delete', rest, `🗑 Rest der Gruppe WIRKLICH löschen?\n\nBehalte:\n${keep}\n\nAnzahl: ${rest.length}`);
+      await batchAction('quarantine', rest, `📦 Rest der Gruppe in Quarantäne verschieben?\n\nBehalte:\n${keep}\n\nAnzahl: ${rest.length}`);
     }
     return;
   }
@@ -6177,10 +6363,14 @@ reloadData().then(()=>{
   setLast('✅ Daten geladen');
   addLog('PAGE LOAD');
   updateSelCount();
+  // Ladescreen beenden
+  setLoaderProgress(100);
 }).catch(e=>{
   document.getElementById('groups').innerHTML = '<p class="muted">Fehler: ' + esc(e.message) + '</p>';
   setLast('❌ Fehler beim Laden: ' + e.message);
   addLog('LOAD ERROR :: ' + e.message);
+  // Ladescreen trotzdem beenden bei Fehler
+  setLoaderProgress(100);
 });
 
 // Fehler-Analyse immer laden (unabhängig von Duplikat-Daten)

@@ -4,7 +4,29 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 
 ---
 
-## 🆕 Was ist neu in v3.1.0?
+## 🆕 Was ist neu in v3.2.0?
+
+### 🎮 Sims 4 Loading Screen
+- **3D-Plumbob** — echter Sims 4 Ladebildschirm mit rotierendem 3D-Plumbob (Three.js WebGL)
+- **Animierter Fortschritt** — Ladebalken zeigt den Scan-Fortschritt in Echtzeit
+- **Rotierende Tipps** — wechselnde Lade-Nachrichten im Sims-Stil („Retikuliere Splines…“)
+- **Skip-Button** — Ladebildschirm kann jederzeit übersprungen werden
+
+### 🛡️ Maximale Sicherheit — Quarantäne-First
+- **Niemals sofort löschen** — ALLE Aktionen verschieben Dateien zuerst in die Quarantäne, nichts wird direkt gelöscht
+- **Endgültig löschen nur im Quarantäne-Tab** — permanentes Löschen ist nur noch aus der Quarantäne-Ansicht möglich
+- **Lösch-Buttons entfernt** — alle „🗑 Löschen“-Buttons aus der gesamten UI entfernt, nur noch „📦 Quarantäne“
+- **Batch-Aktionen nur Quarantäne** — Massen-Aktionen verschieben immer in Quarantäne
+- **Server-Sicherung** — auch auf Backend-Ebene führt `delete` intern eine Quarantäne-Verschiebung durch
+
+### 🗂️ Tray-Cleaner Fix (kritischer Bug behoben)
+- **Instance-ID Gruppierung** — vorher wurden Tray-Dateien falsch nach vollem Dateinamen gruppiert, was zu 81% Fehlerkennungen führte
+- **Quarantäne statt Löschen** — Tray-Cleaner verschiebt jetzt in Quarantäne statt direkt zu löschen
+- **Fehlende Dateitypen** — .hhi, .sgi, .rmi werden jetzt auch erkannt
+
+---
+
+## 📋 Was war neu in v3.1.0?
 
 ### 🛡️ Sicherheit & Benutzerfreundlichkeit
 - **Dashboard-Sicherheitshinweis** — beim Start wird klar erklärt: 📦 Quarantäne = SICHER (rückgängig machbar), 🗑️ Löschen = ENDGÜLTIG
@@ -97,8 +119,10 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 - Haushalts-Gruppierung
 
 ### �️ Sicherheit & UX
-- **Dashboard-Sicherheitshinweis** — erklärt sofort beim Start: Quarantäne = sicher, Löschen = endgültig
-- **Bestätigungsdialoge** — klare Warnungen bei allen Lösch- und Quarantäne-Aktionen
+- **Quarantäne-First-Prinzip** — es wird niemals sofort etwas gelöscht, alle Aktionen verschieben in die Quarantäne
+- **Endgültig löschen nur im Quarantäne-Tab** — permanentes Löschen ist nur aus der Quarantäne-Ansicht möglich
+- **Dashboard-Sicherheitshinweis** — erklärt sofort beim Start: Quarantäne = sicher, alles wird nur verschoben
+- **Bestätigungsdialoge** — klare Warnungen bei allen Quarantäne-Aktionen
 - **Hilfe-Panel** — erreichbar über jede Seite, erklärt alle Funktionen
 - **28 individuelle Tabs** — jede Funktion hat ihren eigenen Bereich
 - **Dashboard Health Score** — Gesundheitsbewertung des Mods-Ordners auf einen Blick
