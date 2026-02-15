@@ -4,14 +4,47 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 
 ---
 
-## 🆕 Was ist neu in v3.0.0?
+## 🆕 Was ist neu in v3.1.0?
+
+### 🛡️ Sicherheit & Benutzerfreundlichkeit
+- **Dashboard-Sicherheitshinweis** — beim Start wird klar erklärt: 📦 Quarantäne = SICHER (rückgängig machbar), 🗑️ Löschen = ENDGÜLTIG
+- **Bestätigungsdialoge überarbeitet** — jede Lösch-Aktion warnt deutlich vor Datenverlust und empfiehlt Quarantäne
+- **Quarantäne-Bestätigung** — zeigt Dateinamen und erklärt, dass Dateien jederzeit zurückgeholt werden können
+- **Batch-Sicherheit** — Massen-Aktionen mit klaren Warnungen und Sicherheitstipps
+- **Tutorial** — zeigt sich beim ersten Start automatisch (nicht mehr vorausgewählt)
+
+### 🔬 Script-Mod-Prüfung (komplett neu)
+- **Schweregrad-System** — jedes Muster wird als 🔴 Kritisch, 🟠 Hoch, 🟡 Mittel oder 🟢 Niedrig eingestuft
+- **Verständliche Erklärungen** — jeder Fund wird in einfacher Sprache erklärt (was macht das Muster? Warum wurde es gefunden?)
+- **Bekannte Mods** — MCCC, WickedWhims, UI Cheats, etc. werden automatisch erkannt und als ✅ sicher markiert
+- **Empfehlungen** — pro Script-Mod individuelle Handlungsempfehlung
+- **Quarantäne-Button** — unbekannte Mods können direkt in Quarantäne verschoben werden
+
+### 🖼️ CC-Galerie verbessert
+- **Alle Items auf einmal** — keine "Mehr laden"-Paginierung mehr, alle CC-Teile werden sofort angezeigt
+- **Lazy-Loading** — Bilder werden erst beim Scrollen geladen (Performance bleibt gut)
+
+### 📝 Alle Info-Texte überarbeitet
+- **Tray-Cleaner** — erklärt jetzt verständlich, was der Tray-Ordner ist und was verwaiste Dateien sind
+- **Script-Check** — erklärt was Script-Mods sind und dass ein Fund ≠ Gefahr bedeutet
+- **Cache/Backup/Speicherplatz** — alle Erklärungen für Einsteiger umgeschrieben
+- **Ergebnisanzeigen** — aussagekräftige Boxen statt kryptischer Listen
+
+### ⚡ Performance & Stabilität
+- **Tray-Index** — nur noch Instance-IDs statt voller Schlüssel (weniger RAM, schneller)
+- **DBPF Safety-Cap** — Dateien mit >500.000 Einträgen werden übersprungen (Hang-Schutz)
+- **Version im Konsolentitel** — Versionsnummer direkt sichtbar
+
+---
+
+## 📋 Was war neu in v3.0.0?
 
 ### 🏗️ Komplettes Refactoring
 - **Monolith aufgelöst** — von einer einzelnen 10.000-Zeilen-Datei auf saubere Modul-Struktur (`sims4_scanner/`) umgebaut
 - **20 Code-Quality-Fixes** — Sicherheit, Error Handling, Input-Validierung
 - **14 Performance-Optimierungen** — Caching, Lazy Loading, parallele Verarbeitung
 
-### 🧬 Spielstand-Analyse (NEU!)
+### 🧬 Spielstand-Analyse
 - **Alle Sims auslesen** — Name, Alter, Geschlecht, Hautton, Spezies
 - **Wohnort/Welt** — jeder Sim wird seiner Welt zugeordnet (Willow Creek, Tomarang, Ondarion, etc.)
 - **Alle 30+ Welten** unterstützt, inkl. neuer DLCs (Chestnut Ridge, Ciudad Enamorada, Ravenwood, Nordhaven, Innisgreen, Gibbi Point, Ondarion)
@@ -63,7 +96,21 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 - Welten-Übersicht mit Sim-Anzahl pro Welt
 - Haushalts-Gruppierung
 
-### 🛠️ Weitere Features
+### �️ Sicherheit & UX
+- **Dashboard-Sicherheitshinweis** — erklärt sofort beim Start: Quarantäne = sicher, Löschen = endgültig
+- **Bestätigungsdialoge** — klare Warnungen bei allen Lösch- und Quarantäne-Aktionen
+- **Hilfe-Panel** — erreichbar über jede Seite, erklärt alle Funktionen
+- **28 individuelle Tabs** — jede Funktion hat ihren eigenen Bereich
+- **Dashboard Health Score** — Gesundheitsbewertung des Mods-Ordners auf einen Blick
+
+### 🔬 Erweiterte Prüfungen
+- **Script-Mod-Prüfung** — Schweregrad-System, bekannte Mods erkannt, verständliche Erklärungen
+- **CC-Check** — prüft Custom Content auf Probleme
+- **Broken CC Finder** — findet defekte/inkompatible CC-Dateien
+- **Tray-Cleaner** — findet verwaiste Tray-Dateien (Galerie-Reste)
+- **Speicherplatz-Analyse** — zeigt Ordnergrößen und die größten Dateien
+
+### �🛠️ Weitere Features
 - 🐛 **Bug Report System** — automatische Analyse mit HTML-Report an Discord
 - 📖 **Interaktives Tutorial** — Schritt-für-Schritt beim ersten Start
 - 💬 **Discord Support** — schwebender Support-Button

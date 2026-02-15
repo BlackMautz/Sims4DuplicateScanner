@@ -25,6 +25,9 @@ from .tray import analyze_tray, build_mod_instance_index
 from .update import check_for_update, download_update, apply_update_and_restart
 from .history import save_scan_history, save_mod_snapshot
 
+print(f"\n  Sims4 Duplicate Scanner v{SCANNER_VERSION}", flush=True)
+print(f"  Python {sys.version.split()[0]}\n", flush=True)
+
 
 class App(tk.Tk):
     def __init__(self):

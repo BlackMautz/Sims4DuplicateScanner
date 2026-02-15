@@ -939,14 +939,17 @@ class LocalServer:
                     if self._check_token_qs(u): return
                     qs = parse_qs(u.query)
                     pkg_path = qs.get("path", [""])[0]
+                    # Normalize forward slashes back to OS path
+                    pkg_path = os.path.normpath(pkg_path) if pkg_path else ""
                     if not pkg_path or not os.path.isfile(pkg_path):
                         self._json(400, {"ok": False, "error": "Datei nicht gefunden"})
                         return
                     try:
                         from .dbpf import read_dbpf_entries, check_package_integrity
                         from .constants import RESOURCE_TYPE_NAMES
-                        integrity = check_package_integrity(pkg_path)
-                        entries = read_dbpf_entries(pkg_path) if integrity == "ok" else []
+                        pkg_p = Path(pkg_path)
+                        integrity = check_package_integrity(pkg_p)
+                        entries = read_dbpf_entries(pkg_p) if integrity == "ok" else []
                         type_counts: dict[str, int] = {}
                         for e in entries:
                             tname = RESOURCE_TYPE_NAMES.get(e["type"], f"0x{e['type']:08X}")
@@ -1399,7 +1402,8 @@ class LocalServer:
                     if not is_q:
                         self._json(400, {"ok": False, "error": "path not in quarantine"})
                         return
-                elif action in ("ignore_group", "unignore_group", "import_upload", "import_upload_confirm", "mark_tutorial_seen", "send_bug_report"):
+                elif action in ("ignore_group", "unignore_group", "import_upload", "import_upload_confirm", "mark_tutorial_seen", "send_bug_report",
+                                "script_security_check", "find_broken_cc", "clean_tray", "clean_cache", "create_backup"):
                     pass
                 elif not is_under_any_root(p, server_ref.dataset.roots):
                     self._json(400, {"ok": False, "error": "path not allowed (not under selected roots)"})
@@ -1628,7 +1632,7 @@ class LocalServer:
                             for pkg in root_p.rglob("*.package"):
                                 checked += 1
                                 try:
-                                    integrity = check_package_integrity(str(pkg))
+                                    integrity = check_package_integrity(pkg)
                                     if integrity == "empty" or integrity == "too_small":
                                         broken.append({
                                             "path": str(pkg), "name": pkg.name,
@@ -1650,7 +1654,7 @@ class LocalServer:
                                             "severity": "error", "size": pkg.stat().st_size,
                                         })
                                         continue
-                                    entries = read_dbpf_entries(str(pkg))
+                                    entries = read_dbpf_entries(pkg)
                                     if len(entries) == 0:
                                         broken.append({
                                             "path": str(pkg), "name": pkg.name,

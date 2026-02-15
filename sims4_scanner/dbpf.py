@@ -30,6 +30,8 @@ def read_dbpf_resource_keys(path: Path) -> list[tuple[int, int, int]] | None:
             entry_count = _struct.unpack_from('<I', header, 36)[0]
             index_size = _struct.unpack_from('<I', header, 44)[0]
             index_offset = _struct.unpack_from('<Q', header, 64)[0]
+            if entry_count > 500000:  # Sicherheit: korrupte Dateien abfangen
+                return None
             if entry_count == 0:
                 return []
             if index_offset == 0 or index_size < 4:

@@ -53,8 +53,8 @@ def build_html_page() -> str:
   .small { font-size:12px; }
   #last { padding:10px 12px; border-radius:12px; background:#101729; border:1px solid #232a3a; }
   #log { width:100%; min-height:120px; max-height:260px; overflow:auto; padding:10px; border-radius:12px; background:#0f1422; border:1px solid #232a3a; color:#e7e7e7; white-space:pre; }
-  #batchbar { position:sticky; top:56px; z-index:5; }
-  #section-nav { position:sticky; top:0; z-index:10; background:#0f172a; border-bottom:2px solid #334155; padding:0 16px; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; margin:0 -20px; padding-left:20px; padding-right:20px; overflow-x:auto; scrollbar-width:thin; }
+  #batchbar { position:sticky; top:0; z-index:5; }
+  #section-nav { position:sticky; top:0; z-index:10; background:#0f172a; border-bottom:2px solid #334155; padding:0 16px; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; margin:0 -20px; padding-left:20px; padding-right:20px; }
   #section-nav .nav-tab { background:transparent; border:none; border-bottom:3px solid transparent; color:#94a3b8; padding:6px 12px 5px; font-size:13px; cursor:pointer; transition:all 0.15s; display:inline-flex; flex-direction:column; align-items:center; white-space:nowrap; font-weight:600; position:relative; text-align:center; line-height:1.3; }
   #section-nav .nav-tab:hover { color:#e2e8f0; background:rgba(99,102,241,0.08); }
   #section-nav .nav-tab.active { color:#a5b4fc; border-bottom-color:#6366f1; background:rgba(99,102,241,0.12); }
@@ -565,12 +565,41 @@ def build_html_page() -> str:
 
 <div id="section-nav">
   <button class="nav-tab active" onclick="switchTab('dashboard')" id="nav-dashboard">🏠 Dashboard</button>
-  <button class="nav-tab" onclick="switchTab('duplicates')" id="nav-groups">📂 Duplikate <span class="nav-badge badge-zero" id="nav-badge-groups">0</span><span class="nav-sub">Gruppen · Korrupte · Addons · Enthaltene · Konflikte</span></button>
-  <button class="nav-tab" onclick="switchTab('analysis')" id="nav-analysis">🔍 Analyse <span class="nav-badge badge-zero" id="nav-badge-analysis">0</span><span class="nav-sub">Veraltet · Abhängigkeiten · Fehler</span></button>
-  <button class="nav-tab" onclick="switchTab('traycc')" id="nav-tray">🎭 Tray &amp; CC<span class="nav-sub">Sims · Häuser · CC-Galerie · Savegames</span></button>
-  <button class="nav-tab" onclick="switchTab('overview')" id="nav-overview">📊 Übersicht<span class="nav-sub">Statistik · Creators · Alle Mods</span></button>
-  <button class="nav-tab" onclick="switchTab('tools')" id="nav-tools">🛠 Werkzeuge<span class="nav-sub">Cache · Backup · Sicherheit · CC-Check · Browser</span></button>
-  <button class="nav-tab" onclick="switchTab('history')" id="nav-history">📚 Verlauf<span class="nav-sub">Mod-Inventar · Änderungen</span></button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('duplicates')" id="nav-groups">📂 Duplikate <span class="nav-badge badge-zero" id="nav-badge-groups">0</span></button>
+  <button class="nav-tab" onclick="switchTab('corrupt')" id="nav-corrupt">💀 Korrupte <span class="nav-badge badge-zero" id="nav-badge-corrupt">0</span></button>
+  <button class="nav-tab" onclick="switchTab('addons')" id="nav-addons">🧩 Addons</button>
+  <button class="nav-tab" onclick="switchTab('contained')" id="nav-contained">🏷️ Enthaltene</button>
+  <button class="nav-tab" onclick="switchTab('conflicts')" id="nav-conflicts">⚔️ Konflikte</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('outdated')" id="nav-outdated">⏰ Veraltet <span class="nav-badge badge-zero" id="nav-badge-analysis">0</span></button>
+  <button class="nav-tab" onclick="switchTab('deps')" id="nav-deps">🔗 Abhängigkeiten</button>
+  <button class="nav-tab" onclick="switchTab('errors')" id="nav-errors">📋 Fehler</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('tray')" id="nav-tray">🎭 Tray</button>
+  <button class="nav-tab" onclick="switchTab('gallery')" id="nav-gallery">🖼️ CC-Galerie</button>
+  <button class="nav-tab" onclick="switchTab('savegames')" id="nav-savegames">💾 Savegames</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('stats')" id="nav-stats">📊 Statistik</button>
+  <button class="nav-tab" onclick="switchTab('creators')" id="nav-creators">👤 Creators</button>
+  <button class="nav-tab" onclick="switchTab('allmods')" id="nav-allmods">📁 Alle Mods</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('import')" id="nav-import">📥 Import</button>
+  <button class="nav-tab" onclick="switchTab('quarantine')" id="nav-quarantine">🗃️ Quarantäne</button>
+  <button class="nav-tab" onclick="switchTab('batch')" id="nav-batch">⚡ Batch</button>
+  <button class="nav-tab" onclick="switchTab('log')" id="nav-log">📜 Log</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('scriptcheck')" id="nav-scriptcheck">🛡️ Script-Check</button>
+  <button class="nav-tab" onclick="switchTab('cccheck')" id="nav-cccheck">🔧 CC-Check</button>
+  <button class="nav-tab" onclick="switchTab('savehealth')" id="nav-savehealth">❤️ Save-Health</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('cache')" id="nav-cache">🗑️ Cache</button>
+  <button class="nav-tab" onclick="switchTab('trayclean')" id="nav-trayclean">🗂️ Tray-Cleaner</button>
+  <button class="nav-tab" onclick="switchTab('backup')" id="nav-backup">💼 Backup</button>
+  <button class="nav-tab" onclick="switchTab('diskusage')" id="nav-diskusage">📏 Speicherplatz</button>
+  <div class="nav-tab-sep"></div>
+  <button class="nav-tab" onclick="switchTab('packages')" id="nav-packages">📦 Packages</button>
+  <button class="nav-tab" onclick="switchTab('history')" id="nav-history">📚 Verlauf</button>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
   <button class="nav-tab" onclick="openBugReport()" title="Bug melden">🐛 Bug</button>
@@ -590,8 +619,46 @@ def build_html_page() -> str:
   <h2>📋 Auf einen Blick</h2>
   <p class="muted small">Das hat der Scanner bei deinen Mods gefunden. Klicke auf eine Karte um direkt dorthin zu springen.</p>
 </div>
+<!-- Gesundheits-Score -->
+<div id="dash-health-score" data-tab="dashboard" style="display:none; margin-bottom:16px; background:linear-gradient(135deg,#0f172a 60%,#1e1b4b); border:1px solid #334155; border-radius:12px; padding:20px 24px;">
+  <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+    <div style="position:relative; width:100px; height:100px; flex-shrink:0;">
+      <svg viewBox="0 0 36 36" style="width:100px;height:100px;transform:rotate(-90deg);">
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" stroke-width="3"></circle>
+        <circle id="health-ring" cx="18" cy="18" r="15.9" fill="none" stroke="#22c55e" stroke-width="3" stroke-dasharray="100" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 1s ease, stroke 0.5s;"></circle>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+        <span id="health-score-num" style="font-size:28px;font-weight:800;color:#22c55e;">—</span>
+        <span style="font-size:9px;color:#64748b;margin-top:-2px;">von 100</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span id="health-emoji" style="font-size:20px;">🩺</span>
+        <span id="health-label" style="font-size:18px;font-weight:bold;color:#e2e8f0;">Mod-Gesundheit</span>
+      </div>
+      <div id="health-detail" class="muted" style="font-size:12px;line-height:1.6;"></div>
+    </div>
+    <div id="health-stats-mini" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;"></div>
+  </div>
+</div>
+<div id="dash-safety" data-tab="dashboard" style="background:linear-gradient(135deg,#0f172a,#1e1b4b); border:1px solid #2563eb; border-radius:12px; padding:16px 20px; margin-bottom:12px;">
+  <div style="display:flex;align-items:flex-start;gap:14px;">
+    <span style="font-size:28px;">🛡️</span>
+    <div>
+      <div style="font-size:15px;font-weight:bold;color:#93c5fd;margin-bottom:6px;">Wichtig bevor du loslegst!</div>
+      <div style="font-size:13px;color:#cbd5e1;line-height:1.8;">
+        <div style="margin-bottom:6px;"><span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:6px;font-weight:bold;">📦 Quarantäne = SICHER</span> Dateien werden nur <b>verschoben</b>, nicht gelöscht. Du kannst sie jederzeit im Tab <b>🗃️ Quarantäne</b> zurückholen. <b>Nutze immer zuerst Quarantäne!</b></div>
+        <div style="margin-bottom:6px;"><span style="background:#7f1d1d;color:#fca5a5;padding:2px 8px;border-radius:6px;font-weight:bold;">🗑️ Löschen = ENDGÜLTIG</span> Die Datei wird <b>unwiderruflich</b> vom PC gelöscht. <b>Kann nicht rückgängig gemacht werden!</b> Nur nutzen wenn du dir 100% sicher bist.</div>
+        <div><span style="background:#1e3a5f;color:#93c5fd;padding:2px 8px;border-radius:6px;font-weight:bold;">💡 Tipp</span> Erstelle im Tab <b>💾 Backup</b> eine Sicherung deiner Mods <b>bevor</b> du aufräumst. Falls etwas schiefgeht, kannst du alles wiederherstellen.</div>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:8px;font-size:11px;padding:4px 12px;" onclick="this.closest('#dash-safety').style.display='none';localStorage.setItem('dash_safety_hidden','1');">✓ Verstanden, nicht mehr anzeigen</button>
+    </div>
+  </div>
+</div>
+<script>if(localStorage.getItem('dash_safety_hidden')==='1') document.getElementById('dash-safety').style.display='none';</script>
 <div class="dashboard" id="dashboard" data-tab="dashboard">
-  <div class="dash-card dash-critical dash-hidden" id="dash-corrupt" onclick="switchTab('duplicates')">
+  <div class="dash-card dash-critical dash-hidden" id="dash-corrupt" onclick="switchTab('corrupt')">
     <div class="dash-icon">💀</div>
     <div class="dash-count" id="dash-corrupt-count">0</div>
     <div class="dash-label">Korrupte Dateien</div>
@@ -605,49 +672,49 @@ def build_html_page() -> str:
     <div class="dash-desc">Doppelte oder sehr ähnliche Mod-Dateien. Aufräumen spart Speicher &amp; verhindert Probleme.</div>
     <span class="dash-action">Aufräumen →</span>
   </div>
-  <div class="dash-card dash-warn dash-hidden" id="dash-conflicts" onclick="switchTab('duplicates')">
+  <div class="dash-card dash-warn dash-hidden" id="dash-conflicts" onclick="switchTab('conflicts')">
     <div class="dash-icon">⚔️</div>
     <div class="dash-count" id="dash-conflicts-count">0</div>
     <div class="dash-label">Konflikte</div>
     <div class="dash-desc">Mods die sich gegenseitig überschreiben — nur einer kann funktionieren.</div>
     <span class="dash-action">Prüfen →</span>
   </div>
-  <div class="dash-card dash-info dash-hidden" id="dash-outdated" onclick="switchTab('analysis')">
+  <div class="dash-card dash-info dash-hidden" id="dash-outdated" onclick="switchTab('outdated')">
     <div class="dash-icon">⏰</div>
     <div class="dash-count" id="dash-outdated-count">0</div>
     <div class="dash-label">Veraltete Mods</div>
     <div class="dash-desc">Vor dem letzten Spiel-Patch erstellt — könnten nicht mehr funktionieren.</div>
     <span class="dash-action">Prüfen →</span>
   </div>
-  <div class="dash-card dash-ok dash-hidden" id="dash-addons" onclick="switchTab('duplicates')">
+  <div class="dash-card dash-ok dash-hidden" id="dash-addons" onclick="switchTab('addons')">
     <div class="dash-icon">🧩</div>
     <div class="dash-count" id="dash-addons-count">0</div>
     <div class="dash-label">Addons erkannt</div>
     <div class="dash-desc">Erweiterungen die zusammengehören — <b>kein Handlungsbedarf!</b></div>
     <span class="dash-action">Details →</span>
   </div>
-  <div class="dash-card dash-warn dash-hidden" id="dash-contained" onclick="switchTab('duplicates')">
+  <div class="dash-card dash-warn dash-hidden" id="dash-contained" onclick="switchTab('contained')">
     <div class="dash-icon">📦</div>
     <div class="dash-count" id="dash-contained-count">0</div>
     <div class="dash-label">Enthaltene Mods</div>
     <div class="dash-desc">Ein Mod steckt komplett in einem Bundle — der Einzelne ist <b>redundant</b> und kann entfernt werden.</div>
     <span class="dash-action">Prüfen →</span>
   </div>
-  <div class="dash-card dash-critical dash-hidden" id="dash-missingdeps" onclick="switchTab('analysis')">
+  <div class="dash-card dash-critical dash-hidden" id="dash-missingdeps" onclick="switchTab('deps')">
     <div class="dash-icon">❌</div>
     <div class="dash-count" id="dash-missingdeps-count">0</div>
     <div class="dash-label">Fehlende Abhängigkeiten</div>
     <div class="dash-desc">Mods importieren Bibliotheken die nicht installiert sind — werden nicht funktionieren!</div>
     <span class="dash-action">Prüfen →</span>
   </div>
-  <div class="dash-card dash-info dash-hidden" id="dash-nonmod" onclick="switchTab('overview')">
+  <div class="dash-card dash-info dash-hidden" id="dash-nonmod" onclick="switchTab('allmods')">
     <div class="dash-icon">📄</div>
     <div class="dash-count" id="dash-nonmod-count">0</div>
     <div class="dash-label">Sonstige Dateien</div>
     <div class="dash-desc">Nicht-Mod-Dateien (txt, png, html…) im Mods-Ordner — können aufgeräumt werden.</div>
     <span class="dash-action">Anzeigen →</span>
   </div>
-  <div class="dash-card dash-ok" id="dash-total" onclick="switchTab('overview')">
+  <div class="dash-card dash-ok" id="dash-total" onclick="switchTab('allmods')">
     <div class="dash-icon">📦</div>
     <div class="dash-count" id="dash-total-count">…</div>
     <div class="dash-label">Mods gescannt</div>
@@ -658,101 +725,91 @@ def build_html_page() -> str:
 
 <div class="box" id="help-section" data-tab="dashboard" style="margin-bottom:12px;">
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <span style="font-size:15px;font-weight:bold;">📖 Erste Schritte — So funktioniert der Scanner</span>
-    <button class="help-toggle" id="help-toggle" onclick="document.getElementById('help-panel').classList.toggle('open'); this.textContent = document.getElementById('help-panel').classList.contains('open') ? '▲ Hilfe zuklappen' : '▼ Hilfe aufklappen';">▲ Hilfe zuklappen</button>
+    <span style="font-size:15px;font-weight:bold;">📖 Kurzanleitung</span>
+    <button class="help-toggle" id="help-toggle" onclick="document.getElementById('help-panel').classList.toggle('open'); this.textContent = document.getElementById('help-panel').classList.contains('open') ? '▲ Zuklappen' : '▼ Hilfe aufklappen';">▲ Zuklappen</button>
   </div>
   <div class="help-panel open" id="help-panel">
-    <div style="margin-bottom:16px;">
-      <p class="muted" style="margin:0 0 10px;"><b>Keine Sorge, es ist einfacher als es aussieht!</b> Hier die wichtigsten Schritte:</p>
+
+    <div style="margin-bottom:14px;">
+      <p class="muted" style="margin:0 0 10px;"><b>So räumst du deine Mods auf — in 3 Schritten:</b></p>
       <div class="help-step">
         <span class="help-num">1</span>
-        <div class="help-text">Oben siehst du die <b>Tab-Leiste</b>. Das <b>Dashboard</b> zeigt dir auf einen Blick, was der Scanner gefunden hat. Klicke auf eine Karte oder auf den Tab <b>📂 Duplikate</b> um zu den Ergebnissen zu gelangen.</div>
+        <div class="help-text">Schau dir das <b>Dashboard</b> und den <b>Gesundheits-Score</b> an — sie zeigen auf einen Blick, ob es Probleme gibt. Klicke auf eine Karte um direkt zum Problem zu springen.</div>
       </div>
       <div class="help-step">
         <span class="help-num">2</span>
-        <div class="help-text">Im Tab <b>📂 Duplikate</b> siehst du alle Duplikat-Gruppen, Korrupte Dateien, Addons, Enthaltene Mods und Konflikte. Setze ein <b>Häkchen ☑️</b> bei den Dateien, die du <b>nicht mehr brauchst</b> (z.B. die ältere Version).</div>
+        <div class="help-text">Markiere überflüssige Dateien mit einem <b>Häkchen ☑️</b> und verschiebe sie in die <b>🗃️ Quarantäne</b>. Nichts wird gelöscht — du kannst alles wiederherstellen.</div>
       </div>
       <div class="help-step">
         <span class="help-num">3</span>
-        <div class="help-text">Im Tab <b>🛠 Werkzeuge</b> findest du die <b>📦 Quarantäne</b> — dort werden markierte Dateien sicher verschoben. <b>Nichts wird gelöscht!</b> Du kannst sie jederzeit wiederherstellen.</div>
-      </div>
-      <div class="help-step">
-        <span class="help-num">4</span>
-        <div class="help-text">Der Tab <b>🔍 Analyse</b> zeigt dir veraltete Mods, fehlende Abhängigkeiten und Fehler-Logs. <b>⏰ Veraltet</b> = vor dem letzten Patch erstellt.</div>
-      </div>
-      <div class="help-step">
-        <span class="help-num">5</span>
-        <div class="help-text">Starte dein Spiel und teste ob alles funktioniert. Falls nicht, gehe zu <b>🛠 Werkzeuge → Quarantäne</b> und stelle Dateien wieder her.</div>
+        <div class="help-text">Starte dein Spiel und teste. Falls etwas fehlt → <b>🗃️ Quarantäne</b> öffnen und wiederherstellen.</div>
       </div>
     </div>
 
     <div class="hr"></div>
-    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🧭 Die Tabs im Überblick</p>
-    <div class="legend-grid">
-      <span class="legend-icon" style="min-width:100px;">🏠 Dashboard</span>
-      <span class="muted">Übersicht aller Ergebnisse — <b>dein Startpunkt</b>. Zeigt auf einen Blick was los ist.</span>
-      <span class="legend-icon" style="min-width:100px;">📂 Duplikate</span>
-      <span class="muted">Duplikat-Gruppen, <b>Korrupte Dateien, Addons, Enthaltene Mods, Konflikte</b> — alles was mit doppelten Dateien zu tun hat.</span>
-      <span class="legend-icon" style="min-width:100px;">🔍 Analyse</span>
-      <span class="muted"><b>Veraltete Mods, Abhängigkeiten, Fehler-Logs</b> — tiefe Analyse deiner Mod-Gesundheit.</span>
-      <span class="legend-icon" style="min-width:100px;">🎭 Tray & CC</span>
-      <span class="muted"><b>Sims, Häuser, CC-Galerie</b> — welche Mods deine gespeicherten Sims/Häuser brauchen.</span>
-      <span class="legend-icon" style="min-width:100px;">📊 Übersicht</span>
-      <span class="muted"><b>Statistiken, Creators, Alle Mods</b> — deine komplette Mod-Sammlung durchsuchen.</span>
-      <span class="legend-icon" style="min-width:100px;">🛠 Werkzeuge</span>
-      <span class="muted"><b>Import, Quarantäne, Batch-Aktionen, Log</b> — Werkzeuge zum Aufräumen.</span>
-      <span class="legend-icon" style="min-width:100px;">📚 Verlauf</span>
-      <span class="muted"><b>Mod-Inventar, Änderungen</b> — was sich seit dem letzten Scan geändert hat.</span>
-    </div>
+    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🧭 Alle Tabs im Überblick</p>
 
-    <div class="hr"></div>
-    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🎨 Konflikte — Farbcode auf einen Blick</p>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(239,68,68,0.15);border-left:4px solid #ef4444;">
-        <span style="background:#ef4444;color:#000;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:bold;white-space:nowrap;">⚠️ Kritisch</span>
-        <span style="color:#fca5a5;font-size:12px;">3+ Tuning-Konflikte — <b>kann Gameplay brechen</b>, aufräumen!</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(30,41,59,0.7);border:1px solid #334155;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:bold;color:#e2e8f0;margin-bottom:6px;">📂 Probleme finden</div>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6;">
+          <b>📂 Duplikate</b> — doppelte Mod-Dateien<br>
+          <b>💀 Korrupte</b> — kaputte .package-Dateien<br>
+          <b>🧩 Addons</b> — Mods die andere Mods brauchen<br>
+          <b>🏷️ Enthaltene</b> — in anderen Mods eingebaut<br>
+          <b>⚔️ Konflikte</b> — Mods die sich beißen
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(251,191,36,0.12);border-left:4px solid #fbbf24;">
-        <span style="background:#fbbf24;color:#000;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:bold;white-space:nowrap;">⚡ Mittel</span>
-        <span style="color:#fde68a;font-size:12px;">CAS/Sim-Data betroffen — <b>könnte Darstellungsfehler</b> verursachen</span>
+      <div style="background:rgba(30,41,59,0.7);border:1px solid #334155;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:bold;color:#e2e8f0;margin-bottom:6px;">🔍 Analyse</div>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6;">
+          <b>⏰ Veraltet</b> — vor dem letzten Patch erstellt<br>
+          <b>🔗 Abhängigkeiten</b> — fehlende Dateien<br>
+          <b>📋 Fehler</b> — LastException-Logs<br>
+          <b>🛡️ Script-Check</b> — Script-Mods prüfen<br>
+          <b>🔧 CC-Check</b> — CC-Gesundheitscheck
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(34,197,94,0.12);border-left:4px solid #22c55e;">
-        <span style="background:#22c55e;color:#000;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:bold;white-space:nowrap;">✅ Niedrig</span>
-        <span style="color:#86efac;font-size:12px;">Nur Texturen/Meshes — <b>meistens gewollt</b>, behalten</span>
+      <div style="background:rgba(30,41,59,0.7);border:1px solid #334155;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:bold;color:#e2e8f0;margin-bottom:6px;">🎭 Übersicht & Daten</div>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6;">
+          <b>🎭 Tray</b> — Sims & Häuser im Tray<br>
+          <b>🖼️ CC-Galerie</b> — deine CC durchstöbern<br>
+          <b>💾 Savegames</b> — Spielstände verwalten<br>
+          <b>📊 Statistik</b> — Mod-Statistiken<br>
+          <b>👤 Creators</b> — Mods nach Ersteller<br>
+          <b>📁 Alle Mods</b> — komplette Mod-Liste
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(148,163,184,0.12);border-left:4px solid #94a3b8;">
-        <span style="background:#94a3b8;color:#000;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:bold;white-space:nowrap;">💤 Harmlos</span>
-        <span style="color:#cbd5e1;font-size:12px;">1-2 geteilte Keys — <b>Mods teilen einzelne Assets</b>, kein Problem</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;background:rgba(96,165,250,0.12);border-left:4px solid #60a5fa;">
-        <span style="background:#60a5fa;color:#000;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:bold;white-space:nowrap;">✅ Gewollt</span>
-        <span style="color:#93c5fd;font-size:12px;">Zusammengehörige Dateien — <b>gleicher Mod, behalten!</b></span>
-      </div>
-    </div>
-
-    <div style="margin:8px 0 12px;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;display:flex;align-items:flex-start;gap:10px;">
-      <span style="font-size:16px;margin-top:1px;">💡</span>
-      <div style="font-size:12px;color:#94a3b8;line-height:1.5;">
-        <b style="color:#cbd5e1;">Hinweis zu den Hintergrundfarben:</b> Die wechselnden Hintergrundfarben
-        (<span style="color:#4a7fff;">blau</span>,
-        <span style="color:#a855f7;">lila</span>,
-        <span style="color:#22c55e;">grün</span>,
-        <span style="color:#f97316;">orange</span>,
-        <span style="color:#ef4444;">rot</span>,
-        <span style="color:#06b6d4;">cyan</span>)
-        bei den Einträgen dienen <b style="color:#e2e8f0;">nur zur visuellen Unterscheidung</b> der einzelnen Gruppen — sie haben <b style="color:#e2e8f0;">nichts mit Fehlern oder Schweregrad</b> zu tun. Der Schweregrad wird ausschließlich über das <b style="color:#e2e8f0;">Badge</b> (Kritisch, Mittel, usw.) angezeigt.
+      <div style="background:rgba(30,41,59,0.7);border:1px solid #334155;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:bold;color:#e2e8f0;margin-bottom:6px;">🛠 Werkzeuge</div>
+        <div style="font-size:11px;color:#94a3b8;line-height:1.6;">
+          <b>📥 Import</b> — Mods importieren<br>
+          <b>🗃️ Quarantäne</b> — sicherer Papierkorb<br>
+          <b>⚡ Batch</b> — Massenaktionen<br>
+          <b>🗑️ Cache</b> / <b>🗂️ Tray-Cleaner</b> / <b>💼 Backup</b><br>
+          <b>📏 Speicherplatz</b> / <b>📦 Packages</b> / <b>❤️ Save-Health</b>
+        </div>
       </div>
     </div>
 
     <div class="hr"></div>
-    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🛡️ Sicherheits-Tipps</p>
+    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🎨 Konflikte — Farbcode</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+      <span style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">⚠️ <b>Kritisch</b> — Gameplay-Bruch</span>
+      <span style="background:rgba(251,191,36,0.15);border:1px solid #fbbf24;color:#fde68a;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">⚡ <b>Mittel</b> — Darstellungsfehler</span>
+      <span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">✅ <b>Niedrig</b> — meist gewollt</span>
+      <span style="background:rgba(148,163,184,0.15);border:1px solid #94a3b8;color:#cbd5e1;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">💤 <b>Harmlos</b> — ignorieren</span>
+      <span style="background:rgba(96,165,250,0.15);border:1px solid #60a5fa;color:#93c5fd;padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;">✅ <b>Gewollt</b> — behalten</span>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:12px;">💡 Hintergrundfarben bei Einträgen = nur zur Gruppen-Unterscheidung, nicht zur Schweregrad-Anzeige.</div>
+
+    <div class="hr"></div>
+    <p style="font-weight:bold;font-size:13px;margin:12px 0 8px;color:#e2e8f0;">🛡️ Tipps</p>
     <div class="muted" style="font-size:12px;line-height:1.6;">
-      ✅ Immer zuerst <b>Quarantäne</b> nutzen statt direkt zu löschen<br>
-      ✅ Nach dem Aufräumen das Spiel <b>testen</b> bevor du Quarantäne-Dateien endgültig löschst<br>
-      ✅ Im Zweifel: <b>lieber behalten!</b> — doppelte CAS-Teile (Haare, Kleidung) sind harmlos<br>
-      ✅ <b>💤 Harmlose</b> und <b>✅ Gewollte</b> Konflikte kannst du bedenkenlos ignorieren<br>
-      ⚠️ <b>Script-Mods</b> (.ts4script) sind nach Patches am problematischsten — bei Problemen zuerst die deaktivieren<br>
-      ⚠️ <b>⚠️ Kritische Konflikte</b> bei Tuning-Mods können zu Abstürzen führen — da konsequent aufräumen
+      ✅ Immer <b>Quarantäne</b> statt direkt löschen · ✅ Nach Aufräumen <b>Spiel testen</b><br>
+      ✅ Im Zweifel <b>behalten</b> — doppelte CAS-Teile sind harmlos<br>
+      ⚠️ <b>Script-Mods</b> nach Patches zuerst deaktivieren · ⚠️ <b>Kritische Konflikte</b> konsequent aufräumen
     </div>
   </div>
 </div>
@@ -823,11 +880,11 @@ def build_html_page() -> str:
   </div>
 </div>
 
-<div class="box notice" data-tab="tools">
+<div class="box notice" data-tab="import">
   <b>🛡️ Sicherheitshinweis:</b> Nutze immer <b>📦 Quarantäne</b> statt Löschen! Quarantäne = Dateien werden nur verschoben, du kannst sie jederzeit zurückholen. <b>🗑 Löschen</b> ist endgültig und nicht rückgängig zu machen!
 </div>
 
-<div class="box" id="import-section" data-tab="tools" style="border:1px solid #2563eb;background:linear-gradient(135deg,#0f172a 60%,#1e1b4b);">
+<div class="box" id="import-section" data-tab="import" style="border:1px solid #2563eb;background:linear-gradient(135deg,#0f172a 60%,#1e1b4b);">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📥 Mod-Import-Manager</h2>
   </div>
@@ -862,8 +919,8 @@ def build_html_page() -> str:
   <div id="import-results" style="margin-top:8px;"></div>
 </div>
 
-<div id="last" class="muted" data-tab="tools">Letzte Aktion: –</div>
-<div id="watcher-banner" data-tab="tools" style="display:none;padding:8px 16px;margin:4px 0;border-radius:8px;background:linear-gradient(90deg,#1e3a5f,#1e293b);border:1px solid #334155;color:#94a3b8;font-size:0.95em;display:flex;align-items:center;gap:8px;" class="muted small">
+<div id="last" class="muted" data-tab="batch">Letzte Aktion: –</div>
+<div id="watcher-banner" data-tab="dashboard" style="display:none;padding:8px 16px;margin:4px 0;border-radius:8px;background:linear-gradient(90deg,#1e3a5f,#1e293b);border:1px solid #334155;color:#94a3b8;font-size:0.95em;display:flex;align-items:center;gap:8px;" class="muted small">
   <span id="watcher-dot" style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:watcherPulse 2s ease-in-out infinite;"></span>
   <span>👁️ Datei-Watcher aktiv — <span id="watcher-files">0</span> Dateien überwacht</span>
   <span id="watcher-event" style="margin-left:auto;opacity:0.7;"></span>
@@ -872,12 +929,13 @@ def build_html_page() -> str:
 @keyframes watcherPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 </style>
 
-<div class="box" id="batchbar" data-tab="tools">
+<div class="box" id="batchbar" data-tab="batch">
   <div class="flex" style="justify-content:space-between;">
     <div>
       <b>📋 Sammel-Aktionen</b>
       <span class="pill" id="selcount">0 ausgewählt</span><br>
       <span class="muted small">Hier kannst du alle Dateien, bei denen du ein <b>Häkchen ☑️</b> gesetzt hast, auf einmal verarbeiten.</span><br>
+      <span class="muted small" style="color:#86efac;">🛡️ <b>Tipp:</b> Nutze immer <b>📦 Quarantäne</b> statt Löschen! Quarantäne kannst du jederzeit rückgängig machen.</span><br>
       <span class="muted small" style="opacity:0.6;">Log-Datei: <code id="logfile"></code></span>
     </div>
     <div class="flex">
@@ -892,7 +950,7 @@ def build_html_page() -> str:
   <div id="batchstatus" class="muted small">Bereit.</div>
 </div>
 
-<div class="box" id="log-section" data-tab="tools">
+<div class="box" id="log-section" data-tab="log">
   <div class="flex" style="justify-content:space-between;">
     <div>
       <b>Aktionen-Log</b> <span class="pill">wird im Browser gespeichert</span>
@@ -979,7 +1037,7 @@ def build_html_page() -> str:
 </div>
 </div>
 
-<div class="box" id="corrupt-section" data-tab="duplicates" style="display:none;">
+<div class="box" id="corrupt-section" data-tab="corrupt">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>⚠️ Korrupte / Verdächtige .package-Dateien</h2>
   </div>
@@ -988,7 +1046,7 @@ def build_html_page() -> str:
   <div id="corrupt-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="addon-section" data-tab="duplicates" style="display:none;">
+<div class="box" id="addon-section" data-tab="addons">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🧩 Addon-Beziehungen (erwartet)</h2>
   </div>
@@ -1003,7 +1061,7 @@ def build_html_page() -> str:
   <div id="addon-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="contained-section" data-tab="duplicates" style="display:none;">
+<div class="box" id="contained-section" data-tab="contained">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📦 Enthaltene Mods (Redundant)</h2>
   </div>
@@ -1018,7 +1076,7 @@ def build_html_page() -> str:
   <div id="contained-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="conflict-section" data-tab="duplicates" style="display:none;">
+<div class="box" id="conflict-section" data-tab="conflicts">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🔀 Ressource-Konflikte (Doppelte Mod-IDs)</h2>
   </div>
@@ -1033,7 +1091,7 @@ def build_html_page() -> str:
   <div id="conflict-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="outdated-section" data-tab="analysis" style="display:none;">
+<div class="box" id="outdated-section" data-tab="outdated">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>⏰ Veraltete Mods</h2>
     <span class="muted small" id="outdated-game-ver"></span>
@@ -1053,7 +1111,7 @@ def build_html_page() -> str:
   <div id="outdated-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="deps-section" data-tab="analysis" style="display:none;">
+<div class="box" id="deps-section" data-tab="deps">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🔗 Mod-Abhängigkeiten</h2>
     <span class="muted small" id="deps-summary"></span>
@@ -1069,7 +1127,7 @@ def build_html_page() -> str:
   <div id="deps-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="error-section" data-tab="analysis">
+<div class="box" id="error-section" data-tab="errors">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🔍 Fehler-Analyse</h2>
     <button class="btn btn-ghost" id="btn_reload_errors">↻ Fehler neu laden</button>
@@ -1126,7 +1184,7 @@ def build_html_page() -> str:
   <p class="muted" style="max-width:500px;margin:0 auto;">Keine Duplikate, keine korrupten Dateien, keine Konflikte gefunden. Deine Mod-Sammlung ist aufgeräumt!</p>
 </div>
 
-<div class="box" id="stats-section" data-tab="overview">
+<div class="box" id="stats-section" data-tab="stats">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📊 Mod-Statistiken</h2>
     <button class="btn btn-ghost" id="btn_export_modlist" title="Exportiere komplette Mod-Liste als CSV-Datei">📥 Mod-Liste exportieren</button>
@@ -1155,7 +1213,7 @@ def build_html_page() -> str:
 </div>
 
 <!-- CC-Galerie -->
-<div class="box" id="gallery-section" data-tab="traycc" style="display:none;">
+<div class="box" id="gallery-section" data-tab="gallery">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🖼️ CC-Galerie</h2>
     <span class="muted small" id="gallery-summary"></span>
@@ -1188,7 +1246,7 @@ def build_html_page() -> str:
 </div>
 
 <!-- ═══ SAVEGAME-ANALYSE SECTION ═══ -->
-<div class="box" id="savegame-section" data-tab="traycc">
+<div class="box" id="savegame-section" data-tab="savegames">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>💾 Savegame-Analyse — Sims in deinem Spielstand</h2>
     <div style="display:flex;gap:6px;align-items:center;">
@@ -1243,7 +1301,7 @@ def build_html_page() -> str:
 </div>
 
 <!-- ═══ BIBLIOTHEK SECTION ═══ -->
-<div class="box" id="library-section" data-tab="traycc">
+<div class="box" id="library-section" data-tab="savegames">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📚 Bibliothek — Gespeicherte Haushalte im Tray</h2>
     <div style="display:flex;gap:6px;align-items:center;">
@@ -1283,7 +1341,7 @@ def build_html_page() -> str:
 </div>
 
 <!-- ═══ TRAY-ANALYSE SECTION (Backup — Details zu CC in Grundstücken & Räumen) ═══ -->
-<div class="box" id="tray-section" data-tab="traycc">
+<div class="box" id="tray-section" data-tab="tray">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🎭 Tray-Analyse — CC in Grundstücken & Räumen</h2>
     <div>
@@ -1318,7 +1376,7 @@ def build_html_page() -> str:
   <div id="tray-most-used" style="display:none; margin-top:20px;"></div>
 </div>
 
-<div class="box" id="creators-section" data-tab="overview">
+<div class="box" id="creators-section" data-tab="creators">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🔗 Mod-Creator & Download-Links</h2>
     <button class="btn btn-ghost" id="btn_toggle_creator_form" title="Neuen Creator/Download-Link hinzufügen">➕ Creator hinzufügen</button>
@@ -1356,7 +1414,7 @@ def build_html_page() -> str:
   <div id="creators-list" style="margin-top:12px;"></div>
 </div>
 
-<div class="box" id="allmods-section" data-tab="overview">
+<div class="box" id="allmods-section" data-tab="allmods">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🏷️ Alle Mods — Tags &amp; Notizen</h2>
     <div class="flex" style="gap:6px;">
@@ -1380,7 +1438,7 @@ def build_html_page() -> str:
   </div>
 </div>
 
-<div class="box" id="nonmod-section" data-tab="overview" style="display:none;">
+<div class="box" id="nonmod-section" data-tab="allmods" style="display:none;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📄 Sonstige Dateien im Mods-Ordner</h2>
     <span class="muted" id="nonmod-summary">Warte auf Scan…</span>
@@ -1389,7 +1447,7 @@ def build_html_page() -> str:
   <div id="nonmod-list" style="margin-top:8px;"></div>
 </div>
 
-<div class="box" id="quarantine-section" data-tab="tools" style="display:none;">
+<div class="box" id="quarantine-section" data-tab="quarantine" style="display:none;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📦 Quarantäne-Manager</h2>
     <button class="btn btn-ghost" id="btn_reload_quarantine">↻ Aktualisieren</button>
@@ -1402,14 +1460,14 @@ def build_html_page() -> str:
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ CACHE-CLEANER ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="cache-cleaner-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="cache-cleaner-section" data-tab="cache" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🧹 Cache-Cleaner</h2>
     <button class="btn btn-ghost" onclick="loadCacheInfo()">↻ Aktualisieren</button>
   </div>
-  <div class="info-hint">💡 <b>Was ist das?</b> Caches können mit der Zeit groß werden und Probleme verursachen. Das Spiel erstellt sie beim nächsten Start automatisch neu. <b>Schließe das Spiel vor dem Bereinigen!</b></div>
+  <div class="info-hint">💡 <b>Was ist das?</b> Sims 4 speichert Bilder und Daten in Cache-Dateien um schneller zu laden. Diese können mit der Zeit <b>sehr groß werden</b> (mehrere GB!) und sogar <b>Probleme verursachen</b> (z.B. lange Ladezeiten, schwarze Thumbnails).<br><b>Keine Sorge:</b> Das Spiel erstellt alle Caches beim nächsten Start automatisch neu. <b>⚠️ Schließe das Spiel vor dem Bereinigen!</b></div>
   <div id="cache-list" style="margin-top:12px;">
-    <div class="muted">Klicke ↻ um Cache-Infos zu laden…</div>
+    <div class="muted">⏳ Cache-Infos werden geladen…</div>
   </div>
   <div id="cache-actions" style="margin-top:12px; display:none;">
     <button class="btn btn-ok" onclick="cleanSelectedCaches()">🧹 Ausgewählte bereinigen</button>
@@ -1421,11 +1479,11 @@ def build_html_page() -> str:
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ MOD-BACKUP ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="backup-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="backup-section" data-tab="backup" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>💾 Mod-Backup</h2>
   </div>
-  <div class="info-hint">💡 Erstellt ein ZIP-Backup aller Mods (.package, .ts4script, .cfg, .ini) im Unterordner <code>ModBackups</code>.</div>
+  <div class="info-hint">💡 <b>Was ist das?</b> Sichert deine <b>komplette Mod-Sammlung</b> als ZIP-Datei. Falls beim Aufräumen mal etwas schiefgeht, kannst du alles aus dem Backup wiederherstellen. Die ZIP-Datei wird im Unterordner <code>ModBackups</code> deines Sims 4 Ordners gespeichert.</div>
   <div style="margin-top:12px;">
     <button class="btn btn-ok" id="btn-create-backup" onclick="createModBackup()">💾 Backup erstellen</button>
     <span id="backup-status" class="muted small" style="margin-left:12px;"></span>
@@ -1435,56 +1493,59 @@ def build_html_page() -> str:
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ TRAY-CLEANER ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="tray-cleaner-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="tray-cleaner-section" data-tab="trayclean" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🗂️ Tray-Cleaner</h2>
     <button class="btn btn-ghost" onclick="scanTrayOrphans()">🔍 Verwaiste Dateien suchen</button>
   </div>
-  <div class="info-hint">💡 Findet verwaiste Tray-Dateien (Hausdaten, Blueprints etc. ohne zugehöriges TrayItem). Diese können bedenkenlos gelöscht werden.</div>
+  <div class="info-hint" style="line-height:1.6;">💡 <b>Was ist der Tray-Ordner?</b> Dort speichert Sims 4 deine erstellten Sims, Häuser und Zimmer (alles was du in der Galerie/Bibliothek siehst).<br><br><b>Was macht der Tray-Cleaner?</b> Wenn du einen Sim oder ein Haus löschst, bleiben manchmal Reste übrig — Bilddaten, Raumpläne oder Blueprints ohne zugehörigen Eintrag. Das sind <b>"verwaiste Dateien"</b> — sie machen nichts kaputt, belegen aber Speicherplatz.<br><br>✅ <b>Verwaiste Dateien können bedenkenlos gelöscht werden.</b> Deine gespeicherten Sims und Häuser werden dadurch <b>nicht</b> gelöscht — nur der Datenmüll.</div>
   <div id="tray-clean-result" style="margin-top:12px;">
-    <div class="muted">Klicke 🔍 um verwaiste Dateien zu suchen…</div>
+    <div class="muted">⏳ Wird automatisch gesucht…</div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ SCRIPT-SICHERHEITSCHECK ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="script-security-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="script-security-section" data-tab="scriptcheck" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>🛡️ Script-Sicherheitscheck</h2>
     <button class="btn btn-ghost" onclick="runScriptSecurityCheck()">🔍 Scripts prüfen</button>
   </div>
-  <div class="info-hint">💡 Analysiert alle <code>.ts4script</code>-Dateien auf verdächtige Muster (Netzwerk-Zugriff, Datei-Löschung, eval etc.). <b>Nicht jeder Fund ist schädlich</b> — aber du solltest die Ergebnisse prüfen.</div>
+  <div class="info-hint" style="line-height:1.6;">💡 <b>Was sind Script-Mods?</b> Manche Mods enthalten Python-Scripts (<code>.ts4script</code>-Dateien) die dem Spiel neue Funktionen geben (z.B. MCCC, WickedWhims).<br><br><b>Was prüft der Check?</b> Er schaut ob in den Scripts bestimmte Befehle vorkommen, die <b>theoretisch</b> riskant sein könnten — z.B. Internet-Zugriff, Datei-Löschung oder Zugriff auf dein System.<br><br>⚠️ <b>Wichtig: Ein Fund heißt NICHT dass der Mod gefährlich ist!</b> Die meisten bekannten Mods (MCCC, WickedWhims, etc.) brauchen solche Funktionen um zu arbeiten. Verdächtig ist vor allem ein <b>unbekannter</b> Mod der z.B. auf das Internet zugreift oder Dateien löscht.</div>
   <div id="script-security-result" style="margin-top:12px;">
-    <div class="muted">Klicke 🔍 um Scripts zu prüfen…</div>
+    <div class="muted">⏳ Wird automatisch geprüft…</div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ BROKEN CC FINDER ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="broken-cc-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="broken-cc-section" data-tab="cccheck" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
-    <h2>🔨 Kaputte CC finden</h2>
-    <button class="btn btn-ghost" onclick="findBrokenCC()">🔍 Packages prüfen</button>
+    <h2>� CC-Gesundheitscheck</h2>
+    <button class="btn btn-ghost" onclick="findBrokenCC()">🔍 Jetzt prüfen</button>
   </div>
-  <div class="info-hint">💡 Durchsucht alle .package-Dateien nach: leere Dateien, ungültiges Format, 0 Ressourcen, CAS-Teile ohne Thumbnails.</div>
+  <div class="info-hint">💡 Prüft alle deine Mod-Dateien auf Probleme. <b>❌ Fehler</b> = Datei ist kaputt, solltest du löschen. <b>⚠️ Hinweis</b> = kosmetisches Problem, Mod funktioniert trotzdem.</div>
   <div id="broken-cc-result" style="margin-top:12px;">
-    <div class="muted">Klicke 🔍 um kaputte CC zu finden…</div>
+    <div class="muted">⏳ Wird automatisch geprüft…</div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ PACKAGE-BROWSER ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="package-browser-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="package-browser-section" data-tab="packages" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📦 Package-Browser</h2>
+    <span class="muted" id="package-browser-count"></span>
   </div>
-  <div class="info-hint">💡 Analysiert eine einzelne .package-Datei und zeigt alle enthaltenen Ressourcen (Typen, Größen, Kompression).</div>
-  <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <input type="text" id="package-browse-path" placeholder="Pfad zur .package-Datei eingeben…" style="flex:1; min-width:300px; padding:8px 12px; background:#0f1115; border:1px solid #334155; border-radius:6px; color:#e7e7e7; font-size:14px;">
-    <button class="btn btn-ok" onclick="browsePackage()">📦 Analysieren</button>
+  <div class="info-hint">💡 Zeigt alle deine Mod-Dateien. Klicke auf eine Datei um zu sehen was drin steckt — z.B. ob es Kleidung, Möbel oder ein Gameplay-Mod ist.</div>
+  <div style="margin-top:12px;">
+    <input type="text" id="package-browse-filter" placeholder="🔍 Package suchen…" oninput="filterPackageList()" style="width:100%; padding:8px 12px; background:#0f1115; border:1px solid #334155; border-radius:6px; color:#e7e7e7; font-size:14px; margin-bottom:8px;">
+    <div id="package-browse-list" style="max-height:300px; overflow-y:auto; border:1px solid #334155; border-radius:6px; background:#0f1115;">
+      <div class="muted" style="padding:12px;">⏳ Wird nach Scan automatisch geladen…</div>
+    </div>
   </div>
   <div id="package-browse-result" style="margin-top:12px;"></div>
 </div>
@@ -1492,25 +1553,25 @@ def build_html_page() -> str:
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ SAVE-GESUNDHEITSCHECK ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="save-health-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="save-health-section" data-tab="savehealth" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>❤️ Save-Gesundheitscheck</h2>
     <button class="btn btn-ghost" onclick="checkSaveHealth()">🩺 Speicherstand prüfen</button>
   </div>
   <div class="info-hint">💡 Analysiert den geladenen Speicherstand auf Probleme: obdachlose Sims, fehlende Namen, doppelte Namen, negative Lebenstage, und mehr. <b>Lade erst den Speicherstand im Tray &amp; CC Tab.</b></div>
   <div id="save-health-result" style="margin-top:12px;">
-    <div class="muted">Klicke 🩺 um den Speicherstand zu prüfen…</div>
+    <div class="muted">⏳ Wird nach Savegame-Analyse automatisch geprüft…</div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════ -->
 <!-- ═══ SPEICHERPLATZ-VISUALISIERUNG ═══ -->
 <!-- ════════════════════════════════════════════════════ -->
-<div class="box" id="disk-usage-section" data-tab="tools" style="border:1px solid #1e3a5f;">
+<div class="box" id="disk-usage-section" data-tab="diskusage" style="border:1px solid #1e3a5f;">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>📊 Speicherplatz-Analyse</h2>
   </div>
-  <div class="info-hint">💡 Zeigt wohin dein Speicherplatz geht — aufgeteilt nach Ordnern und Dateitypen. Daten werden aus dem letzten Scan geladen.</div>
+  <div class="info-hint">💡 <b>Was ist das?</b> Zeigt dir genau, <b>wie viel Speicherplatz</b> deine Mods belegen — aufgeteilt nach Ordnern und Dateitypen. So findest du schnell heraus, welche Ordner am größten sind.</div>
   <div id="disk-usage-chart" style="margin-top:12px;">
     <div class="muted">Wird automatisch nach dem Scan angezeigt…</div>
   </div>
@@ -1548,8 +1609,7 @@ let _activeTab = 'dashboard';
 
 // Sections die per data bedingt sichtbar sind (display:none wenn leer)
 const _conditionalSections = new Set([
-  'corrupt-section','addon-section','contained-section','conflict-section','outdated-section',
-  'deps-section','nonmod-section','quarantine-section','gallery-section',
+  'nonmod-section','quarantine-section',
   'progress-section','all-ok-banner','groups-view','perfile-view'
 ]);
 
@@ -2155,10 +2215,10 @@ function renderCorrupt(data) {
   const section = document.getElementById('corrupt-section');
   const list = data.corrupt || [];
   if (list.length === 0) {
-    showConditionalSection('corrupt-section', false);
+    document.getElementById('corrupt-summary').innerHTML = '<span style="color:#22c55e;">✅ Keine korrupten Dateien gefunden.</span>';
+    document.getElementById('corrupt-list').innerHTML = '';
     return;
   }
-  showConditionalSection('corrupt-section', true);
 
   // Zusammenfassung nach Status
   const byStatus = {};
@@ -2192,10 +2252,10 @@ function renderAddons(data) {
   const section = document.getElementById('addon-section');
   const list = data.addon_pairs || [];
   if (list.length === 0) {
-    showConditionalSection('addon-section', false);
+    document.getElementById('addon-summary').innerHTML = '<span class="muted">Keine Addon-Beziehungen erkannt.</span>';
+    document.getElementById('addon-list').innerHTML = '';
     return;
   }
-  showConditionalSection('addon-section', true);
 
   document.getElementById('addon-summary').innerHTML =
     `<span class="addon-ok">✅ ${list.length} Addon-Paar(e)</span> erkannt — diese gehören zusammen und sind kein Problem.`;
@@ -2253,10 +2313,10 @@ function renderAddons(data) {
 function renderContainedIn(data) {
   const list = data.contained_in || [];
   if (list.length === 0) {
-    showConditionalSection('contained-section', false);
+    document.getElementById('contained-summary').innerHTML = '<span style="color:#22c55e;">\u2705 Keine redundanten Mods gefunden.</span>';
+    document.getElementById('contained-list').innerHTML = '';
     return;
   }
-  showConditionalSection('contained-section', true);
 
   const subsets = list.filter(c => !c.is_variant);
   const variants = list.filter(c => c.is_variant);
@@ -2368,10 +2428,10 @@ function renderConflicts(data) {
   const section = document.getElementById('conflict-section');
   const list = data.conflicts || [];
   if (list.length === 0) {
-    showConditionalSection('conflict-section', false);
+    document.getElementById('conflict-summary').innerHTML = '<span style="color:#22c55e;">\u2705 Keine Ressource-Konflikte gefunden.</span>';
+    document.getElementById('conflict-list').innerHTML = '';
     return;
   }
-  showConditionalSection('conflict-section', true);
 
   // Vorab prüfen welche Konflikte zusammengehörige Mods sind (→ "Gewollt")
   const listWithRelated = list.map(c => {
@@ -3310,18 +3370,19 @@ loadCurseForge();
 
 const TUTORIAL_STEPS = [
   {icon:'🎮',title:'Willkommen beim Sims 4 Mod-Scanner!',body:'<b>Schön, dass du da bist!</b> Dieses Tool hilft dir, deine Mods-Sammlung sauber und organisiert zu halten.<br><br>In diesem kurzen Tutorial zeigen wir dir alle wichtigen Funktionen.<br><br><b>💡 Tipp:</b> Du kannst das Tutorial jederzeit über den <b>❓ Tutorial</b>-Button in der Tab-Leiste erneut starten.'},
-  {icon:'🧭',title:'Die Tab-Navigation',body:'Oben findest du die <b>Tab-Leiste</b> mit allen Bereichen. Klicke auf einen Tab um den Bereich zu öffnen:<br><ul><li><b>🏠 Dashboard</b> — Übersicht aller Ergebnisse auf einen Blick</li><li><b>📂 Duplikate</b> — Duplikat-Gruppen, Korrupte, Addons, Konflikte</li><li><b>🔍 Analyse</b> — Veraltete Mods, Abhängigkeiten, Fehler-Logs</li><li><b>🎭 Tray & CC</b> — Sim/Haus-Analyse und CC-Galerie</li><li><b>📊 Übersicht</b> — Statistiken, Creators, Alle Mods</li><li><b>🛠 Werkzeuge</b> — Import, Quarantäne, Batch-Aktionen</li><li><b>📚 Verlauf</b> — Mod-Inventar und Änderungen</li></ul>Die <b>Badges</b> hinter den Tabs zeigen die Anzahl der Funde an.'},
+  {icon:'🧭',title:'Die Tab-Navigation',body:'Oben findest du die <b>Tab-Leiste</b> mit allen Bereichen. Jeder Bereich hat seinen eigenen Tab:<br><ul><li><b>🏠 Dashboard</b> — Übersicht aller Ergebnisse</li><li><b>📂 Duplikate / 💀 Korrupte / 🧩 Addons / 🏷️ Enthaltene / ⚔️ Konflikte</b></li><li><b>⏰ Veraltet / 🔗 Abhängigkeiten / 📋 Fehler</b></li><li><b>🎭 Tray / 🖼️ CC-Galerie / 💾 Savegames</b></li><li><b>📊 Statistik / 👤 Creators / 📁 Alle Mods</b></li><li><b>📥 Import / 🗃️ Quarantäne / ⚡ Batch / 📜 Log</b></li><li><b>🛡️ Script-Check / 🔧 CC-Check / ❤️ Save-Health</b></li><li><b>🗑️ Cache / 🗂️ Tray-Cleaner / 💼 Backup / 📏 Speicherplatz</b></li></ul>Die <b>Badges</b> hinter den Tabs zeigen die Anzahl der Funde an.'},
   {icon:'🏠',title:'Das Dashboard',body:'Das <b>Dashboard</b> ist dein Startpunkt. Hier siehst du auf einen Blick:<br><ul><li>💀 <b>Korrupte Dateien</b> — Sofort entfernen!</li><li>📂 <b>Duplikate</b> — Doppelte Mod-Dateien</li><li>⚔️ <b>Konflikte</b> — Mods die sich überschreiben</li><li>📦 <b>Enthaltene Mods</b> — Mods in Bundles enthalten</li><li>⏰ <b>Veraltete Mods</b> — Vor letztem Patch erstellt</li><li>❌ <b>Fehlende Abhängigkeiten</b> — Mods ohne Voraussetzungen</li></ul>Klicke auf eine <b>Karte</b> um direkt zum passenden Tab zu springen!'},
-  {icon:'📂',title:'Tab: Duplikate',body:'Im Tab <b>📂 Duplikate</b> findest du alles zu doppelten Dateien:<br><ul><li><b>📦 Inhalt-Duplikate</b> — 100% identische Kopien</li><li><b>📛 Name-Duplikate</b> — Gleicher Name, verschiedene Ordner</li><li><b>🔤 Ähnliche Namen</b> — Wahrscheinlich verschiedene Versionen</li></ul>Außerdem findest du hier:<br><ul><li><b>💀 Korrupte Dateien</b> — Beschädigte .package-Dateien</li><li><b>🧩 Addons</b> — Zusammengehörige Mods (kein Handlungsbedarf)</li><li><b>📦 Enthaltene Mods</b> — Ein Mod ist komplett in einem Bundle enthalten</li><li><b>⚔️ Konflikte</b> — Sich überschreibende Mods</li></ul>Setze <b>Häkchen ☑️</b> bei Dateien die du entfernen willst.'},
+  {icon:'📂',title:'Tab: Duplikate',body:'Im Tab <b>📂 Duplikate</b> findest du alles zu doppelten Dateien:<br><ul><li><b>📦 Inhalt-Duplikate</b> — 100% identische Kopien</li><li><b>📛 Name-Duplikate</b> — Gleicher Name, verschiedene Ordner</li><li><b>🔤 Ähnliche Namen</b> — Wahrscheinlich verschiedene Versionen</li></ul>Setze <b>Häkchen ☑️</b> bei Dateien die du entfernen willst.<br><br>Verwandte Tabs: <b>💀 Korrupte</b>, <b>🧩 Addons</b>, <b>🏷️ Enthaltene</b>, <b>⚔️ Konflikte</b> — jeweils mit eigenem Tab!'},
   {icon:'⚔️',title:'Konflikte & Schweregrade',body:'Konflikte werden nach <b>Schweregrad</b> farblich markiert:<br><br><span style="background:#ef4444;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚠️ Kritisch</span> <span style="color:#ef4444;">3+ Tuning-Ressourcen</span> — Kann Gameplay-Fehler verursachen, aufräumen!<br><br><span style="background:#fbbf24;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚡ Mittel</span> <span style="color:#fbbf24;">CAS/Sim-Data betroffen</span> — Könnte Darstellungsfehler verursachen<br><br><span style="background:#22c55e;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Niedrig</span> <span style="color:#22c55e;">Nur Texturen/Meshes</span> — Meistens gewollt, behalten<br><br><span style="background:#94a3b8;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">💤 Harmlos</span> <span style="color:#94a3b8;">1-2 geteilte Keys</span> — Mods teilen einzelne Assets, kein Problem<br><br><span style="background:#60a5fa;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Gewollt</span> <span style="color:#60a5fa;">Zusammengehörige Dateien</span> — Gleicher Mod, behalten!'},
-  {icon:'🔍',title:'Tab: Analyse',body:'Der Tab <b>🔍 Analyse</b> zeigt dir die Gesundheit deiner Mods:<br><ul><li><b>⏰ Veraltete Mods</b> — Vor dem letzten Spiel-Patch erstellt, könnten Probleme machen</li><li><b>🔗 Abhängigkeiten</b> — Welche Mods andere Mods brauchen</li><li><b>📋 Fehler-Analyse</b> — Ausgewertete Fehlerlogs (lastException.txt)</li></ul>Hier erkennst du auf einen Blick, welche Mods Probleme verursachen könnten!'},
-  {icon:'🎭',title:'Tab: Tray & CC',body:'Der Tab <b>🎭 Tray & CC</b> analysiert deine gespeicherten Inhalte:<br><ul><li><b>Tray-Analyse</b> — Welche Mods deine Sims und Häuser brauchen</li><li><b>CC-Galerie</b> — Alle Custom Content Vorschaubilder in einer Galerie</li></ul>⚠️ Wenn du einen Mod löschen willst, der von einem gespeicherten Sim benutzt wird, wirst du <b>gewarnt</b>!'},
-  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen dir Aktionen zur Verfügung:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li><li><b>🗑️ Löschen</b> — Löscht die Datei endgültig</li><li><b>📂 Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Tipp:</b> Nutze immer Quarantäne statt Löschen! Im Tab <b>🛠 Werkzeuge</b> findest du die Quarantäne-Verwaltung zum Wiederherstellen.'},
-  {icon:'🛠',title:'Tab: Werkzeuge',body:'Im Tab <b>🛠 Werkzeuge</b> findest du praktische Helfer:<br><ul><li><b>📥 Import-Manager</b> — Neue Mods sicher importieren</li><li><b>📦 Quarantäne</b> — Verschobene Dateien verwalten/wiederherstellen</li><li><b>🎛️ Batch-Aktionen</b> — Alle markierten Dateien auf einmal verarbeiten</li><li><b>📋 Log</b> — Alle durchgeführten Aktionen nachverfolgen</li></ul>Über die <b>Checkboxen</b> bei jeder Datei und dann <b>Batch-Quarantäne</b> kannst du schnell aufräumen.'},
+  {icon:'⏰',title:'Analyse-Tabs',body:'Die Analyse deiner Mods ist auf eigene Tabs aufgeteilt:<br><ul><li><b>⏰ Veraltet</b> — Mods die vor dem letzten Spiel-Patch erstellt wurden</li><li><b>🔗 Abhängigkeiten</b> — Welche Mods andere Mods brauchen</li><li><b>📋 Fehler</b> — Ausgewertete Fehlerlogs (lastException.txt)</li></ul>Hier erkennst du auf einen Blick, welche Mods Probleme verursachen könnten!'},
+  {icon:'🎭',title:'Tray, Galerie & Savegames',body:'Deine gespeicherten Inhalte haben eigene Tabs:<br><ul><li><b>🎭 Tray</b> — Welche Mods deine Sims und Häuser brauchen</li><li><b>🖼️ CC-Galerie</b> — Alle Custom Content Vorschaubilder</li><li><b>💾 Savegames</b> — Spielstand-Analyse</li></ul>⚠️ Wenn du einen Mod löschen willst, der von einem gespeicherten Sim benutzt wird, wirst du <b>gewarnt</b>!'},
+  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen dir Aktionen zur Verfügung:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li><li><b>🗑️ Löschen</b> — Löscht die Datei endgültig</li><li><b>📂 Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Tipp:</b> Nutze immer Quarantäne statt Löschen! Im Tab <b>🗃️ Quarantäne</b> kannst du Dateien wiederherstellen.'},
+  {icon:'🛠',title:'Werkzeug-Tabs',body:'Praktische Helfer haben eigene Tabs:<br><ul><li><b>📥 Import</b> — Neue Mods sicher importieren</li><li><b>🗃️ Quarantäne</b> — Verschobene Dateien verwalten/wiederherstellen</li><li><b>⚡ Batch</b> — Alle markierten Dateien auf einmal verarbeiten</li><li><b>📜 Log</b> — Alle durchgeführten Aktionen nachverfolgen</li></ul>Über die <b>Checkboxen</b> bei jeder Datei und dann <b>Batch-Quarantäne</b> kannst du schnell aufräumen.'},
   {icon:'🔎',title:'Globale Suche',body:'Die <b>Globale Suche</b> unterhalb der Tab-Leiste durchsucht <b>ALLES</b> auf einmal:<br><ul><li>Dateinamen und Pfade</li><li>Notizen und Tags</li><li>Creator-Informationen</li><li>CurseForge-Daten</li></ul>Einfach eintippen — die Ergebnisse erscheinen sofort!'},
   {icon:'🏷️',title:'Notizen & Tags',body:'Du kannst zu jeder Mod <b>persönliche Notizen</b> und <b>Tags</b> hinzufügen:<br><br><b>📝 Notizen</b> — Freitext, z.B. "Funktioniert super mit XY Mod"<br><b>🏷️ Tags</b> — Kategorie-Labels wie "Favorit", "Testen", "Behalten"<br><br>Alles wird gespeichert und überlebt Rescans! Nutze Tags um deine Mods zu organisieren.'},
-  {icon:'📚',title:'Tab: Verlauf & Übersicht',body:'<b>📚 Verlauf:</b><br><ul><li><b>📸 Mod-Snapshot</b> — Ein Foto deiner Mod-Sammlung bei jedem Scan</li><li><b>📋 Scan-Historie</b> — Alle Aktionen nachvollziehen</li></ul><b>📊 Übersicht:</b><br><ul><li><b>Statistiken</b> — Gesamtzahlen und Analyse</li><li><b>Creators</b> — Mod-Ersteller verwalten</li><li><b>Alle Mods</b> — Komplette Liste durchsuchen</li></ul>'},
-  {icon:'🎉',title:'Fertig! Viel Spaß!',body:'Du kennst jetzt alle <b>wichtigen Funktionen</b>!<br><br><b>Noch ein paar Tipps:</b><ul><li>Der <b>🔄 Auto-Watcher</b> erkennt Änderungen automatisch</li><li>Erstelle <b>Creator-Verknüpfungen</b> unter 📊 Übersicht</li><li>Nutze den <b>📥 Import-Manager</b> unter 🛠 Werkzeuge</li><li>Schau regelmäßig im Tab <b>🔍 Analyse</b> nach Problemen</li></ul><b>🎮 Happy Simming!</b>'}
+  {icon:'🛡️',title:'Sicherheit & Pflege',body:'Für die Pflege deiner Mods gibt es eigene Tabs:<br><ul><li><b>🛡️ Script-Check</b> — Prüft Scripts auf Sicherheitsrisiken</li><li><b>🔧 CC-Check</b> — Findet kaputtes Custom Content</li><li><b>❤️ Save-Health</b> — Prüft Spielstand-Gesundheit</li><li><b>🗑️ Cache</b> — Cache-Dateien bereinigen</li><li><b>🗂️ Tray-Cleaner</b> — Verwaiste Tray-Dateien aufräumen</li><li><b>💼 Backup</b> — Mods-Ordner sichern</li><li><b>📏 Speicherplatz</b> — Speicherverbrauch analysieren</li></ul>'},
+  {icon:'📚',title:'Verlauf & Statistik',body:'<b>📚 Verlauf:</b><br><ul><li><b>📸 Mod-Snapshot</b> — Ein Foto deiner Mod-Sammlung bei jedem Scan</li><li><b>📋 Scan-Historie</b> — Alle Aktionen nachvollziehen</li></ul><b>📊 Statistik / 👤 Creators / 📁 Alle Mods:</b><br><ul><li>Gesamtzahlen und Analyse</li><li>Mod-Ersteller verwalten</li><li>Komplette Liste durchsuchen</li></ul>'},
+  {icon:'🎉',title:'Fertig! Viel Spaß!',body:'Du kennst jetzt alle <b>wichtigen Funktionen</b>!<br><br><b>Noch ein paar Tipps:</b><ul><li>Der <b>🔄 Auto-Watcher</b> erkennt Änderungen automatisch</li><li>Erstelle <b>Creator-Verknüpfungen</b> unter <b>👤 Creators</b></li><li>Nutze den <b>📥 Import</b>-Tab für neue Mods</li><li>Schau regelmäßig bei <b>⏰ Veraltet</b> und <b>🔗 Abhängigkeiten</b> nach Problemen</li></ul><b>🎮 Happy Simming!</b>'}
 ];
 
 let tutorialStep = 0;
@@ -3486,16 +3547,97 @@ function checkAllOK(data) {
   const groups = (s.groups_name||0) + (s.groups_content||0) + (s.groups_similar||0);
   const hasProblems = groups > 0 || s.corrupt_count > 0 || s.conflict_count > 0 || (s.missing_dep_count||0) > 0;
   showConditionalSection('all-ok-banner', !hasProblems);
+  renderHealthScore(data);
+}
+
+function renderHealthScore(data) {
+  const el = document.getElementById('dash-health-score');
+  if (!el) return;
+  const s = data.summary || {};
+  const total = s.total_files || 0;
+  if (total === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  const corrupt = s.corrupt_count || 0;
+  const dupes = (s.groups_content||0);
+  const conflicts = s.conflict_count || 0;
+  const outdated = s.outdated_count || 0;
+  const missingDeps = s.missing_dep_count || 0;
+  const contained = s.contained_count || 0;
+
+  // Score berechnen (100 = perfekt)
+  let score = 100;
+  // Korrupte: -10 pro Datei (sehr schlecht)
+  score -= corrupt * 10;
+  // Fehlende Deps: -8 pro Stück
+  score -= missingDeps * 8;
+  // Inhalt-Duplikate: -3 pro Gruppe
+  score -= dupes * 3;
+  // Konflikte: -2 pro Stück
+  score -= conflicts * 2;
+  // Veraltet: -0.5 pro Mod (nicht so schlimm)
+  score -= Math.min(outdated * 0.5, 15);
+  // Enthaltene: -1 pro Stück
+  score -= contained * 1;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  // Farbe und Label
+  let color, emoji, label;
+  if (score >= 90) { color = '#22c55e'; emoji = '🎉'; label = 'Ausgezeichnet!'; }
+  else if (score >= 75) { color = '#4ade80'; emoji = '😊'; label = 'Gut!'; }
+  else if (score >= 60) { color = '#fbbf24'; emoji = '😐'; label = 'Geht so'; }
+  else if (score >= 40) { color = '#f59e0b'; emoji = '😟'; label = 'Solltest du aufräumen'; }
+  else { color = '#ef4444'; emoji = '😱'; label = 'Dringend aufräumen!'; }
+
+  // Ring animieren
+  const ring = document.getElementById('health-ring');
+  const circumference = 2 * Math.PI * 15.9; // ~100
+  ring.style.strokeDasharray = circumference;
+  ring.style.strokeDashoffset = circumference - (score / 100) * circumference;
+  ring.style.stroke = color;
+
+  // Score-Zahl
+  const numEl = document.getElementById('health-score-num');
+  numEl.textContent = score;
+  numEl.style.color = color;
+
+  // Label
+  document.getElementById('health-emoji').textContent = emoji;
+  document.getElementById('health-label').textContent = label;
+  document.getElementById('health-label').style.color = color;
+
+  // Detail-Text
+  const problems = [];
+  if (corrupt > 0) problems.push(`💀 ${corrupt} korrupte Datei(en)`);
+  if (missingDeps > 0) problems.push(`❌ ${missingDeps} fehlende Abhängigkeit(en)`);
+  if (dupes > 0) problems.push(`📂 ${dupes} Inhalt-Duplikat(e)`);
+  if (conflicts > 0) problems.push(`⚔️ ${conflicts} Konflikt(e)`);
+  if (outdated > 0) problems.push(`⏰ ${outdated} veraltete Mod(s)`);
+  if (contained > 0) problems.push(`📦 ${contained} redundante Mod(s)`);
+  const detailEl = document.getElementById('health-detail');
+  if (problems.length === 0) {
+    detailEl.innerHTML = '✅ Keine Probleme gefunden — deine Mod-Sammlung ist sauber!';
+  } else {
+    detailEl.innerHTML = problems.join(' • ');
+  }
+
+  // Mini-Statistiken
+  const miniEl = document.getElementById('health-stats-mini');
+  miniEl.innerHTML = `
+    <div><span style="color:#94a3b8;">📦 Mods:</span> <b>${total}</b></div>
+    <div><span style="color:#94a3b8;">📏 Größe:</span> <b>${esc(s.total_size_h || '?')}</b></div>
+    <div><span style="color:#94a3b8;">🗑️ Verschwendet:</span> <b style="color:#f59e0b;">${esc(s.wasted_h || '0 B')}</b></div>
+    <div><span style="color:#94a3b8;">🔧 Probleme:</span> <b style="color:${score >= 90 ? '#22c55e' : color};">${problems.length}</b></div>
+  `;
 }
 
 function renderDependencies(data) {
   const section = document.getElementById('deps-section');
   const deps = data.dependencies || [];
   if (deps.length === 0) {
-    showConditionalSection('deps-section', false);
+    document.getElementById('deps-list').innerHTML = '<span style="color:#22c55e;">\u2705 Keine fehlenden Abh\u00e4ngigkeiten gefunden.</span>';
     return;
   }
-  showConditionalSection('deps-section', true);
 
   const showMissing = document.getElementById('deps-filter-missing').checked;
   const showImports = document.getElementById('deps-filter-imports').checked;
@@ -3903,18 +4045,30 @@ async function createModBackup() {
 // ═══════════════════════════════════════════════════
 async function scanTrayOrphans() {
   const el = document.getElementById('tray-clean-result');
-  el.innerHTML = '<div class="muted">Suche verwaiste Tray-Dateien…</div>';
+  el.innerHTML = '<div class="muted">🔍 Durchsuche den Tray-Ordner nach verwaisten Dateien…</div>';
   try {
     const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'clean_tray', delete:false})});
     const json = await resp.json();
     if (!json.ok) throw new Error(json.error);
     const orphans = json.orphans || [];
     if (orphans.length === 0) {
-      el.innerHTML = '<div style="color:#22c55e;">✅ Keine verwaisten Tray-Dateien gefunden — alles sauber!</div>';
+      el.innerHTML = `<div style="background:#22c55e15; border:1px solid #22c55e40; border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:24px;">✅</div>
+        <div style="color:#22c55e; font-weight:bold; font-size:16px;">Alles sauber!</div>
+        <div class="muted">Keine verwaisten Tray-Dateien gefunden. Dein Tray-Ordner ist ordentlich!</div>
+      </div>`;
       return;
     }
     const totalMB = (json.orphan_size / 1048576).toFixed(1);
-    let html = `<div style="margin-bottom:8px;"><b>${orphans.length}</b> verwaiste Dateien gefunden (${totalMB} MB)</div>`;
+    let html = `<div style="background:#f59e0b15; border:1px solid #f59e0b40; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:22px;">🗂️</span>
+        <div>
+          <div style="font-weight:bold;color:#fbbf24;"><b>${orphans.length}</b> verwaiste Dateien gefunden (${totalMB} MB)</div>
+          <div class="muted" style="font-size:12px; margin-top:4px;">Das sind Reste von gelöschten Sims, Häusern oder Zimmern. Sie machen nichts kaputt, belegen aber unnötig Speicherplatz. Du kannst sie bedenkenlos löschen.</div>
+        </div>
+      </div>
+    </div>`;
     html += '<div style="max-height:200px;overflow-y:auto;border:1px solid #334155;border-radius:6px;padding:8px;background:#0f172a;">';
     for (const o of orphans.slice(0, 100)) {
       const sz = (o.size / 1024).toFixed(0);
@@ -3922,7 +4076,10 @@ async function scanTrayOrphans() {
     }
     if (orphans.length > 100) html += `<div class="muted small">…und ${orphans.length - 100} weitere</div>`;
     html += '</div>';
-    html += `<div style="margin-top:8px;"><button class="btn btn-danger" onclick="deleteTrayOrphans()">🗑 ${orphans.length} verwaiste Dateien löschen</button></div>`;
+    html += `<div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+      <button class="btn btn-danger" onclick="deleteTrayOrphans()">🗑 ${orphans.length} verwaiste Dateien löschen (${totalMB} MB freigeben)</button>
+      <span class="muted" style="font-size:11px;">Deine gespeicherten Sims & Häuser bleiben erhalten!</span>
+    </div>`;
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
@@ -3946,6 +4103,40 @@ async function deleteTrayOrphans() {
 // ═══════════════════════════════════════════════════
 // ═══ SCRIPT-SICHERHEITSCHECK ═══
 // ═══════════════════════════════════════════════════
+// Script-Check: Erklärungen und Gefährdungsstufen für jedes Muster
+const _scriptPatternInfo = {
+  'os.remove':      {severity:'low', icon:'📁', label:'Kann Dateien löschen', explain:'Der Mod kann einzelne Dateien von deinem PC löschen. Normale Mods machen das z.B. um eigene Temp-Dateien aufzuräumen.', tip:'Bei bekannten Mods (MCCC etc.) normal. Bei unbekannten Mods vorsichtig sein.'},
+  'os.unlink':      {severity:'low', icon:'📁', label:'Kann Dateien löschen', explain:'Wie os.remove — löscht einzelne Dateien.', tip:'Meistens harmlos, wird für eigene Cache-Dateien verwendet.'},
+  'shutil.rmtree':  {severity:'medium', icon:'📂', label:'Kann ganze Ordner löschen', explain:'Der Mod kann komplette Ordner mit allem Inhalt löschen. Das ist mächtiger als einzelne Dateien löschen.', tip:'Sollte nur bei vertrauenswürdigen Mods vorkommen.'},
+  'shutil.move':    {severity:'low', icon:'📂', label:'Kann Dateien verschieben', explain:'Der Mod kann Dateien an andere Orte verschieben.', tip:'Normal — viele Mods organisieren damit ihre eigenen Dateien.'},
+  'subprocess':     {severity:'high', icon:'⚙️', label:'Kann externe Programme starten', explain:'Der Mod kann andere Programme auf deinem PC starten (z.B. einen Browser oder ein Tool).', tip:'Bei unbekannten Mods ein Warnsignal! Bekannte Mods wie MCCC nutzen das aber manchmal.'},
+  'eval(':          {severity:'high', icon:'🔓', label:'Kann beliebigen Code ausführen', explain:'eval() führt Text als Programmcode aus. Das kann theoretisch alles tun.', tip:'In seriösen Mods selten nötig. Bei unbekannten Mods verdächtig.'},
+  'exec(':          {severity:'high', icon:'🔓', label:'Kann beliebigen Code ausführen', explain:'Wie eval() — führt Text als Programmcode aus.', tip:'In seriösen Mods selten nötig. Bei unbekannten Mods verdächtig.'},
+  '__import__':     {severity:'medium', icon:'📦', label:'Lädt Bibliotheken dynamisch', explain:'Der Mod lädt andere Python-Module zur Laufzeit. Das ist eine fortgeschrittene Technik.', tip:'Kommt in größeren Mods wie MCCC vor. Bei kleinen unbekannten Mods ungewöhnlich.'},
+  'ctypes':         {severity:'high', icon:'🖥️', label:'Zugriff auf System-Funktionen', explain:'Der Mod greift direkt auf Windows/System-Funktionen zu. Das umgeht die normalen Sicherheitsebenen.', tip:'Nur bei sehr bekannten und vertrauenswürdigen Mods akzeptabel.'},
+  'socket':         {severity:'medium', icon:'🌐', label:'Netzwerk-Verbindung', explain:'Der Mod kann sich mit dem Internet oder anderen Computern verbinden.', tip:'Mods wie MCCC nutzen das für Update-Checks. Bei unbekannten Mods prüfen wozu.'},
+  'urllib':         {severity:'medium', icon:'🌐', label:'Lädt Daten aus dem Internet', explain:'Der Mod kann Dateien oder Daten aus dem Internet herunterladen.', tip:'Wird für Update-Checks und Online-Funktionen genutzt. Normal bei bekannten Mods.'},
+  'requests':       {severity:'medium', icon:'🌐', label:'Lädt Daten aus dem Internet', explain:'Wie urllib — kann Daten aus dem Internet laden oder senden.', tip:'Wird für Update-Checks verwendet. Bei bekannten Mods kein Problem.'},
+  'keylog':         {severity:'critical', icon:'🚨', label:'Mögliche Tastatur-Überwachung', explain:'Das Wort \"keylog\" deutet auf Tastatur-Aufzeichnung hin. Das ist ein starkes Warnsignal!', tip:'SOFORT LÖSCHEN wenn du den Mod nicht kennst! Seriöse Mods machen sowas nie.'},
+  'winreg':         {severity:'high', icon:'🖥️', label:'Windows-Registry-Zugriff', explain:'Der Mod kann Windows-Einstellungen (Registry) lesen oder ändern.', tip:'Sollte in Sims-Mods nicht vorkommen. Bei unbekannten Mods verdächtig.'},
+  'cryptograph':    {severity:'medium', icon:'🔐', label:'Verschlüsselung', explain:'Der Mod nutzt Verschlüsselungsfunktionen. Kann harmlos sein (z.B. für sichere Verbindungen) oder auf verschleierte Aktivitäten hindeuten.', tip:'Bei bekannten Mods meist für HTTPS-Verbindungen. Bei unbekannten Mods prüfen.'},
+  'UNLESBAR':       {severity:'high', icon:'❌', label:'Script kann nicht gelesen werden', explain:'Das Script-Archiv ist beschädigt oder in einem unbekannten Format.', tip:'Neu herunterladen oder löschen.'},
+};
+
+function _getScriptSeverity(findings) {
+  const levels = {critical:4, high:3, medium:2, low:1};
+  let max = 0;
+  for (const f of findings) {
+    const info = _scriptPatternInfo[f.pattern] || {};
+    const lvl = levels[info.severity] || 1;
+    if (lvl > max) max = lvl;
+  }
+  if (max >= 4) return {label:'Kritisch', color:'#ef4444', bg:'#7f1d1d', icon:'🚨', border:'#ef4444'};
+  if (max >= 3) return {label:'Hoch', color:'#f59e0b', bg:'#92400e', icon:'⚠️', border:'#f59e0b'};
+  if (max >= 2) return {label:'Mittel', color:'#60a5fa', bg:'#1e3a5f', icon:'ℹ️', border:'#3b82f6'};
+  return {label:'Niedrig', color:'#22c55e', bg:'#14532d', icon:'✅', border:'#22c55e'};
+}
+
 async function runScriptSecurityCheck() {
   const el = document.getElementById('script-security-result');
   el.innerHTML = '<div class="muted">⏳ Analysiere Scripts… (kann bei vielen Mods dauern)</div>';
@@ -3954,23 +4145,101 @@ async function runScriptSecurityCheck() {
     const json = await resp.json();
     if (!json.ok) throw new Error(json.error);
     const scripts = json.scripts || [];
+    const totalChecked = (json.suspicious_count || 0) + (json.safe_count || 0);
     if (scripts.length === 0) {
-      el.innerHTML = `<div style="color:#22c55e;">✅ Keine verdächtigen Muster gefunden! (${json.safe_count || 0} Scripts geprüft)</div>`;
+      el.innerHTML = `<div style="background:#22c55e15; border:1px solid #22c55e40; border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:24px;">✅</div>
+        <div style="color:#22c55e; font-weight:bold; font-size:16px;">Alles sicher!</div>
+        <div class="muted">Alle ${totalChecked} Script-Mods wurden geprüft — keine verdächtigen Muster gefunden.</div>
+      </div>`;
       return;
     }
-    let html = `<div style="margin-bottom:8px;">
-      <span style="color:#f59e0b;">⚠️ <b>${json.suspicious_count}</b> Script(s) mit verdächtigen Mustern</span>
-      <span class="muted"> | ${json.safe_count || 0} unauffällig</span>
+
+    // Zusammenfassung mit Erklärung
+    let html = `<div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px 16px; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:18px;">🛡️</span>
+        <div>
+          <div><b>${totalChecked}</b> Scripts geprüft — <b style="color:#f59e0b;">${json.suspicious_count}</b> mit Funden, <b style="color:#22c55e;">${json.safe_count || 0}</b> unauffällig</div>
+          <div class="muted" style="font-size:12px; margin-top:4px;">Funde bedeuten <b>nicht</b> dass ein Mod gefährlich ist! Bekannte Mods wie MCCC oder WickedWhims haben immer Funde weil sie fortgeschrittene Funktionen nutzen.</div>
+        </div>
+      </div>
     </div>`;
+
+    // Legende
+    html += `<div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; font-size:11px;">
+      <span style="background:#7f1d1d;color:#ef4444;padding:2px 8px;border-radius:6px;">🚨 Kritisch = Sofort prüfen!</span>
+      <span style="background:#92400e;color:#f59e0b;padding:2px 8px;border-radius:6px;">⚠️ Hoch = Bei unbekannten Mods vorsichtig</span>
+      <span style="background:#1e3a5f;color:#60a5fa;padding:2px 8px;border-radius:6px;">ℹ️ Mittel = Normal bei bekannten Mods</span>
+      <span style="background:#14532d;color:#22c55e;padding:2px 8px;border-radius:6px;">✅ Niedrig = Meistens harmlos</span>
+    </div>`;
+
     for (const s of scripts) {
       const sizeKB = (s.size / 1024).toFixed(0);
-      html += `<div style="margin-bottom:8px;padding:8px 12px;background:#0f172a;border:1px solid #92400e;border-radius:8px;">
-        <div style="font-weight:bold;font-size:12px;" title="${esc(s.path)}">${esc(s.name)} <span class="muted">(${sizeKB} KB)</span></div>
-        <div style="margin-top:4px;">`;
-      for (const f of s.findings) {
-        html += `<div style="font-size:11px;padding:2px 0;"><span style="color:#f59e0b;font-family:monospace;">${esc(f.pattern)}</span> <span class="muted">— ${esc(f.desc)}</span> <span style="opacity:0.5;font-size:10px;">in ${esc(f.file)}</span></div>`;
+      const sev = _getScriptSeverity(s.findings);
+      const creator = detectCreator(s.name);
+      const isKnown = !!creator;
+      const knownBadge = isKnown
+        ? `<span style="background:#14532d;color:#22c55e;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:6px;">✅ Bekannter Mod</span>`
+        : `<span style="background:#1e293b;color:#94a3b8;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:6px;">❓ Unbekannter Ersteller</span>`;
+
+      html += `<details style="margin-bottom:8px;padding:0;background:#0f172a;border:1px solid ${sev.border}40;border-left:3px solid ${sev.border};border-radius:8px;">
+        <summary style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;list-style:none;">
+          <span style="background:${sev.bg};color:${sev.color};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">${sev.icon} ${sev.label}</span>
+          <span style="font-weight:bold;font-size:12px;" title="${esc(s.path)}">${esc(s.name)}</span>
+          <span class="muted" style="font-size:11px;">(${sizeKB} KB, ${s.findings.length} Fund${s.findings.length !== 1 ? 'e' : ''})</span>
+          ${knownBadge}
+        </summary>
+        <div style="padding:8px 12px 12px 16px;border-top:1px solid #1e293b;">`;
+
+      if (isKnown) {
+        html += `<div style="background:#14532d40;border:1px solid #22c55e30;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#86efac;">
+          ✅ <b>Bekannter Mod von ${esc(creator.name)}.</b> Die Funde unten sind normal — dieser Mod braucht diese Funktionen um zu arbeiten.</div>`;
+      } else {
+        html += `<div style="background:#92400e40;border:1px solid #f59e0b30;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#fbbf24;">
+          ❓ <b>Unbekannter Mod-Ersteller.</b> Prüfe ob du diesen Mod bewusst installiert hast. Wenn du dir unsicher bist, google nach dem Mod-Namen.</div>`;
       }
-      html += '</div></div>';
+
+      for (const f of s.findings) {
+        const info = _scriptPatternInfo[f.pattern] || {severity:'low', icon:'❓', label:f.desc, explain:'Unbekanntes Muster.', tip:''};
+        const sevColors = {critical:'#ef4444', high:'#f59e0b', medium:'#60a5fa', low:'#22c55e'};
+        const sevColor = sevColors[info.severity] || '#94a3b8';
+        html += `<div style="background:#111827;border:1px solid #1e293b;border-radius:6px;padding:8px 12px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span>${info.icon}</span>
+            <span style="color:${sevColor};font-weight:bold;font-size:12px;">${esc(info.label)}</span>
+            <code style="background:#1e293b;padding:1px 6px;border-radius:3px;font-size:10px;color:#94a3b8;">${esc(f.pattern)}</code>
+            <span class="muted" style="font-size:10px;margin-left:auto;">in ${esc(f.file)}</span>
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-bottom:2px;">📋 ${esc(info.explain)}</div>
+          ${info.tip ? `<div style="font-size:11px;color:#86efac;">💡 ${esc(info.tip)}</div>` : ''}
+        </div>`;
+      }
+
+      // Empfehlung pro Script
+      const sevLevel = {critical:4, high:3, medium:2, low:1};
+      const maxSev = Math.max(...s.findings.map(f => sevLevel[(_scriptPatternInfo[f.pattern]||{}).severity] || 1));
+      let recommendation = '';
+      if (isKnown) {
+        recommendation = '<div style="margin-top:8px;padding:8px 12px;background:#14532d40;border-radius:6px;font-size:12px;color:#86efac;">👍 <b>Empfehlung:</b> Behalten — bekannter und vertrauenswürdiger Mod.</div>';
+      } else if (maxSev >= 4) {
+        recommendation = '<div style="margin-top:8px;padding:8px 12px;background:#7f1d1d;border-radius:6px;font-size:12px;color:#fca5a5;">🚨 <b>Empfehlung:</b> Diesen Mod sofort löschen oder in Quarantäne verschieben, wenn du ihn nicht bewusst installiert hast!</div>';
+      } else if (maxSev >= 3) {
+        recommendation = '<div style="margin-top:8px;padding:8px 12px;background:#92400e40;border-radius:6px;font-size:12px;color:#fbbf24;">⚠️ <b>Empfehlung:</b> Prüfe ob du diesen Mod kennst. Wenn nicht — zur Sicherheit in Quarantäne verschieben.</div>';
+      } else {
+        recommendation = '<div style="margin-top:8px;padding:8px 12px;background:#1e3a5f40;border-radius:6px;font-size:12px;color:#93c5fd;">ℹ️ <b>Empfehlung:</b> Wahrscheinlich harmlos. Trotzdem gut zu wissen dass der Mod diese Funktionen nutzt.</div>';
+      }
+      html += recommendation;
+
+      // Aktions-Buttons für unbekannte Mods
+      if (!isKnown) {
+        html += `<div style="margin-top:8px;display:flex;gap:6px;">
+          <button class="btn btn-ok" style="font-size:11px;" data-act="quarantine" data-path="${esc(s.path)}">📦 Quarantäne</button>
+          <button class="btn" style="font-size:11px;" data-act="open_folder" data-path="${esc(s.path)}">📂 Ordner öffnen</button>
+        </div>`;
+      }
+
+      html += '</div></details>';
     }
     el.innerHTML = html;
   } catch(e) {
@@ -3981,36 +4250,123 @@ async function runScriptSecurityCheck() {
 // ═══════════════════════════════════════════════════
 // ═══ BROKEN CC FINDER ═══
 // ═══════════════════════════════════════════════════
+const _issueHelp = {
+  'Leere/zu kleine Datei': {
+    icon: '🗑️', color: '#ef4444', category: 'error',
+    explain: 'Diese Datei ist leer oder viel zu klein um ein echtes Package zu sein.',
+    tip: 'Kann bedenkenlos gelöscht werden — enthält keine Mod-Daten.'
+  },
+  'Datei nicht lesbar': {
+    icon: '🔒', color: '#ef4444', category: 'error',
+    explain: 'Die Datei kann nicht geöffnet werden (Berechtigungsproblem oder gesperrt).',
+    tip: 'Starte den Scanner als Administrator oder schließe Programme die auf die Datei zugreifen.'
+  },
+  'Package hat 0 Ressourcen (leer)': {
+    icon: '📭', color: '#ef4444', category: 'error',
+    explain: 'Die Datei hat ein gültiges Format, enthält aber keine Inhalte.',
+    tip: 'Kann gelöscht werden — der Mod macht nichts.'
+  },
+};
+
+function _getIssueHelp(issue) {
+  if (_issueHelp[issue]) return _issueHelp[issue];
+  if (issue.includes('Ungültiges Package-Format')) return {
+    icon: '💀', color: '#ef4444', category: 'error',
+    explain: 'Das Dateiformat ist ungültig oder die Datei ist für ein anderes Spiel (Sims 2/3).',
+    tip: 'Löschen oder durch die richtige Version ersetzen (neu herunterladen).'
+  };
+  if (issue.includes('CAS-Teil') && issue.includes('ohne Thumbnail')) return {
+    icon: '👗', color: '#f59e0b', category: 'warning',
+    explain: 'Kleidung/Haare ohne Vorschaubild. Im CAS siehst du evtl. kein Bild beim Scrollen — der Mod funktioniert aber trotzdem!',
+    tip: 'Meistens harmlos. Viele ältere Mods haben keine eingebetteten Thumbnails. Das Spiel erstellt sie beim ersten Benutzen selbst.'
+  };
+  if (issue.includes('Fehler beim Lesen')) return {
+    icon: '⚠️', color: '#ef4444', category: 'error',
+    explain: 'Die Datei konnte nicht analysiert werden.',
+    tip: 'Möglicherweise beschädigt — neu herunterladen oder löschen.'
+  };
+  return {icon: '❓', color: '#94a3b8', category: 'warning', explain: issue, tip: ''};
+}
+
 async function findBrokenCC() {
   const el = document.getElementById('broken-cc-result');
-  el.innerHTML = '<div class="muted">⏳ Prüfe alle Packages… (kann bei vielen Mods länger dauern)</div>';
+  el.innerHTML = '<div class="muted">⏳ Prüfe alle Packages… (kann bei vielen Mods etwas dauern)</div>';
   try {
     const resp = await fetch('/api/action', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:TOKEN, action:'find_broken_cc'})});
     const json = await resp.json();
     if (!json.ok) throw new Error(json.error);
     const broken = json.broken || [];
+    const okCount = json.checked - broken.length;
     if (broken.length === 0) {
-      el.innerHTML = `<div style="color:#22c55e;">✅ Alle ${json.checked} Packages sind in Ordnung!</div>`;
+      el.innerHTML = `<div style="background:#22c55e15; border:1px solid #22c55e40; border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:24px;">✅</div>
+        <div style="color:#22c55e; font-weight:bold; font-size:16px;">Alles in Ordnung!</div>
+        <div class="muted">Alle ${json.checked} Packages wurden geprüft — keine Probleme gefunden.</div>
+      </div>`;
       return;
     }
-    let html = `<div style="margin-bottom:8px;">
-      <span style="color:#ef4444;">🔨 <b>${json.broken_count}</b> problematische Package(s)</span>
-      <span class="muted"> von ${json.checked} geprüft</span>
-    </div>`;
-    html += '<div style="max-height:400px;overflow-y:auto;">';
-    for (const b of broken) {
-      const sizeKB = (b.size / 1024).toFixed(0);
-      const sevColor = b.severity === 'error' ? '#ef4444' : '#f59e0b';
-      const sevIcon = b.severity === 'error' ? '❌' : '⚠️';
-      html += `<div style="display:flex;align-items:center;gap:10px;padding:6px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;margin-bottom:3px;">
-        <span>${sevIcon}</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(b.path)}">${esc(b.name)}</div>
-          <div style="font-size:11px;color:${sevColor};">${esc(b.issue)} <span class="muted">(${sizeKB} KB)</span></div>
-        </div>
-      </div>`;
+
+    // Aufteilen in Fehler und Hinweise
+    const errors = broken.filter(b => _getIssueHelp(b.issue).category === 'error');
+    const warnings = broken.filter(b => _getIssueHelp(b.issue).category === 'warning');
+
+    let html = `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-bottom:16px;">`;
+    html += `<div style="background:#0f1115; padding:12px; border-radius:8px; text-align:center;">
+      <div style="font-size:11px; color:#94a3b8;">Geprüft</div>
+      <div style="font-size:20px; font-weight:bold;">${json.checked}</div></div>`;
+    html += `<div style="background:#0f1115; padding:12px; border-radius:8px; text-align:center;">
+      <div style="font-size:11px; color:#94a3b8;">In Ordnung</div>
+      <div style="font-size:20px; font-weight:bold; color:#22c55e;">✅ ${okCount}</div></div>`;
+    if (errors.length > 0) html += `<div style="background:#ef444415; padding:12px; border-radius:8px; text-align:center; border:1px solid #ef444440;">
+      <div style="font-size:11px; color:#ef4444;">Fehler</div>
+      <div style="font-size:20px; font-weight:bold; color:#ef4444;">❌ ${errors.length}</div></div>`;
+    if (warnings.length > 0) html += `<div style="background:#f59e0b15; padding:12px; border-radius:8px; text-align:center; border:1px solid #f59e0b40;">
+      <div style="font-size:11px; color:#f59e0b;">Hinweise</div>
+      <div style="font-size:20px; font-weight:bold; color:#f59e0b;">⚠️ ${warnings.length}</div></div>`;
+    html += `</div>`;
+
+    // Fehler zuerst
+    if (errors.length > 0) {
+      html += `<div style="margin-bottom:12px;">`;
+      html += `<h3 style="color:#ef4444; margin:0 0 8px 0; font-size:14px;">❌ Kaputte Dateien — solltest du löschen oder ersetzen:</h3>`;
+      for (const b of errors) {
+        const info = _getIssueHelp(b.issue);
+        const sizeKB = (b.size / 1024).toFixed(0);
+        html += `<details style="background:#0f172a; border:1px solid #334155; border-radius:6px; margin-bottom:4px; padding:0;">`;
+        html += `<summary style="padding:8px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; list-style:none;">`;
+        html += `<span>${info.icon}</span>`;
+        html += `<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(b.path)}">${esc(b.name)}</div>`;
+        html += `<div style="font-size:11px;color:${info.color};">${esc(b.issue)} <span class="muted">(${sizeKB} KB)</span></div></div></summary>`;
+        html += `<div style="padding:8px 12px 12px 36px; border-top:1px solid #1e293b;">`;
+        html += `<div style="font-size:12px; color:#cbd5e1; margin-bottom:4px;">📋 <b>Was bedeutet das?</b> ${esc(info.explain)}</div>`;
+        html += `<div style="font-size:12px; color:#22c55e;">💡 <b>Tipp:</b> ${esc(info.tip)}</div>`;
+        html += `<div style="margin-top:8px;"><button class="btn btn-danger" style="font-size:11px; padding:3px 10px;" data-bcc-path="${esc(b.path)}" onclick="doDelete(this.getAttribute('data-bcc-path'));">🗑️ Löschen</button> <button class="btn btn-ghost" style="font-size:11px; padding:3px 10px;" data-bcc-path="${esc(b.path)}" onclick="doQuarantine(this.getAttribute('data-bcc-path'));">📦 Quarantäne</button></div>`;
+        html += `</div></details>`;
+      }
+      html += `</div>`;
     }
-    html += '</div>';
+
+    // Hinweise
+    if (warnings.length > 0) {
+      html += `<details${errors.length === 0 ? ' open' : ''} style="margin-bottom:12px;">`;
+      html += `<summary style="cursor:pointer; font-size:14px; color:#f59e0b; font-weight:bold; margin-bottom:8px;">⚠️ ${warnings.length} Hinweis(e) — meistens harmlos (klicken zum Anzeigen)</summary>`;
+      html += `<div style="background:#f59e0b08; border:1px solid #f59e0b20; border-radius:8px; padding:12px; margin-bottom:8px;">`;
+      html += `<div style="font-size:12px; color:#fbbf24; margin-bottom:8px;">💡 <b>Was bedeutet "CAS-Teile ohne Thumbnail"?</b></div>`;
+      html += `<div style="font-size:12px; color:#cbd5e1; line-height:1.6;">Diese Mods enthalten Kleidung, Haare oder Accessoires, aber kein eingebettetes Vorschaubild. `;
+      html += `Im Create-a-Sim (CAS) kann es passieren, dass diese Teile <b>kein Bild zeigen</b> beim Durchblättern — der Mod funktioniert aber trotzdem ganz normal!<br><br>`;
+      html += `<b>Muss ich etwas tun?</b> Nein! Das Spiel erstellt fehlende Vorschaubilder meistens selbst. Falls dich ein fehlendes Bild stört, kannst du den Mod neu herunterladen — neuere Versionen haben oft Thumbnails dabei.</div>`;
+      html += `</div>`;
+      for (const b of warnings) {
+        const info = _getIssueHelp(b.issue);
+        const sizeKB = (b.size / 1024).toFixed(0);
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;margin-bottom:3px;">`;
+        html += `<span>${info.icon}</span>`;
+        html += `<div style="flex:1;min-width:0;"><div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(b.path)}">${esc(b.name)}</div>`;
+        html += `<div style="font-size:11px;color:#94a3b8;">${esc(b.issue)} <span class="muted">(${sizeKB} KB)</span></div></div></div>`;
+      }
+      html += `</details>`;
+    }
+
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
@@ -4020,52 +4376,161 @@ async function findBrokenCC() {
 // ═══════════════════════════════════════════════════
 // ═══ PACKAGE-BROWSER ═══
 // ═══════════════════════════════════════════════════
-async function browsePackage() {
-  const pathInput = document.getElementById('package-browse-path');
-  const pkgPath = pathInput.value.trim();
+let _packageList = [];
+
+function populatePackageList() {
+  const data = window.__DATA;
+  if (!data) return;
+  const allFiles = collectAllUniqueFiles(data);
+  _packageList = allFiles.filter(f => (f.path||'').toLowerCase().endsWith('.package')).map(f => ({
+    path: f.path,
+    name: (f.path||'').split(/[\\/]/).pop(),
+    size: f.size || 0
+  }));
+  _packageList.sort((a,b) => a.name.localeCompare(b.name));
+  const countEl = document.getElementById('package-browser-count');
+  if (countEl) countEl.textContent = _packageList.length + ' Packages';
+  filterPackageList();
+}
+
+function filterPackageList() {
+  const filter = (document.getElementById('package-browse-filter')?.value || '').toLowerCase();
+  const listEl = document.getElementById('package-browse-list');
+  if (!listEl) return;
+  const filtered = filter ? _packageList.filter(p => p.name.toLowerCase().includes(filter) || p.path.toLowerCase().includes(filter)) : _packageList;
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="muted" style="padding:12px;">Keine Packages gefunden.</div>';
+    return;
+  }
+  const show = filtered.slice(0, 200);
+  let html = '';
+  for (const pkg of show) {
+    const sizeMB = (pkg.size / 1048576).toFixed(2);
+    const safePath = pkg.path.replace(/\\/g, '/');
+    html += `<div data-pkg-path="${esc(safePath)}" onclick="browsePackage(this.getAttribute('data-pkg-path'))" style="padding:6px 12px; cursor:pointer; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center; transition:background 0.1s;" onmouseenter="this.style.background='#1e293b'" onmouseleave="this.style.background=''">
+      <span style="font-size:13px;">📦 ${esc(pkg.name)}</span>
+      <span class="muted" style="font-size:11px;">${sizeMB} MB</span>
+    </div>`;
+  }
+  if (filtered.length > 200) {
+    html += `<div class="muted" style="padding:8px 12px; text-align:center;">…und ${filtered.length - 200} weitere (Filter nutzen)</div>`;
+  }
+  listEl.innerHTML = html;
+}
+
+const _typeDescriptions = {
+  'CAS Part': {icon:'👗', desc:'Kleidung, Haare, Accessoires (Create-a-Sim)'},
+  'Object Definition': {icon:'🪑', desc:'Kaufbare Objekte / Möbel'},
+  'Buff Tuning': {icon:'😊', desc:'Stimmungen & Gefühle'},
+  'Trait Tuning': {icon:'⭐', desc:'Charakter-Eigenschaften'},
+  'Object Tuning': {icon:'⚙️', desc:'Objekt-Verhalten & Einstellungen'},
+  'Interaction Tuning': {icon:'💬', desc:'Aktionen & Interaktionen'},
+  'Lot Tuning': {icon:'🏠', desc:'Grundstücks-Einstellungen'},
+  'Action Tuning': {icon:'🎬', desc:'Animations-Aktionen'},
+  'Instance Tuning': {icon:'📋', desc:'Allgemeine Spielmechanik'},
+  'Sim Data': {icon:'🧬', desc:'Sim-Daten (Aussehen, Werte)'},
+  'Sim Info': {icon:'👤', desc:'Sim-Informationen'},
+  'Texture (LRLE)': {icon:'🖼️', desc:'Texturen & Oberflächen'},
+  'Mesh (GEOM)': {icon:'📐', desc:'3D-Modelle & Formen'},
+  'Blend Geometry': {icon:'🔄', desc:'Körper-Anpassungen'},
+  'NameMap': {icon:'🏷️', desc:'Interne Namens-Zuordnungen'},
+  'Thumbnail': {icon:'📸', desc:'Vorschaubilder'},
+  'DST Image': {icon:'🖼️', desc:'Textur-Details'},
+  'Bone Delta': {icon:'🦴', desc:'Körper-Slider-Anpassungen'},
+  'Hotspot Control': {icon:'🎯', desc:'Interaktions-Punkte'},
+  'Sim Outfit': {icon:'👔', desc:'Gespeicherte Sim-Outfits'},
+  'Color List': {icon:'🎨', desc:'Farbpaletten'},
+  'Footprint': {icon:'👣', desc:'Objekt-Platzierung / Fußabdruck'},
+  'Region Sort': {icon:'🗺️', desc:'Welt-Sortierung'},
+  'Slot Tuning': {icon:'📍', desc:'Objekt-Slot-Einstellungen'},
+  'Region Tuning': {icon:'🗺️', desc:'Welt-/Nachbarschafts-Einstellungen'},
+  'Recipe Tuning': {icon:'🍳', desc:'Koch-Rezepte / Herstellungs-Rezepte'},
+  'Aspiration Tuning': {icon:'💭', desc:'Lebensziele & Wünsche'},
+  'Career Tuning': {icon:'💼', desc:'Karrieren & Jobs'},
+  'Walkby Tuning': {icon:'🚶', desc:'Passanten-Verhalten'},
+  'Situation Tuning': {icon:'🎭', desc:'Events & Situationen'},
+};
+
+async function browsePackage(pkgPath) {
+  if (!pkgPath) return;
   const el = document.getElementById('package-browse-result');
-  if (!pkgPath) { showToast('Bitte Pfad eingeben', 'warning'); return; }
   el.innerHTML = '<div class="muted">⏳ Analysiere Package…</div>';
   try {
     const resp = await fetch('/api/package-detail?token=' + TOKEN + '&path=' + encodeURIComponent(pkgPath));
     const json = await resp.json();
     if (!json.ok) throw new Error(json.error);
     const fileMB = (json.file_size / 1048576).toFixed(2);
-    const compMB = (json.total_compressed / 1048576).toFixed(2);
-    const uncompMB = (json.total_uncompressed / 1048576).toFixed(2);
-    let html = `<div style="margin-bottom:8px;">
-      <b>📦 ${esc(pkgPath.split(/[\\/]/).pop())}</b><br>
-      <span class="muted">Integrität: </span><span style="color:${json.integrity === 'ok' ? '#22c55e' : '#ef4444'};">${esc(json.integrity)}</span> |
-      <span class="muted">Dateigröße:</span> ${fileMB} MB |
-      <span class="muted">Ressourcen:</span> <b>${json.resource_count}</b> |
-      <span class="muted">Komprimiert:</span> ${compMB} MB |
-      <span class="muted">Unkomprimiert:</span> ${uncompMB} MB
-    </div>`;
-    // Type-Zusammenfassung
+    const fname = esc(pkgPath.split(/[\\/]/).pop());
+    const intColor = json.integrity === 'ok' ? '#22c55e' : '#ef4444';
+    const intText = json.integrity === 'ok' ? '✅ In Ordnung' : '❌ Beschädigt';
+    const ratio = json.total_uncompressed > 0 ? ((1 - json.total_compressed / json.total_uncompressed) * 100).toFixed(0) : 0;
+
+    // Mod-Typ bestimmen
     const tc = json.type_counts || {};
     const types = Object.entries(tc).sort((a,b) => b[1] - a[1]);
+    let modType = '📦 Unbekannt';
+    let modTypeColor = '#94a3b8';
+    const hasCAS = tc['CAS Part'] > 0;
+    const hasObj = tc['Object Definition'] > 0;
+    const hasTuning = types.some(([n]) => n.includes('Tuning'));
+    const hasMesh = tc['Mesh (GEOM)'] > 0 || tc['Texture (LRLE)'] > 0;
+    if (hasCAS && !hasTuning) { modType = '👗 CAS / Kleidung'; modTypeColor = '#f472b6'; }
+    else if (hasCAS && hasTuning) { modType = '👗⚙️ CAS mit Gameplay'; modTypeColor = '#f59e0b'; }
+    else if (hasObj && !hasTuning) { modType = '🪑 Objekte / Möbel'; modTypeColor = '#60a5fa'; }
+    else if (hasObj && hasTuning) { modType = '🪑⚙️ Objekte mit Gameplay'; modTypeColor = '#f59e0b'; }
+    else if (hasTuning) { modType = '⚙️ Gameplay / Script-Mod'; modTypeColor = '#a78bfa'; }
+    else if (hasMesh) { modType = '🖼️ Texturen / Meshes'; modTypeColor = '#34d399'; }
+
+    let html = `<div style="background:#1a1f2e; border:1px solid #334155; border-radius:8px; padding:16px; margin-bottom:12px;">`;
+    html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">`;
+    html += `<h3 style="margin:0; font-size:16px;">📦 ${fname}</h3>`;
+    html += `<span style="background:${modTypeColor}22; color:${modTypeColor}; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold;">${modType}</span>`;
+    html += `</div>`;
+
+    // Info-Karten
+    html += `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:16px;">`;
+    html += `<div style="background:#0f1115; padding:10px; border-radius:6px; text-align:center;">`;
+    html += `<div style="font-size:11px; color:#94a3b8;">Status</div>`;
+    html += `<div style="font-size:14px; color:${intColor}; font-weight:bold;">${intText}</div></div>`;
+    html += `<div style="background:#0f1115; padding:10px; border-radius:6px; text-align:center;">`;
+    html += `<div style="font-size:11px; color:#94a3b8;">Dateigröße</div>`;
+    html += `<div style="font-size:14px; font-weight:bold;">${fileMB} MB</div></div>`;
+    html += `<div style="background:#0f1115; padding:10px; border-radius:6px; text-align:center;">`;
+    html += `<div style="font-size:11px; color:#94a3b8;">Inhalte</div>`;
+    html += `<div style="font-size:14px; font-weight:bold;">${json.resource_count} Teile</div></div>`;
+    html += `<div style="background:#0f1115; padding:10px; border-radius:6px; text-align:center;">`;
+    html += `<div style="font-size:11px; color:#94a3b8;">Kompression</div>`;
+    html += `<div style="font-size:14px; font-weight:bold;">${ratio}% gespart</div></div>`;
+    html += `</div>`;
+
+    // Inhalts-Zusammenfassung
     if (types.length > 0) {
-      html += '<div style="margin-bottom:8px;"><b>Ressourcen-Typen:</b></div>';
-      html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">';
+      html += '<div style="margin-bottom:8px;"><b>📋 Was steckt drin:</b></div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">';
       for (const [name, count] of types) {
-        html += `<span class="pill" style="font-size:11px;">${esc(name)}: ${count}</span>`;
+        const info = _typeDescriptions[name] || {icon:'📄', desc:'Sims 4 Ressource'};
+        html += `<span title="${esc(info.desc)}" style="background:#1e293b; padding:4px 10px; border-radius:12px; font-size:12px; cursor:help; display:inline-flex; align-items:center; gap:4px;">${info.icon} ${esc(name)} <b style="color:#61dafb;">${count}×</b></span>`;
       }
       html += '</div>';
     }
-    // Entries-Tabelle
+
+    // Einfache Zusammenfassung statt Rohdaten
+    html += '<details style="margin-top:4px;"><summary style="cursor:pointer; color:#94a3b8; font-size:12px;">🔍 Technische Details anzeigen (${json.resource_count} Einträge)</summary>';
     const entries = json.entries || [];
     if (entries.length > 0) {
-      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #334155;border-radius:6px;">';
+      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #334155;border-radius:6px;margin-top:8px;">';
       html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
-      html += '<tr style="position:sticky;top:0;background:#1e293b;"><th style="padding:4px 8px;text-align:left;">Typ</th><th style="padding:4px 8px;text-align:left;">Type-ID</th><th style="padding:4px 8px;text-align:left;">Instance</th><th style="padding:4px 8px;text-align:right;">Größe</th><th style="padding:4px 8px;text-align:right;">Unkomprimiert</th></tr>';
+      html += '<tr style="position:sticky;top:0;background:#1e293b;"><th style="padding:4px 8px;text-align:left;">Typ</th><th style="padding:4px 8px;text-align:left;">Beschreibung</th><th style="padding:4px 8px;text-align:right;">Größe</th></tr>';
       for (const e of entries) {
-        html += `<tr style="border-top:1px solid #1e293b;"><td style="padding:3px 8px;">${esc(e.type)}</td><td style="padding:3px 8px;font-family:monospace;opacity:0.6;">${esc(e.type_id)}</td><td style="padding:3px 8px;font-family:monospace;font-size:10px;">${esc(e.instance)}</td><td style="padding:3px 8px;text-align:right;">${(e.comp_size/1024).toFixed(1)} KB</td><td style="padding:3px 8px;text-align:right;">${(e.uncomp_size/1024).toFixed(1)} KB</td></tr>`;
+        const info = _typeDescriptions[e.type] || {icon:'📄', desc:''};
+        html += `<tr style="border-top:1px solid #1e293b;"><td style="padding:3px 8px;">${info.icon} ${esc(e.type)}</td><td style="padding:3px 8px;color:#94a3b8;font-size:10px;">${esc(info.desc)}</td><td style="padding:3px 8px;text-align:right;">${(e.uncomp_size/1024).toFixed(1)} KB</td></tr>`;
       }
       if (json.resource_count > 500) {
-        html += `<tr><td colspan="5" class="muted" style="padding:6px 8px;text-align:center;">…und ${json.resource_count - 500} weitere Ressourcen</td></tr>`;
+        html += `<tr><td colspan="3" class="muted" style="padding:6px 8px;text-align:center;">…und ${json.resource_count - 500} weitere</td></tr>`;
       }
       html += '</table></div>';
     }
+    html += '</details></div>';
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div style="color:#ef4444;">Fehler: ' + esc(e.message) + '</div>';
@@ -4160,6 +4625,22 @@ function renderDiskUsage(data) {
   }
   html += '</div>';
   el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ AUTO-RUN TOOL ANALYSES ═══
+// ═══════════════════════════════════════════════════
+let _toolsAutoRan = false;
+function autoRunToolAnalyses() {
+  if (_toolsAutoRan) return;
+  _toolsAutoRan = true;
+  // Kurz warten damit Server bereit ist, dann parallel starten
+  setTimeout(() => {
+    loadCacheInfo().catch(()=>{});
+    scanTrayOrphans().catch(()=>{});
+    runScriptSecurityCheck().catch(()=>{});
+    findBrokenCC().catch(()=>{});
+  }, 500);
 }
 
 let _allModsShown = 50;
@@ -4384,10 +4865,9 @@ function renderGallery(data) {
   // Nur Dateien mit Thumbnail
   const withThumb = allFiles.filter(f => f.deep && f.deep.thumbnail_b64);
   if (withThumb.length === 0) {
-    showConditionalSection('gallery-section', false);
+    document.getElementById('gallery-grid').innerHTML = '<div class="muted" style="padding:20px;text-align:center;">Keine CC-Vorschaubilder gefunden. Starte erst einen Scan.</div>';
     return;
   }
-  showConditionalSection('gallery-section', true);
 
   // Populate category filter
   const catSel = document.getElementById('gallery-cat-filter');
@@ -4424,7 +4904,7 @@ function renderGallery(data) {
   });
 
   _galleryFiltered = filtered;
-  _galleryShown = 60;
+  _galleryShown = Infinity;
 
   document.getElementById('gallery-summary').innerHTML =
     `<b>${filtered.length}</b> von ${withThumb.length} CC mit Vorschau`;
@@ -4467,7 +4947,7 @@ function _renderGalleryPage() {
   }).join('');
   document.getElementById('gallery-grid').innerHTML = cards || '<div class="muted" style="grid-column:1/-1;">Keine CC mit Vorschau gefunden.</div>';
   const moreBtn = document.getElementById('gallery-loadmore');
-  moreBtn.style.display = _galleryShown < _galleryFiltered.length ? '' : 'none';
+  moreBtn.style.display = 'none';
 }
 
 function galleryLoadMore() {
@@ -4507,10 +4987,11 @@ function renderOutdated(data) {
   const list = data.outdated || [];
   const gi = data.game_info;
   if (list.length === 0 || !gi) {
-    showConditionalSection('outdated-section', false);
+    document.getElementById('outdated-game-ver').innerHTML = '';
+    document.getElementById('outdated-summary').innerHTML = '<span style="color:#22c55e;">\u2705 Keine veralteten Mods gefunden.</span>';
+    document.getElementById('outdated-list').innerHTML = '';
     return;
   }
-  showConditionalSection('outdated-section', true);
   document.getElementById('outdated-game-ver').innerHTML =
     `Spielversion: <b>${esc(gi.version)}</b> | Patch vom: <b>${esc(gi.patch_date)}</b>`;
 
@@ -4798,18 +5279,10 @@ document.getElementById('view-toggle').addEventListener('click', (e) => {
   if (view === 'groups') {
     groupsView.style.display = 'block';
     perfileView.style.display = 'none';
-    showConditionalSection('corrupt-section', !!(window.__DATA && window.__DATA.corrupt && window.__DATA.corrupt.length));
-    showConditionalSection('addon-section', !!(window.__DATA && window.__DATA.addon_pairs && window.__DATA.addon_pairs.length));
-    showConditionalSection('contained-section', !!(window.__DATA && window.__DATA.contained_in && window.__DATA.contained_in.length));
-    showConditionalSection('conflict-section', !!(window.__DATA && window.__DATA.conflicts && window.__DATA.conflicts.length));
     title.textContent = 'Gruppen';
   } else {
     groupsView.style.display = 'none';
     perfileView.style.display = 'block';
-    showConditionalSection('corrupt-section', false);
-    showConditionalSection('addon-section', false);
-    showConditionalSection('contained-section', false);
-    showConditionalSection('conflict-section', false);
     title.textContent = 'Pro Datei';
     if (window.__DATA) renderPerFile(window.__DATA);
   }
@@ -4846,6 +5319,9 @@ async function reloadData() {
   renderGallery(data);
   renderNonModFiles(data);
   renderDiskUsage(data);
+  populatePackageList();
+  // Auto-run: Alle Werkzeug-Analysen nach Scan
+  autoRunToolAnalyses();
   // Tray-Daten aktualisieren falls im Scan enthalten
   if (data.tray) {
     _trayData = data.tray;
@@ -4861,18 +5337,22 @@ async function reloadData() {
 }
 
 async function doQuarantine(path) {
+  // Dateiname für Bestätigung
+  const fname = path.split(/[\\\\/]/).pop();
   // Tray-warning check
+  let trayWarn = '';
   if (_trayData && _trayData.mod_usage) {
     const np = path.toLowerCase().replace(/\\\\/g, '/');
     for (const [mp, info] of Object.entries(_trayData.mod_usage)) {
       const nmp = mp.toLowerCase().replace(/\\\\/g, '/');
       if (np === nmp || np.endsWith('/' + nmp.split('/').pop())) {
         const names = (info.used_by || []).slice(0, 5).join(', ');
-        if (!confirm(`⚠️ ACHTUNG: Dieser Mod wird von ${info.used_count} gespeicherten Sims/Häusern verwendet!\\n\\nVerwendet von: ${names}\\n\\nTrotzdem in Quarantäne verschieben?`)) return;
+        trayWarn = `\\n\\n⚠️ ACHTUNG: Dieser Mod wird von ${info.used_count} gespeicherten Sims/Häusern verwendet!\\nVerwendet von: ${names}`;
         break;
       }
     }
   }
+  if (!confirm(`📦 In Quarantäne verschieben?\\n\\n${fname}\\n\\nDie Datei wird in den Quarantäne-Ordner verschoben. Du kannst sie im Tab 🗃️ Quarantäne jederzeit zurückholen.${trayWarn}`)) return;
   const res = await postAction('quarantine', path, {});
   console.log('[QUARANTINE]', path, res);
   setLast('📦 Quarantäne: ' + path);
@@ -4895,7 +5375,7 @@ async function doDelete(path) {
       }
     }
   }
-  if (!confirm('Wirklich löschen?\\n\\n' + path + trayMsg)) return;
+  if (!confirm('⚠️ ENDGÜLTIG LÖSCHEN — Nicht rückgängig machbar!\\n\\nDiese Datei wird unwiderruflich von deinem PC gelöscht.\\nWenn du dir unsicher bist, nutze lieber 📦 Quarantäne (kannst du jederzeit rückgängig machen).\\n\\n' + path + trayMsg)) return;
   const res = await postAction('delete', path, {});
   console.log('[DELETE]', path, res);
   setLast('🗑 Löschen: ' + path + ' (deleted=' + String(res.deleted) + ')');
@@ -5041,11 +5521,11 @@ async function batchAction(action, paths, confirmText=null) {
 }
 
 document.getElementById('btn_q_sel').addEventListener('click', async () => {
-  await batchAction('quarantine', Array.from(selected), `📦 ${selected.size} Dateien in Quarantäne verschieben?`);
+  await batchAction('quarantine', Array.from(selected), `📦 ${selected.size} Dateien in Quarantäne verschieben?\n\nDie Dateien werden nur verschoben, nicht gelöscht. Du kannst sie im Tab 🗃️ Quarantäne jederzeit zurückholen.`);
 });
 
 document.getElementById('btn_d_sel').addEventListener('click', async () => {
-  await batchAction('delete', Array.from(selected), `🗑 ${selected.size} Dateien WIRKLICH löschen?\n\nDas kann man nicht rückgängig machen!`);
+  await batchAction('delete', Array.from(selected), `⚠️ ENDGÜLTIG LÖSCHEN — ${selected.size} Dateien!\n\nAlle ${selected.size} markierten Dateien werden unwiderruflich von deinem PC gelöscht!\nDas kann man NICHT rückgängig machen!\n\nWenn du dir unsicher bist, nutze lieber 📦 Quarantäne (kannst du jederzeit zurückholen).\n\nWirklich alle ${selected.size} Dateien löschen?`);
 });
 
 document.getElementById('reload').addEventListener('click', async () => {
@@ -6429,8 +6909,8 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  // 1–7 → Tab wechseln
-  const tabMap = {'1':'dashboard','2':'duplicates','3':'analysis','4':'traycc','5':'overview','6':'tools','7':'history'};
+  // 1–5 → Tab wechseln (Hauptbereiche)
+  const tabMap = {'1':'dashboard','2':'duplicates','3':'outdated','4':'tray','5':'stats'};
   if (tabMap[e.key]) {
     e.preventDefault();
     switchTab(tabMap[e.key]);
@@ -6496,6 +6976,7 @@ async function startSavegameAnalysis(force, selectedSave) {
       _savegamePolling = false;
       _savegameData = d.data;
       renderSavegameResults();
+      checkSaveHealth();
       btnAnalyze.disabled = false;
       btnAnalyze.textContent = '🔍 Analysieren';
       return;
@@ -6523,6 +7004,7 @@ async function pollSavegame() {
         _savegamePolling = false;
         _savegameData = d.data;
         renderSavegameResults();
+        checkSaveHealth();
         btnAnalyze.disabled = false;
         btnAnalyze.textContent = '🔍 Analysieren';
       } else if (d.status === 'analyzing' || d.status === 'started') {
@@ -7212,7 +7694,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="tut-btn tut-btn-primary" id="tut-btn-next" onclick="tutorialNext()">Weiter →</button>
     </div>
     <div class="tut-check">
-      <input type="checkbox" id="tut-dont-show" checked>
+      <input type="checkbox" id="tut-dont-show">
       <label for="tut-dont-show">Beim nächsten Start nicht mehr anzeigen</label>
     </div>
   </div>

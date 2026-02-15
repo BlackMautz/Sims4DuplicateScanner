@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import struct as _struct
+import time
 from pathlib import Path
 from collections import defaultdict
 
@@ -254,52 +255,62 @@ def build_mod_instance_index(mod_dirs: list[Path], progress_cb=None) -> dict:
     cache_hits = 0
 
     total = len(pkg_files)
+    print(f"[TRAY] Mod-Index: {total} .package Dateien werden gelesen...", flush=True)
+    t0 = time.time()
     for i, pkg_path in enumerate(pkg_files):
         pkg_str = str(pkg_path)
+        t_file = time.time()
         try:
             st = pkg_path.stat()
             cached = cached_entries.get(pkg_str)
-            keys = None
+            inst_ids = None
             if cached and abs(cached.get('mt', 0) - st.st_mtime) < 0.01 and cached.get('sz', -1) == st.st_size:
-                # Cache-Hit: Keys aus Cache
-                keys = cached.get('keys', [])
+                # Cache-Hit: Instance-IDs aus Cache
+                inst_ids = cached.get('ids') or cached.get('keys')
                 cache_hits += 1
             else:
                 # Cache-Miss: Datei lesen
                 raw_keys = read_dbpf_resource_keys(pkg_path)
                 if raw_keys:
-                    keys = raw_keys
+                    # Nur Instance-IDs extrahieren (viel kleiner als volle Keys)
+                    inst_ids = list({k[2] for k in raw_keys})
                 else:
-                    keys = []
+                    inst_ids = []
 
-            if keys:
-                # Cache-Eintrag aktualisieren
-                # Für den Index brauchen wir nur die Instance-IDs
-                for item in keys:
+            if inst_ids:
+                for item in inst_ids:
+                    # Abwärtskompatibel: alte Cache-Einträge haben [type, group, inst]
                     if isinstance(item, (list, tuple)) and len(item) >= 3:
-                        _t, _g, inst = item[0], item[1], item[2]
-                        index[inst].add(pkg_str)
+                        index[item[2]].add(pkg_str)
+                    else:
+                        index[item].add(pkg_str)
 
-                # Im Cache speichern wir die Keys als Listen (JSON-kompatibel)
                 new_entries[pkg_str] = {
                     'mt': st.st_mtime,
                     'sz': st.st_size,
-                    'keys': [list(k) if isinstance(k, tuple) else k for k in keys],
+                    'ids': inst_ids if not isinstance(inst_ids[0], (list, tuple)) else list({x[2] for x in inst_ids}),
                 }
             else:
-                new_entries[pkg_str] = {'mt': st.st_mtime, 'sz': st.st_size, 'keys': []}
+                new_entries[pkg_str] = {'mt': st.st_mtime, 'sz': st.st_size, 'ids': []}
 
         except Exception:
             pass
+        dt = time.time() - t_file
+        if dt > 3.0:
+            print(f"[TRAY] SLOW ({dt:.1f}s): {pkg_path.name}", flush=True)
         if progress_cb and (i % 200 == 0 or i == total - 1):
             progress_cb(i + 1, total, pkg_path.name)
+        # Konsolenfortschritt alle 500 Dateien
+        if i > 0 and i % 500 == 0:
+            print(f"[TRAY] {i}/{total} Dateien verarbeitet ({cache_hits} Cache-Hits)...", flush=True)
 
-    # Cache auf Disk speichern
+    # Cache auf Disk speichern (nur Instance-IDs, nicht volle Keys)
+    elapsed = time.time() - t0
+    print(f"[TRAY] Index fertig: {total} Dateien in {elapsed:.1f}s ({cache_hits} aus Cache)", flush=True)
+    print("[TRAY] Cache wird gespeichert...", flush=True)
     tray_disk_cache["mod_index_entries"] = new_entries
     save_tray_cache(tray_disk_cache)
-
-    if cache_hits > 0:
-        print(f"[TRAY-CACHE] {cache_hits}/{total} .package aus Cache geladen (Ersparnis: {cache_hits * 100 // max(total,1)}%)", flush=True)
+    print("[TRAY] Cache gespeichert.", flush=True)
 
     return dict(index)
 
