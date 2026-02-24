@@ -5,6 +5,8 @@ import os
 import hashlib
 import time
 import json
+import threading
+import concurrent.futures
 from pathlib import Path
 from urllib.parse import quote
 from typing import Optional
@@ -12,18 +14,24 @@ import requests
 from .name_translation import german_to_english_name
 from .embedded_portraits import get_embedded_portrait
 
-# Rate-Limiting: max 1 Wiki-Request pro 0.15 Sekunden (~ 6-7 req/s)
+# Rate-Limiting: Thread-safe mit Lock statt globalem float + sleep
+_rate_lock = threading.Lock()
 _last_wiki_request: float = 0.0
-_WIKI_MIN_INTERVAL: float = 0.15
+_WIKI_MIN_INTERVAL: float = 0.12  # Etwas aggressiver (war 0.15)
 
 def _wiki_rate_limit():
-    """Wartet falls nötig, um das Wiki nicht zu überlasten."""
+    """Thread-safe Rate-Limiter — blockiert nur so kurz wie nötig."""
     global _last_wiki_request
-    now = time.time()
-    elapsed = now - _last_wiki_request
-    if elapsed < _WIKI_MIN_INTERVAL:
-        time.sleep(_WIKI_MIN_INTERVAL - elapsed)
-    _last_wiki_request = time.time()
+    with _rate_lock:
+        now = time.time()
+        elapsed = now - _last_wiki_request
+        if elapsed < _WIKI_MIN_INTERVAL:
+            time.sleep(_WIKI_MIN_INTERVAL - elapsed)
+        _last_wiki_request = time.time()
+
+# ── In-Memory Negativ-Cache (einmal laden statt pro Aufruf von Disk) ──
+_neg_cache_lock = threading.Lock()
+_neg_cache_mem: dict | None = None  # Lazy-init beim ersten Zugriff
 
 
 def _wiki_cache_dir() -> Path:
@@ -54,35 +62,46 @@ USER_PORTRAITS_DIR = _user_portraits_dir()
 NEGATIVE_CACHE_FILE = WIKI_CACHE_DIR / "_no_portrait.json"
 
 def _load_negative_cache() -> dict:
-    """Lädt den Negativ-Cache (Sims ohne Wiki-Portrait)."""
-    try:
-        if NEGATIVE_CACHE_FILE.exists():
-            data = json.loads(NEGATIVE_CACHE_FILE.read_text(encoding='utf-8'))
-            # Einträge älter als 30 Tage entfernen (Wiki könnte inzwischen Bild haben)
-            now = time.time()
-            max_age = 30 * 86400  # 30 Tage
-            cleaned = {}
-            for name, ts in data.items():
-                if isinstance(ts, (int, float)) and (now - ts) < max_age:
-                    cleaned[name] = ts
-                elif isinstance(ts, dict):
-                    # Legacy-Format: prüfe ob Timestamp-Feld existiert
-                    legacy_ts = ts.get("ts", ts.get("time", 0))
-                    if isinstance(legacy_ts, (int, float)) and (now - legacy_ts) < max_age:
+    """Gibt den In-Memory Negativ-Cache zurück (lazy-init von Disk)."""
+    global _neg_cache_mem
+    with _neg_cache_lock:
+        if _neg_cache_mem is not None:
+            return _neg_cache_mem
+        # Erstmaliges Laden von Disk
+        try:
+            if NEGATIVE_CACHE_FILE.exists():
+                data = json.loads(NEGATIVE_CACHE_FILE.read_text(encoding='utf-8'))
+                now = time.time()
+                max_age = 30 * 86400
+                cleaned = {}
+                for name, ts in data.items():
+                    if isinstance(ts, (int, float)) and (now - ts) < max_age:
                         cleaned[name] = ts
-                    # else: abgelaufener Legacy-Eintrag, wird entfernt
-                else:
-                    cleaned[name] = ts
-            if len(cleaned) < len(data):
-                print(f"[WIKI] {len(data) - len(cleaned)} abgelaufene Negativ-Cache-Einträge entfernt", flush=True)
-                _save_negative_cache(cleaned)
-            return cleaned
-    except Exception:
-        pass
-    return {}
+                    elif isinstance(ts, dict):
+                        legacy_ts = ts.get("ts", ts.get("time", 0))
+                        if isinstance(legacy_ts, (int, float)) and (now - legacy_ts) < max_age:
+                            cleaned[name] = ts
+                    else:
+                        cleaned[name] = ts
+                if len(cleaned) < len(data):
+                    print(f"[WIKI] {len(data) - len(cleaned)} abgelaufene Negativ-Cache-Einträge entfernt", flush=True)
+                    _save_negative_cache_disk(cleaned)
+                _neg_cache_mem = cleaned
+            else:
+                _neg_cache_mem = {}
+        except Exception:
+            _neg_cache_mem = {}
+        return _neg_cache_mem
 
 def _save_negative_cache(cache: dict):
-    """Speichert den Negativ-Cache."""
+    """Aktualisiert In-Memory + schreibt auf Disk (write-through)."""
+    global _neg_cache_mem
+    with _neg_cache_lock:
+        _neg_cache_mem = cache
+    _save_negative_cache_disk(cache)
+
+def _save_negative_cache_disk(cache: dict):
+    """Schreibt Negativ-Cache auf Disk."""
     try:
         _ensure_cache_dir()
         NEGATIVE_CACHE_FILE.write_text(json.dumps(cache), encoding='utf-8')
@@ -436,3 +455,146 @@ def _save_to_user_dir(sim_name: str, data: bytes):
             out_file.write_bytes(data)
     except Exception:
         pass
+
+
+# ── Batch-Wiki-Prefetch ──────────────────────────────────────────
+
+def batch_prefetch_wiki_portraits(sim_names: list[str]) -> dict[str, str]:
+    """Batched Wiki-Portrait-Prefetch: Nutzt die MediaWiki-API um bis zu 50 Sims
+    pro Request gleichzeitig nach pageimages abzufragen. Lädt dann gefundene
+    Bilder herunter und gibt ein dict sim_name → image_url zurück.
+
+    Reduziert HTTP-Roundtrips drastisch gegenüber Einzelabfragen.
+
+    Returns:
+        dict: english_name → image_url (nur für gefundene Sims)
+    """
+    if not sim_names:
+        return {}
+
+    headers = {"User-Agent": "Sims4DuplicateScanner/3.2.0"}
+
+    # Schritt 1: Namen übersetzen und bereits vorhandene filtern
+    need_lookup = {}  # english_name → sim_name (Original)
+    neg_cache = _load_negative_cache()
+
+    for sname in sim_names:
+        if not sname:
+            continue
+        # Prüfe ob schon lokal vorhanden (User/Embedded/File-Cache)
+        if get_wiki_portrait_cached(sname) is not None:
+            continue
+        english = german_to_english_name(sname)
+        if english in neg_cache:
+            continue
+        need_lookup[english] = sname
+
+    if not need_lookup:
+        return {}
+
+    print(f"[WIKI-BATCH] {len(need_lookup)} Sims für Batch-Lookup vorbereitet", flush=True)
+
+    # Schritt 2: Batch pageimages abfragen (max 50 pro Request)
+    found_urls = {}  # english_name → url
+    eng_names = list(need_lookup.keys())
+    batch_size = 50
+
+    for batch_start in range(0, len(eng_names), batch_size):
+        batch = eng_names[batch_start:batch_start + batch_size]
+        titles = "|".join(name.replace(" ", "_") for name in batch)
+        api_url = (
+            f"https://sims.fandom.com/api.php?action=query"
+            f"&titles={quote(titles)}"
+            f"&prop=pageimages&format=json&pithumbsize=250"
+        )
+        try:
+            _wiki_rate_limit()
+            resp = requests.get(api_url, headers=headers, timeout=15)
+            if resp.status_code != 200:
+                continue
+            data = resp.json()
+            pages = data.get("query", {}).get("pages", {})
+
+            # Normalization-Map aufbauen (Wiki normalisiert Titel)
+            normalized = {}
+            for n in data.get("query", {}).get("normalized", []):
+                normalized[n.get("to", "")] = n.get("from", "")
+
+            for page_id, page_info in pages.items():
+                if page_id == "-1":
+                    continue
+                title = page_info.get("title", "")
+                thumbnail = page_info.get("thumbnail", {})
+                img_url = thumbnail.get("source", "")
+                if not img_url:
+                    continue
+
+                # Filtere schlechte Bilder
+                bad_patterns = [
+                    "cover_art", "icon", "logo", "ep14", "ep15", "ep16",
+                    "pack", "expansion", "stuff", "game_pack", "kit",
+                    "trait_", "aspiration_", "career_", "skill_",
+                    "ts4_cas", "_cas.", "_cas_", "milestone", "deceased",
+                    "male.png", "female.png", "relexpectations",
+                ]
+                img_lower = img_url.lower()
+                if any(bad in img_lower for bad in bad_patterns):
+                    continue
+
+                # Skaliere auf 250px
+                img_url = img_url.replace("/scale-to-width-down/225", "/scale-to-width-down/250")
+                img_url = img_url.replace("/scale-to-width-down/300", "/scale-to-width-down/250")
+                img_url = img_url.replace("/scale-to-width-down/400", "/scale-to-width-down/250")
+
+                # English-Name aus dem Titel rekonstruieren
+                eng_name = title.replace("_", " ")
+                found_urls[eng_name] = img_url
+
+        except Exception as e:
+            print(f"[WIKI-BATCH] Batch-Request fehlgeschlagen: {e}", flush=True)
+            continue
+
+    print(f"[WIKI-BATCH] {len(found_urls)} Bilder-URLs gefunden von {len(need_lookup)} Anfragen", flush=True)
+
+    # Schritt 3: Gefundene Bilder herunterladen (parallel mit ThreadPool)
+    downloaded = {}  # sim_name → bytes
+    urls_to_dl = []  # (english_name, sim_name, url)
+    for eng_name, url in found_urls.items():
+        sim_name = need_lookup.get(eng_name)
+        if sim_name:
+            urls_to_dl.append((eng_name, sim_name, url))
+
+    def _download_one(args):
+        eng_name, sim_name, url = args
+        try:
+            _wiki_rate_limit()
+            resp = requests.get(url, headers=headers, timeout=15)
+            if resp.status_code == 200 and len(resp.content) > 1000:
+                # In Cache speichern
+                name_hash = hashlib.md5(eng_name.encode()).hexdigest()
+                _ensure_cache_dir()
+                cache_file = WIKI_CACHE_DIR / f"{name_hash}.jpg"
+                try:
+                    cache_file.write_bytes(resp.content)
+                except Exception:
+                    pass
+                _save_to_user_dir(sim_name, resp.content)
+                return (sim_name, resp.content)
+        except Exception:
+            pass
+        return (sim_name, None)
+
+    if urls_to_dl:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            for sim_name, img_data in pool.map(_download_one, urls_to_dl):
+                if img_data:
+                    downloaded[sim_name] = img_data
+
+    # Schritt 4: Nicht-gefundene Sims in Negativ-Cache schreiben
+    for eng_name, sim_name in need_lookup.items():
+        if sim_name not in downloaded and eng_name not in found_urls:
+            neg_cache[eng_name] = time.time()
+    _save_negative_cache(neg_cache)
+
+    print(f"[WIKI-BATCH] {len(downloaded)} Portraits heruntergeladen", flush=True)
+    return downloaded

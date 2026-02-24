@@ -4,7 +4,56 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 
 ---
 
-## 🆕 Was ist neu in v3.2.0?
+## 🆕 Was ist neu in v3.5.0?
+
+### 🧬 Character Sheet — RPG-Stil Sim-Steckbrief
+- **Vollbild-Modal** — Klick auf einen Sim öffnet ein detailliertes Character Sheet im RPG-Stil
+- **Fähigkeiten-Balken** — alle erlernten Skills mit Level und Fortschrittsbalken
+- **Vitalwerte** — Bedürfnisse (Hunger, Energie, Spaß, etc.) als farbige Balken (grün/gelb/rot)
+- **Ausrüstungs-Grid** — CC-Mods des Sims als visuelles Emoji-Grid mit Thumbnails
+- **CC-Thumbnails** — Vorschaubilder werden direkt aus .package-Dateien extrahiert und angezeigt
+
+### 🧠 Deutsche Trait-Namen
+- **139 Eigenschaften** mit korrekten deutschen Namen (z.B. „Kreativ", „Romantisch")
+- **Geschlechts-abhängig** — weibliche Formen wo nötig (z.B. „Romantische" statt „Romantisch")
+- **Persönlichkeit, Bonus & Aspiration** — getrennte Kategorien mit Emoji-Chips (🧠 ⭐ 🌟)
+
+### 💼 Deutsche Karriere-Namen
+- **~100 Karrieren** mit deutschen Namen (z.B. „Astronaut", „Meisterkoch", „Technik-Guru")
+- **Karriere-Level** — Stufe 1-10 wird auf der Sim-Karte und im Character Sheet angezeigt
+- **Geschlechts-abhängig** — z.B. „Astronautin" vs. „Astronaut"
+
+### ❤️ Vorlieben & Abneigungen
+- **258 Vorlieben/Abneigungen** aus dem Spielstand extrahiert und mit deutschen Namen angezeigt
+- **7 Kategorien** — Farbe (🎨), Deko (🏠), Musik (🎵), Aktivitäten (🎯), Mode (👗), Eigenschaft (💭), Kommunikation (💬)
+- **Kategorie-gruppiert** — übersichtliche Darstellung im Character Sheet nach Kategorie sortiert
+
+### 🤝 Beziehungs-Details
+- **Freundschafts-Stufen** — Bekannt → Freunde → Gute Freunde → Beste Freunde
+- **Romantik-Stufen** — Erster Kuss → Freund/Freundin → Verlobt → Verheiratet → Seelenverwandte
+- **Familien-Typen** — Elternteil, Kind, Großelternteil, Enkelkind, Geschwister, Schwieger-Beziehungen
+- **Asymmetrische Erkennung** — Eric → Vivian = „Elternteil", Vivian → Eric = „Kind"
+- **Kompatibilität** — Toll (⭐), Gut (👍), Schlecht (⚡)
+- **Farbcodierte Tags** — Familie (lila), Romantik (pink), Freundschaft (blau), Kompatibilität (gold)
+- **Scrollbarer Container** — alle Beziehungen sichtbar, kein Limit
+
+### 🎨 Hautton-Konflikte
+- **Skin-Mod-Erkennung** — findet CC-Mods die Standard-Hauttöne überschreiben
+- **Konflikt-Analyse** — zeigt welche Skin-Mods sich gegenseitig beeinflussen
+
+### 🖼️ Portrait-System verbessert
+- **Batch-Prefetch** — Wiki-Portraits werden parallel vorgeladen (schnellerer Start)
+- **Negative-Cache auf Disk** — Sims ohne Wiki-Bild werden nicht erneut gesucht
+- **Thread-sicherer Index** — Portrait-Index wird nur einmal aufgebaut
+
+### ⚡ Performance
+- **Tray-Parsing parallelisiert** — Package-Dateien werden parallel gelesen
+- **Thumbnail-Schnellextraktion** — `extract_thumbnail_fast()` für CC-Vorschaubilder
+- **+2.700 neue Zeilen** Code, 8 Dateien geändert
+
+---
+
+## 📋 Was war neu in v3.2.0?
 
 ### 🎮 Sims 4 Loading Screen
 - **3D-Plumbob** — echter Sims 4 Ladebildschirm mit rotierendem 3D-Plumbob (Three.js WebGL)
@@ -110,6 +159,12 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 - **QFS-Dekompression** — EA's proprietäres Kompressionsformat
 - **Disk-Cache** — einmal analysiert, sofort verfügbar
 - **Alle 395+ Sims** in einem typischen Spielstand
+- **Character Sheet** — RPG-Stil Steckbrief mit Skills, Vitalwerten, Traits, Karriere
+- **139 deutsche Trait-Namen** — geschlechts-abhängig (Persönlichkeit, Bonus, Aspiration)
+- **~100 deutsche Karriere-Namen** — mit Level-Anzeige (Stufe 1-10)
+- **258 Vorlieben/Abneigungen** — 7 Kategorien mit deutschen Namen
+- **Beziehungs-Details** — Freundschaft, Romantik, Familie, Kompatibilität mit farbigen Tags
+- **CC-Thumbnails** — Vorschaubilder aus .package-Dateien extrahiert
 
 ### 📊 Statistiken & Übersichten
 - Mod-Aktivitäts-Heatmap (GitHub-Style, letzte 365 Tage)
@@ -247,6 +302,7 @@ sims4_scanner/                # Hauptmodul
 ├── protobuf.py               # Protobuf-Parser
 ├── name_translation.py       # DE/EN Namensübersetzung
 ├── wiki_portraits.py         # Wiki-Portrait-Download
+├── skin_textures.py          # Hautton-/Skin-Textur-Analyse
 └── web/
     └── template.py           # HTML/CSS/JS Web-UI Template
 ```

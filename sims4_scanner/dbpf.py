@@ -650,3 +650,51 @@ def analyze_with_cache(path: Path, deep_cache: dict | None):
         except Exception:
             pass
     return result
+
+
+def extract_thumbnail_fast(path: Path) -> str | None:
+    """Extrahiert nur das Thumbnail aus einer .package-Datei (schnell).
+
+    Returns:
+        Base64-encoded data URI string oder None.
+    """
+    if path.suffix.lower() != '.package':
+        return None
+    entries = read_dbpf_entries(path)
+    if entries is None:
+        return None
+
+    _THUMB_TYPES = (0x3C1AF1F2, 0xC8A5E01A, 0x3C2A8647, 0x5B282D45, 0xCD9DE247, 0x0580A2B4, 0x0580A2B6)
+    thumb_entries = [e for e in entries if e['type'] in _THUMB_TYPES]
+    for te in thumb_entries[:5]:
+        data = _read_resource_data(path, te)
+        if data and len(data) > 8:
+            if data[:4] == b'\x89PNG':
+                return 'data:image/png;base64,' + base64.b64encode(data).decode()
+            elif data[:2] == b'\xff\xd8':
+                return 'data:image/jpeg;base64,' + base64.b64encode(data).decode()
+
+    # Fallback: kleine PNG/JPEG Ressourcen
+    for e in entries:
+        usz = e.get('uncomp_size', 0) or e.get('comp_size', 0)
+        if usz > 200_000 or e['type'] in _THUMB_TYPES:
+            continue
+        data = _read_resource_data(path, e)
+        if data and len(data) > 8:
+            if data[:4] == b'\x89PNG':
+                return 'data:image/png;base64,' + base64.b64encode(data).decode()
+            elif data[:2] == b'\xff\xd8':
+                return 'data:image/jpeg;base64,' + base64.b64encode(data).decode()
+
+    # DDS Fallback
+    dds_entries = [e for e in entries if e['type'] == 0x00B2D882]
+    dds_entries.sort(key=lambda e: abs((e.get('uncomp_size', 0) or e.get('comp_size', 0)) - 16000))
+    for de in dds_entries[:3]:
+        data = _read_resource_data(path, de)
+        if data and len(data) > 128 and data[:4] == b'DDS ':
+            png_data = _dds_to_png(data, max_dim=128)
+            if png_data:
+                return 'data:image/png;base64,' + base64.b64encode(png_data).decode()
+
+    return None
+

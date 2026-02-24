@@ -184,6 +184,14 @@ def build_html_page() -> str:
   .conflict-badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:bold; background:#4c1d95; color:#c4b5fd; }
   .conflict-types { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; }
   .conflict-type-pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; background:#1e293b; color:#94a3b8; }
+  .skin-card { border-radius:10px; padding:14px 16px; margin:8px 0; background:#1a1215; border:1px solid #7f1d1d; border-left:4px solid #ef4444; }
+  .skin-card.skin-warn { border-left-color:#fbbf24; border-color:#78350f; background:#1a1810; }
+  .skin-card.skin-info { border-left-color:#60a5fa; border-color:#1e3a5f; background:#0f1422; }
+  .skin-badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:bold; }
+  .skin-badge-hoch { background:#7f1d1d; color:#fca5a5; }
+  .skin-badge-mittel { background:#78350f; color:#fde68a; }
+  .skin-badge-niedrig { background:#1e3a5f; color:#93c5fd; }
+  .skin-reason { display:inline-block; padding:1px 8px; border-radius:6px; background:#1e293b; color:#f0abfc; font-size:11px; margin:2px; }
   .addon-badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:bold; background:#065f46; color:#6ee7b7; }
   .addon-ok { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:bold; background:#14532d; color:#86efac; }
   .err-solution { margin:6px 0; padding:8px 10px; background:#0f1422; border-radius:8px; border-left:3px solid #4a7fff; }
@@ -233,6 +241,7 @@ def build_html_page() -> str:
   .pf-section.pf-corrupt { background:#2b1111; border-color:#ef4444; }
   .pf-section.pf-addon { background:#0f2922; border-color:#22c55e; }
   .pf-section.pf-conflict { background:#1a1a2e; border-color:#8b5cf6; }
+  .pf-section.pf-skin { background:#2b1115; border-color:#ef4444; }
   .pf-section-title { font-weight:bold; font-size:13px; margin-bottom:6px; }
   .pf-partner { font-size:12px; color:#94a3b8; margin:2px 0; }
   .pf-partner code { font-size:11px; }
@@ -438,6 +447,16 @@ def build_html_page() -> str:
   .sim-badge-creator { background:#3b82f618; color:#93c5fd; border:1px solid #3b82f633; }
   .sim-partner-line { font-size:11px; color:#f472b6; padding:4px 14px 0; display:flex; align-items:center; gap:4px; position:relative; z-index:2; }
   .sim-extra-line { font-size:10px; color:#64748b; padding:2px 14px 0; position:relative; z-index:2; }
+  /* ── Outfit-Sektion ── */
+  .sim-outfit-section { padding:6px 12px 8px; position:relative; z-index:2; border-top:1px solid #ffffff08; margin-top:4px; }
+  .sim-outfit-title { font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+  .sim-outfit-detail { max-height:0; overflow:hidden; transition:max-height 0.3s ease; }
+  .sim-outfit-detail.open { max-height:800px; }
+  .outfit-cat-row { padding:4px 0; border-bottom:1px solid #1e293b; }
+  .outfit-cat-name { font-size:11px; font-weight:700; color:#e2e8f0; }
+  .outfit-cat-count { font-size:10px; color:#94a3b8; margin-left:8px; }
+  .outfit-bt-tags { display:flex; flex-wrap:wrap; gap:3px; margin-top:3px; }
+  .outfit-bt-tag { font-size:9px; background:#1e293b; color:#94a3b8; padding:1px 6px; border-radius:4px; border:1px solid #334155; }
   /* ── Familien-Rollen ── */
   .sim-family-section { padding:6px 12px 8px; position:relative; z-index:2; border-top:1px solid #ffffff08; margin-top:4px; }
   .sim-family-title { font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
@@ -491,6 +510,109 @@ def build_html_page() -> str:
   .sim-detail-row .detail-icon { font-size:12px; }
   .sim-detail-row .detail-label { color:#64748b; }
   .sim-detail-row .detail-val { color:#cbd5e1; }
+
+  /* ═══ MMO CHARACTER SHEET MODAL ═══ */
+  .cs-overlay { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); display:none; overflow-y:auto; animation:cs-fadeIn 0.25s ease; }
+  .cs-overlay.open { display:flex; justify-content:center; align-items:flex-start; padding:24px; }
+  @keyframes cs-fadeIn { from{opacity:0} to{opacity:1} }
+  .cs-sheet { width:100%; max-width:900px; background:linear-gradient(180deg,#12101f 0%,#0a0914 100%); border:2px solid #2a2755; border-radius:16px; box-shadow:0 0 60px rgba(99,102,241,0.15),0 0 120px rgba(99,102,241,0.05); position:relative; overflow:hidden; margin:auto; }
+  .cs-sheet::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h60M30 0v60' stroke='%23ffffff' stroke-width='0.3' opacity='0.03'/%3E%3C/svg%3E"); pointer-events:none; }
+  .cs-close { position:absolute; top:14px; right:18px; z-index:10; background:none; border:1px solid #ffffff22; color:#94a3b8; font-size:20px; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .cs-close:hover { background:#ef444433; border-color:#ef4444; color:#f87171; }
+  /* Header */
+  .cs-header { display:flex; align-items:center; gap:20px; padding:24px 28px 16px; border-bottom:1px solid #ffffff0a; position:relative; z-index:1; }
+  .cs-portrait { width:100px; height:100px; border-radius:14px; overflow:hidden; border:3px solid #312e81; flex-shrink:0; background:#0c0a2a; }
+  .cs-portrait img { width:100%; height:100%; object-fit:cover; }
+  .cs-portrait .cs-emoji { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:48px; background:linear-gradient(135deg,#1e1b4b 0%,#0f172a 100%); }
+  .cs-header-info { flex:1; min-width:0; }
+  .cs-name { font-size:22px; font-weight:800; color:#f1f5f9; letter-spacing:0.01em; }
+  .cs-subtitle { font-size:12px; color:#64748b; margin-top:2px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cs-subtitle .cs-tag { font-size:10px; padding:2px 8px; border-radius:6px; font-weight:600; }
+  .cs-subtitle .cs-tag-species { background:#7c3aed22; color:#c4b5fd; border:1px solid #7c3aed44; }
+  .cs-subtitle .cs-tag-age { background:#3b82f622; color:#93c5fd; border:1px solid #3b82f644; }
+  .cs-subtitle .cs-tag-gender { background:#ec489922; color:#f9a8d4; border:1px solid #ec489944; }
+  .cs-subtitle .cs-tag-gender.male { background:#3b82f622; color:#93c5fd; border-color:#3b82f644; }
+  .cs-subtitle .cs-tag-career { background:#f59e0b22; color:#fcd34d; border:1px solid #f59e0b44; }
+  .cs-subtitle .cs-tag-mood { border-radius:6px; padding:2px 8px; font-size:10px; font-weight:600; }
+  .cs-gold { position:absolute; right:28px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:6px; }
+  .cs-gold-icon { font-size:20px; }
+  .cs-gold-val { font-size:18px; font-weight:800; color:#fbbf24; text-shadow:0 0 12px rgba(251,191,36,0.3); }
+  /* Two-column layout */
+  .cs-body { display:grid; grid-template-columns:1fr 1fr; gap:0; position:relative; z-index:1; }
+  .cs-col { padding:16px 24px; }
+  .cs-col:first-child { border-right:1px solid #ffffff06; }
+  .cs-section-title { font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .cs-section-title .cs-st-icon { font-size:13px; }
+  /* Skill bars */
+  .cs-skill { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .cs-skill-name { font-size:11px; color:#cbd5e1; width:100px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cs-skill-bar { flex:1; height:8px; border-radius:4px; background:#1a1744; overflow:hidden; position:relative; border:1px solid #2a2755; }
+  .cs-skill-fill { height:100%; border-radius:3px; transition:width 0.6s ease; background:linear-gradient(90deg,#6366f1,#8b5cf6); box-shadow:inset 0 1px 0 rgba(255,255,255,0.15); }
+  .cs-skill-lvl { font-size:10px; font-weight:700; color:#a78bfa; width:28px; text-align:right; flex-shrink:0; }
+  /* Trait chips */
+  .cs-traits { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .cs-trait { font-size:10px; padding:3px 9px; border-radius:8px; font-weight:600; background:#1e1b4b; color:#c4b5fd; border:1px solid #312e81; }
+  .cs-trait-person { background:#3b82f615; color:#93c5fd; border-color:#3b82f633; }
+  .cs-trait-bonus { background:#f59e0b15; color:#fcd34d; border-color:#f59e0b33; }
+  .cs-trait-aspir { background:#ec489915; color:#f9a8d4; border-color:#ec489933; }
+  .cs-trait-like { background:#ef444415; color:#fca5a5; border-color:#ef444433; }
+  .cs-trait-dislike { background:#64748b15; color:#94a3b8; border-color:#64748b33; text-decoration:line-through; }
+  .cs-trait-life { background:#22c55e15; color:#86efac; border-color:#22c55e33; }
+  /* Preference rows */
+  .cs-pref-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px; }
+  .cs-pref-cat { font-size:10px; color:#94a3b8; font-weight:600; min-width:90px; flex-shrink:0; }
+  /* Needs vitals */
+  .cs-need { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .cs-need-icon { font-size:14px; width:20px; text-align:center; flex-shrink:0; }
+  .cs-need-name { font-size:10px; color:#94a3b8; width:48px; flex-shrink:0; }
+  .cs-need-bar { flex:1; height:10px; border-radius:5px; background:#1a1744; overflow:hidden; border:1px solid #2a2755; position:relative; }
+  .cs-need-fill { height:100%; border-radius:4px; transition:width 0.6s; }
+  .cs-need-fill.crit { background:linear-gradient(90deg,#dc2626,#ef4444); box-shadow:0 0 8px rgba(239,68,68,0.4); }
+  .cs-need-fill.low { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .cs-need-fill.med { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+  .cs-need-fill.high { background:linear-gradient(90deg,#22c55e,#4ade80); }
+  .cs-need-pct { font-size:10px; font-weight:600; color:#94a3b8; width:30px; text-align:right; flex-shrink:0; }
+  /* Equipment / outfit */
+  .cs-equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .cs-equip-slot { background:#0f0d1e; border:1px solid #1e1b4b; border-radius:8px; padding:8px 10px; display:flex; align-items:center; gap:8px; transition:all 0.2s; }
+  .cs-equip-slot:hover { border-color:#6366f144; background:#12101f; }
+  .cs-equip-icon { font-size:18px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:#1a1744; border-radius:6px; border:1px solid #2a2755; flex-shrink:0; }
+  .cs-equip-info { flex:1; min-width:0; }
+  .cs-equip-label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
+  .cs-equip-val { font-size:11px; color:#cbd5e1; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cs-equip-empty .cs-equip-icon { opacity:0.3; }
+  .cs-equip-empty .cs-equip-val { color:#334155; }
+  /* Info rows */
+  .cs-info-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:11px; }
+  .cs-info-icon { font-size:13px; width:20px; text-align:center; flex-shrink:0; }
+  .cs-info-label { color:#64748b; }
+  .cs-info-val { color:#cbd5e1; font-weight:600; margin-left:auto; }
+  /* CC Mods section */
+  .cs-cc-list { max-height:120px; overflow-y:auto; }
+  .cs-cc-item { display:flex; align-items:center; gap:6px; padding:3px 0; font-size:10px; }
+  .cs-cc-name { color:#fbbf24; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cs-cc-count { color:#64748b; font-weight:600; }
+  /* Family */
+  .cs-family-member { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:11px; color:#cbd5e1; }
+  .cs-family-member .cs-fm-role { font-size:9px; color:#94a3b8; margin-left:auto; }
+  /* Relationship detail rows */
+  .cs-rel-scroll { max-height:260px; overflow-y:auto; padding-right:4px; scrollbar-width:thin; scrollbar-color:#334155 transparent; }
+  .cs-rel-scroll::-webkit-scrollbar { width:5px; }
+  .cs-rel-scroll::-webkit-scrollbar-track { background:transparent; }
+  .cs-rel-scroll::-webkit-scrollbar-thumb { background:#334155; border-radius:4px; }
+  .cs-rel-row { display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11px; }
+  .cs-rel-name { color:#cbd5e1; min-width:90px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cs-rel-tags { display:flex; flex-wrap:wrap; gap:3px; }
+  .cs-rel-tag { font-size:9px; padding:1px 6px; border-radius:6px; font-weight:600; background:#1e1b4b; color:#c4b5fd; border:1px solid #312e81; }
+  .cs-rel-fam { background:#7c3aed15; color:#c4b5fd; border-color:#7c3aed33; }
+  .cs-rel-rom { background:#ec489915; color:#f9a8d4; border-color:#ec489933; }
+  .cs-rel-fri { background:#3b82f615; color:#93c5fd; border-color:#3b82f633; }
+  .cs-rel-comp { background:#f59e0b15; color:#fcd34d; border-color:#f59e0b33; }
+  /* Footer */
+  .cs-footer { padding:12px 24px; border-top:1px solid #ffffff06; text-align:center; font-size:10px; color:#334155; position:relative; z-index:1; }
+  /* Responsive */
+  @media (max-width:700px) { .cs-body { grid-template-columns:1fr; } .cs-col:first-child { border-right:none; border-bottom:1px solid #ffffff06; } .cs-header { flex-direction:column; text-align:center; } .cs-gold { position:static; transform:none; justify-content:center; margin-top:8px; } }
+
   /* Library household cards */
   .lib-hh-card { background:linear-gradient(135deg,#1a1d2e 0%,#0f1115 100%); border:1px solid #334155; border-radius:14px; padding:16px; transition:all 0.2s; }
   .lib-hh-card:hover { border-color:#6366f155; box-shadow:0 0 20px rgba(99,102,241,0.08); transform:translateY(-1px); }
@@ -520,6 +642,41 @@ def build_html_page() -> str:
   /* ── Card-Glanz-Effekt bei Hover ── */
   .sim-card::after { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), transparent 60%); opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:0; }
   .sim-card:hover::after { opacity:1; }
+  /* ── Neue Badges: Spezies, Simoleons, Karriere, Lot, Username ── */
+  .sim-badge-simoleons { background:#22c55e18; color:#86efac; border:1px solid #22c55e33; font-weight:700; }
+  .sim-badge-career { background:#3b82f618; color:#93c5fd; border:1px solid #3b82f633; }
+  .sim-badge-lot { background:#a855f718; color:#d8b4fe; border:1px solid #a855f733; font-style:italic; }
+  .sim-badge-username { background:#06b6d418; color:#67e8f9; border:1px solid #06b6d433; }
+  /* Spezies-spezifische Karten-Farben */
+  .sim-card.pet { border-color:#a855f780; background:linear-gradient(180deg,#3b1d5e 0%,#0f172a 100%); }
+  .sim-card.pet:hover { border-color:#c084fc; box-shadow:0 8px 32px rgba(168,85,247,0.35); }
+  .sim-card.horse { border-color:#92400e80; background:linear-gradient(180deg,#451a03 0%,#0f172a 100%); }
+  .sim-card.horse:hover { border-color:#d97706; box-shadow:0 8px 32px rgba(217,119,6,0.35); }
+  .sim-card.werewolf { border-color:#65a30d80; background:linear-gradient(180deg,#1a2e05 0%,#0f172a 100%); }
+  .sim-card.werewolf:hover { border-color:#84cc16; box-shadow:0 8px 32px rgba(132,204,22,0.35); }
+  .sim-card.spellcaster { border-color:#7c3aed80; background:linear-gradient(180deg,#2e1065 0%,#0f172a 100%); }
+  .sim-card.spellcaster:hover { border-color:#a78bfa; box-shadow:0 8px 32px rgba(139,92,246,0.35); }
+  .sim-card.fairy { border-color:#10b98180; background:linear-gradient(180deg,#064e3b 0%,#0f172a 100%); }
+  .sim-card.fairy:hover { border-color:#34d399; box-shadow:0 8px 32px rgba(52,211,153,0.35); }
+  .sim-card.vampire { border-color:#dc262680; background:linear-gradient(180deg,#450a0a 0%,#0f172a 100%); }
+  .sim-card.vampire:hover { border-color:#f87171; box-shadow:0 8px 32px rgba(248,113,113,0.35); }
+  .sim-card.mermaid { border-color:#06b6d480; background:linear-gradient(180deg,#083344 0%,#0f172a 100%); }
+  .sim-card.mermaid:hover { border-color:#22d3ee; box-shadow:0 8px 32px rgba(34,211,238,0.35); }
+  .sim-card.alien { border-color:#84cc1680; background:linear-gradient(180deg,#1a2e05 0%,#0f172a 100%); }
+  .sim-card.alien:hover { border-color:#a3e635; box-shadow:0 8px 32px rgba(163,230,53,0.35); }
+  /* ── Trait-Details Tooltip/Aufklapper ── */
+  .sim-trait-details { display:none; font-size:10px; color:#94a3b8; padding:2px 12px; margin-top:2px; }
+  .sim-badge-traits:hover + .sim-trait-details, .sim-trait-details:hover { display:flex; gap:6px; flex-wrap:wrap; }
+  .sim-trait-detail-item { background:#1e293b; padding:1px 6px; border-radius:4px; border:1px solid #334155; white-space:nowrap; }
+  /* ── Spieleinstellungen-Panel ── */
+  .game-settings-panel { background:linear-gradient(135deg,#1a1d2e 0%,#0f1115 100%); border:1px solid #334155; border-radius:14px; padding:16px; margin-bottom:16px; }
+  .game-settings-panel h3 { font-size:14px; font-weight:700; color:#e2e8f0; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .game-settings-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px; }
+  .game-setting-item { display:flex; align-items:center; gap:8px; padding:6px 10px; background:#0f172a; border:1px solid #1e293b; border-radius:8px; font-size:12px; }
+  .game-setting-icon { font-size:14px; flex-shrink:0; }
+  .game-setting-label { color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; }
+  .game-setting-val { color:#e2e8f0; font-weight:600; }
+  .game-version-badge { font-size:11px; background:#6366f122; color:#a5b4fc; border:1px solid #6366f144; padding:3px 10px; border-radius:8px; font-weight:600; }
   .sim-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:14px; }
   .tray-most-used-table { width:100%; border-collapse:collapse; margin-top:10px; }
   .tray-most-used-table th { text-align:left; font-size:11px; color:#64748b; padding:6px 10px; border-bottom:1px solid #334155; }
@@ -528,6 +685,15 @@ def build_html_page() -> str:
   .tray-used-count { background:#6366f133; color:#a5b4fc; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
   .tray-progress { background:#1e293b; border-radius:8px; height:8px; margin:10px 0; overflow:hidden; }
   .tray-progress-bar { height:100%; background:linear-gradient(90deg,#6366f1,#a78bfa); border-radius:8px; transition:width 0.3s; }
+
+  /* ═══ MINI SIMS-LOADER (einheitlich für alle Tabs) ═══ */
+  .sims-mini-loader { text-align:center; padding:30px 20px; }
+  .sims-mini-loader .mini-plumbob { width:40px; height:52px; margin:0 auto 12px; animation: miniPlumbobFloat 2s ease-in-out infinite; }
+  @keyframes miniPlumbobFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .sims-mini-loader .mini-loader-bar-wrap { max-width:280px; margin:0 auto 14px; height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
+  .sims-mini-loader .mini-loader-bar { height:100%; background:linear-gradient(90deg,#3bc455,#4cda64,#7be89a); border-radius:4px; transition:width 0.3s ease; box-shadow:0 0 8px rgba(76,218,100,0.4); }
+  .sims-mini-loader .mini-loader-text { font-size:14px; font-weight:300; color:rgba(255,255,255,0.5); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+  .sims-mini-loader .mini-loader-tip { font-size:12px; color:rgba(255,255,255,0.35); letter-spacing:1px; min-height:18px; transition:opacity 0.4s ease; }
   .tray-warning-badge { display:inline-flex; align-items:center; gap:4px; background:#f59e0b22; color:#fbbf24; border:1px solid #f59e0b44; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; cursor:help; }
 
   /* Toast-Benachrichtigungen */
@@ -574,6 +740,8 @@ def build_html_page() -> str:
   .loader-bar-wrap { width:380px; max-width:80vw; height:4px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; margin-bottom:20px; z-index:2; }
   .loader-bar { height:100%; width:0%; background:linear-gradient(90deg,#3bc455,#4cda64,#7be89a); border-radius:4px; transition:width 0.4s ease; box-shadow:0 0 12px rgba(76,218,100,0.5); }
   .loader-tip { font-size:14px; font-weight:300; color:rgba(255,255,255,0.7); letter-spacing:1px; min-height:22px; z-index:2; transition:opacity 0.4s ease; }
+  .loader-stage { font-size:11px; font-weight:400; color:rgba(255,255,255,0.35); letter-spacing:1px; margin-top:10px; z-index:2; min-height:16px; transition:opacity 0.3s ease; }
+  .loader-stage .stage-pct { color:rgba(76,218,100,0.7); font-weight:600; margin-left:6px; }
   .loader-particle { position:absolute; width:3px; height:3px; background:rgba(76,218,100,0.4); border-radius:50%; animation:particle-rise linear infinite; }
   @keyframes particle-rise { 0%{transform:translateY(0) scale(1); opacity:0.6;} 100%{transform:translateY(-100vh) scale(0); opacity:0;} }
   .loader-brand { position:absolute; bottom:30px; left:40px; font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.25); z-index:2; }
@@ -586,9 +754,10 @@ def build_html_page() -> str:
 <div id="sims-loader">
   <canvas id="plumbob-canvas"></canvas>
   <div class="loader-title">Duplicate Scanner</div>
-  <div class="loader-version">v3.1.0</div>
+  <div class="loader-version">v3.2.0</div>
   <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
   <div class="loader-tip" id="loader-tip"></div>
+  <div class="loader-stage" id="loader-stage"></div>
   <div class="loader-brand">SIMS 4 TOOLS</div>
   <button class="loader-skip" onclick="dismissLoader()">Überspringen ›</button>
 </div>
@@ -608,7 +777,77 @@ function setLoaderProgress(pct) {
   _loaderProgress = Math.min(100, Math.max(0, pct));
   var b = document.getElementById('loader-bar');
   if (b) b.style.width = _loaderProgress + '%';
+  _updateLoaderStage();
   if (_loaderProgress >= 100) setTimeout(dismissLoader, 500);
+}
+
+// ═══ READINESS TRACKING — Loader bleibt bis ALLES fertig ═══
+var _scanReady = false, _savegameReady = false, _libraryReady = false;
+function _checkAllReady() {
+  if (_loaderDismissed) return;
+  var done = (_scanReady?1:0) + (_savegameReady?1:0) + (_libraryReady?1:0);
+  // Scan=0-40%, Savegame=40-70%, Library=70-100%
+  var minPct = 0;
+  if (_scanReady) minPct = 40;
+  if (_savegameReady) minPct = Math.max(minPct, 70);
+  if (_libraryReady) minPct = Math.max(minPct, 100);
+  if (done >= 3) minPct = 100;
+  if (_loaderProgress < minPct) setLoaderProgress(minPct);
+}
+
+// ═══ STAGE-ANZEIGE unter dem Tipp ═══
+function _updateLoaderStage() {
+  var el = document.getElementById('loader-stage');
+  if (!el || _loaderDismissed) return;
+  var pct = Math.round(_loaderProgress);
+  var stage = '';
+  if (!_scanReady) stage = '📦 Scan-Daten laden';
+  else if (!_savegameReady && !_libraryReady) stage = '💾 Spielstand & Bibliothek laden';
+  else if (!_savegameReady) stage = '💾 Spielstand wird analysiert';
+  else if (!_libraryReady) stage = '📚 Bibliothek wird geladen';
+  else stage = '✅ Alles bereit!';
+  el.innerHTML = stage + ' <span class="stage-pct">' + pct + '%</span>';
+}
+
+// ═══ MINI-LOADER Hilfsfunktionen (einheitlich für alle Tabs) ═══
+var _miniPlumbobSVG = '<svg class="mini-plumbob" viewBox="0 0 54 70"><defs><linearGradient id="mlG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7af59a"/><stop offset="50%" stop-color="#3ed85e"/><stop offset="100%" stop-color="#1a8c3a"/></linearGradient></defs><polygon points="27,2 52,28 27,68 2,28" fill="url(#mlG)" opacity="0.85" stroke="#7af59a" stroke-width="0.5"/><polygon points="27,8 46,28 27,60 8,28" fill="#4cda64" opacity="0.25"/></svg>';
+var _miniTips = [
+  "Retikuliere Splines \u2026", "Sortiere Simoleons \u2026", "Platziere M\u00f6bel \u2026",
+  "Z\u00e4hle Plumbobs \u2026", "Lade Nachbarschaften \u2026", "Erstelle Sim-Portraits \u2026",
+  "Analysiere Mod-Dateien \u2026", "Katalogisiere Custom Content \u2026",
+  "Berechne Duplikate \u2026", "Dekomprimiere QFS-Daten \u2026"
+];
+function _miniLoaderHTML(id, text, pct) {
+  var tip = _miniTips[Math.floor(Math.random()*_miniTips.length)];
+  return '<div class="sims-mini-loader" id="'+id+'">' + _miniPlumbobSVG +
+    '<div class="mini-loader-text" id="'+id+'-text">'+text+'</div>' +
+    '<div class="mini-loader-bar-wrap"><div class="mini-loader-bar" id="'+id+'-bar" style="width:'+(pct||5)+'%"></div></div>' +
+    '<div style="font-size:12px;color:rgba(76,218,100,0.7);font-weight:600;margin-bottom:6px;min-height:16px;" id="'+id+'-info">'+(pct||0)+'%</div>' +
+    '<div class="mini-loader-tip" id="'+id+'-tip">'+tip+'</div></div>';
+}
+function _setMiniBar(id, pct) {
+  var b = document.getElementById(id+'-bar');
+  if (b) b.style.width = Math.min(pct,100)+'%';
+  var info = document.getElementById(id+'-info');
+  if (info) info.textContent = Math.round(Math.min(pct,100)) + '%';
+}
+function _rotateMiniTip(id) {
+  var el = document.getElementById(id+'-tip');
+  if (!el) return;
+  el.style.opacity='0';
+  setTimeout(function(){
+    el.textContent = _miniTips[Math.floor(Math.random()*_miniTips.length)];
+    el.style.opacity='1';
+  }, 350);
+}
+// Starte Tipp-Rotation für Mini-Loader
+var _miniTipTimers = {};
+function _startMiniTipRotation(id) {
+  if (_miniTipTimers[id]) clearInterval(_miniTipTimers[id]);
+  _miniTipTimers[id] = setInterval(function(){ _rotateMiniTip(id); }, 3000);
+}
+function _stopMiniTipRotation(id) {
+  if (_miniTipTimers[id]) { clearInterval(_miniTipTimers[id]); delete _miniTipTimers[id]; }
 }
 
 (function(){
@@ -625,17 +864,24 @@ function setLoaderProgress(pct) {
     loader.appendChild(p);
   }
 
-  // ─── Lade-Tipps ───
+  // ─── Lade-Tipps (Sims 4 Fun + Programm-Infos) ───
   var tips = [
+    // Sims 4 Fun
     "Retikuliere Splines \u2026", "Sortiere Simoleons \u2026", "Platziere M\u00f6bel \u2026",
     "Z\u00e4hle Plumbobs \u2026", "Kalibriere Wunschbrunnen \u2026", "Lade Nachbarschaften \u2026",
-    "Analysiere Mod-Dateien \u2026", "Katalogisiere Custom Content \u2026",
-    "Durchsuche Spielst\u00e4nde \u2026", "Erstelle Sim-Portraits \u2026",
-    "Berechne Duplikate \u2026", "Pr\u00fcfe Script-Mods \u2026",
-    "Lade Tray-Daten \u2026", "Indexiere Package-Dateien \u2026",
-    "\u00dcbersetze Sim-Namen \u2026", "Untersuche DBPF-Container \u2026",
-    "Dekomprimiere QFS-Daten \u2026", "Scanne Ordnerstruktur \u2026",
-    "Baue Vorschaubilder auf \u2026"
+    "Erstelle Sim-Portraits \u2026", "\u00dcbersetze Sim-Namen \u2026",
+    "Dekomprimiere QFS-Daten \u2026", "Baue Vorschaubilder auf \u2026",
+    // Programm-Infos
+    "\ud83d\udee0\ufe0f Findet Duplikate, korrupte Mods & CC-Konflikte",
+    "\ud83e\udea8 Skin-Diagnose erkennt Stein-Haut automatisch",
+    "\ud83c\udfad Tray-Analyse zeigt CC in Grundst\u00fccken & R\u00e4umen",
+    "\ud83d\udcbe Savegame-Analyse liest alle Sims aus deinem Spielstand",
+    "\ud83d\uddd1\ufe0f Mods k\u00f6nnen direkt gel\u00f6scht oder deaktiviert werden",
+    "\ud83d\udcda Die Bibliothek zeigt gespeicherte Sims mit Portraits",
+    "\u2699\ufe0f Script-Mods brechen fast immer nach Patches",
+    "\ud83d\udd0d \u00dcber 20 Analyse-Tools in einer Oberfl\u00e4che",
+    "\ud83d\udce6 Package-Dateien werden per DBPF-Format gelesen",
+    "\ud83c\udfae Unterst\u00fctzt alle Sims 4 Erweiterungen & Packs"
   ];
   var tipIdx = Math.floor(Math.random()*tips.length);
   var tipEl = document.getElementById('loader-tip');
@@ -649,19 +895,91 @@ function setLoaderProgress(pct) {
     }, 400);
   }, 2800);
 
-  // ─── Sanfter Auto-Fortschritt (stoppt bei 85%, Rest kommt von echtem Load) ───
-  var autoP = 0;
-  function autoAdvance(){
-    if (_loaderDismissed || autoP >= 85) return;
-    if (autoP < 30) autoP += 1.5 + Math.random()*2;
-    else if (autoP < 60) autoP += 0.5 + Math.random()*1.5;
-    else autoP += 0.3 + Math.random()*0.8;
-    if (autoP > 85) autoP = 85;
-    var b = document.getElementById('loader-bar');
-    if (b) b.style.width = autoP + '%';
-    setTimeout(autoAdvance, 200 + Math.random()*400);
+  // ─── Echter Scan-Fortschritt via /api/progress ───
+  function pollScanProgress(){
+    if (_loaderDismissed) return;
+    fetch('/api/progress?token=' + encodeURIComponent(TOKEN))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (_loaderDismissed) return;
+        if (d.active || d.done) {
+          // Echte Prozent: Scan = 0-40% des Hauptloaders
+          var scanPct = 0;
+          if (d.total > 0) scanPct = Math.round((d.cur / d.total) * 100);
+          if (d.done) scanPct = 100;
+          // Skaliere Scan-Fortschritt auf 0-40% des Hauptloaders (Rest für Savegame/Lib)
+          var mappedPct = Math.round(scanPct * 0.4);
+          if (_loaderProgress < mappedPct) {
+            _loaderProgress = mappedPct;
+            var b = document.getElementById('loader-bar');
+            if (b) b.style.width = _loaderProgress + '%';
+          }
+          _updateLoaderStage();
+          // Phase-Info aktualisieren
+          if (d.msg && !_scanReady) {
+            var stEl = document.getElementById('loader-stage');
+            if (stEl) stEl.innerHTML = '\ud83d\udce6 ' + d.msg + ' <span class=\"stage-pct\">' + Math.round(_loaderProgress) + '%</span>';
+          }
+        }
+        if (!_scanReady) setTimeout(pollScanProgress, 600);
+      })
+      .catch(function(){ if (!_scanReady) setTimeout(pollScanProgress, 1500); });
   }
-  setTimeout(autoAdvance, 300);
+  setTimeout(pollScanProgress, 500);
+
+  // ─── Savegame + Bibliothek Progress-Polling (für Hauptloader-Stage) ───
+  function pollSubProgress(){
+    if (_loaderDismissed) return;
+    var pending = [];
+    if (!_savegameReady) pending.push(fetch('/api/savegame?token=' + encodeURIComponent(TOKEN)).then(function(r){return r.json();}));
+    if (!_libraryReady) pending.push(fetch('/api/library?token=' + encodeURIComponent(TOKEN)).then(function(r){return r.json();}));
+    if (pending.length === 0) return;
+    Promise.all(pending).then(function(results){
+      if (_loaderDismissed) return;
+      var stEl = document.getElementById('loader-stage');
+      // Berechne den echten Gesamtfortschritt
+      var sgPct = _savegameReady ? 100 : 0;
+      var libPct = _libraryReady ? 100 : 0;
+      var sgMsg = '', libMsg = '';
+      for (var i = 0; i < results.length; i++) {
+        var d = results[i];
+        if (!d) continue;
+        if (d.progress && d.progress.pct !== undefined) {
+          // Bestimme ob das Savegame oder Library ist
+          if (!_savegameReady && d.progress.phase && (d.progress.msg||'').indexOf('Spielstand') >= 0 || (d.progress.msg||'').indexOf('Portrait') >= 0 || (d.progress.msg||'').indexOf('Wiki') >= 0 || (d.progress.phase||'').indexOf('read') >= 0 || (d.progress.phase||'').indexOf('sims') >= 0 || (d.progress.phase||'').indexOf('wiki') >= 0 || (d.progress.phase||'').indexOf('tray_portraits') >= 0) {
+            sgPct = d.progress.pct;
+            sgMsg = d.progress.msg || '';
+          } else {
+            libPct = d.progress.pct;
+            libMsg = d.progress.msg || '';
+          }
+        }
+      }
+      // Skaliere: Scan=0-40%, Savegame=40-70%, Library=70-100%
+      var totalPct = 40;
+      if (_scanReady) totalPct = 40;
+      if (!_savegameReady) totalPct += Math.round(sgPct * 0.3);
+      else totalPct += 30;
+      if (!_libraryReady) totalPct += Math.round(libPct * 0.3);
+      else totalPct += 30;
+      if (_loaderProgress < totalPct) {
+        _loaderProgress = totalPct;
+        var b = document.getElementById('loader-bar');
+        if (b) b.style.width = _loaderProgress + '%';
+      }
+      // Stage-Text: zeige was gerade aktiv lädt
+      if (stEl && !_loaderDismissed) {
+        var txt = '';
+        if (!_savegameReady && sgMsg) txt = '\ud83d\udcbe ' + sgMsg;
+        else if (!_libraryReady && libMsg) txt = '\ud83d\udcda ' + libMsg;
+        else if (!_savegameReady) txt = '\ud83d\udcbe Spielstand wird analysiert…';
+        else if (!_libraryReady) txt = '\ud83d\udcda Bibliothek wird geladen…';
+        if (txt) stEl.innerHTML = txt + ' <span class=\"stage-pct\">' + Math.round(_loaderProgress) + '%</span>';
+      }
+      if (!_savegameReady || !_libraryReady) setTimeout(pollSubProgress, 800);
+    }).catch(function(){ if (!_savegameReady || !_libraryReady) setTimeout(pollSubProgress, 2000); });
+  }
+  setTimeout(pollSubProgress, 1200);
 
   // ─── THREE.JS PLUMBOB ───
   if (typeof THREE !== 'undefined') {
@@ -768,6 +1086,7 @@ function setLoaderProgress(pct) {
   <button class="nav-tab" onclick="switchTab('addons')" id="nav-addons">🧩 Addons</button>
   <button class="nav-tab" onclick="switchTab('contained')" id="nav-contained">🏷️ Enthaltene</button>
   <button class="nav-tab" onclick="switchTab('conflicts')" id="nav-conflicts">⚔️ Konflikte</button>
+  <button class="nav-tab" onclick="switchTab('skincheck')" id="nav-skincheck">🧑 Skin-Diagnose <span class="nav-badge badge-zero" id="nav-badge-skincheck">0</span></button>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="switchTab('outdated')" id="nav-outdated">⏰ Veraltet <span class="nav-badge badge-zero" id="nav-badge-analysis">0</span></button>
   <button class="nav-tab" onclick="switchTab('deps')" id="nav-deps">🔗 Abhängigkeiten</button>
@@ -875,6 +1194,13 @@ function setLoaderProgress(pct) {
     <div class="dash-label">Konflikte</div>
     <div class="dash-desc">Mods die sich gegenseitig überschreiben — nur einer kann funktionieren.</div>
     <span class="dash-action">Prüfen →</span>
+  </div>
+  <div class="dash-card dash-critical dash-hidden" id="dash-skincheck" onclick="switchTab('skincheck')">
+    <div class="dash-icon">🧑</div>
+    <div class="dash-count" id="dash-skincheck-count">0</div>
+    <div class="dash-label">Skin-Probleme</div>
+    <div class="dash-desc">Skin/Overlay-Konflikte die Stein-Haut und Textur-Fehler verursachen können.</div>
+    <span class="dash-action">Diagnose →</span>
   </div>
   <div class="dash-card dash-info dash-hidden" id="dash-outdated" onclick="switchTab('outdated')">
     <div class="dash-icon">⏰</div>
@@ -1287,6 +1613,21 @@ function setLoaderProgress(pct) {
   <div id="conflict-list" style="margin-top:12px;"></div>
 </div>
 
+<div class="box" id="skincheck-section" data-tab="skincheck">
+  <div class="flex" style="justify-content:space-between; align-items:center;">
+    <h2>🧑 Skin-Diagnose</h2>
+  </div>
+  <div style="background:#2d1b1b; border:1px solid #7f1d1d; border-radius:10px; padding:14px; margin-bottom:14px;">
+    <p style="margin:0 0 8px; font-size:14px; font-weight:bold; color:#fca5a5;">🪨 Was ist die "Stein-Haut"?</p>
+    <p class="muted" style="margin:0 0 6px;">Wenn ein Sim im Spiel plötzlich eine <b>graue/steinige Textur</b> hat, aber in "Sim erstellen" (CAS) normal aussieht, liegt es fast immer an einem <b>Skin/Overlay-Mod-Konflikt</b>.</p>
+    <p class="muted" style="margin:0 0 6px;">Das passiert wenn <b>zwei Skin-Mods die gleichen CAS-Part-IDs</b> verwenden — der eine überschreibt den anderen, und die alte Textur wird als Stein-Fläche angezeigt.</p>
+    <p class="muted" style="margin:0 0 8px;">Auch <b>korrupte Skin-Mods</b> oder <b>Skin-Recolors ohne Basis-Mod</b> können diesen Effekt verursachen.</p>
+    <p style="margin:0; font-size:13px; font-weight:bold; color:#fbbf24;">💡 Lösung: Die hier markierten Mods prüfen und nur EINEN Skin-/Overlay-Mod pro Typ behalten.</p>
+  </div>
+  <div id="skincheck-summary" class="muted"></div>
+  <div id="skincheck-list" style="margin-top:12px;"></div>
+</div>
+
 <div class="box" id="outdated-section" data-tab="outdated">
   <div class="flex" style="justify-content:space-between; align-items:center;">
     <h2>⏰ Veraltete Mods</h2>
@@ -1464,6 +1805,8 @@ function setLoaderProgress(pct) {
       <option value="skills">Meiste Skills</option>
       <option value="mood">Beste Stimmung</option>
       <option value="sim-age">Älteste (Spieltage)</option>
+      <option value="simoleons">💰 Reichste</option>
+      <option value="career">💼 Karriere</option>
       <option value="world">Nach Welt</option>
     </select>
     <select id="savegame-age-filter" class="filter-input" onchange="filterSavegameSims()">
@@ -1483,6 +1826,18 @@ function setLoaderProgress(pct) {
     </select>
     <select id="savegame-world-filter" class="filter-input" onchange="filterSavegameSims()">
       <option value="all">🏘️ Alle Welten</option>
+    </select>
+    <select id="savegame-species-filter" class="filter-input" onchange="filterSavegameSims()">
+      <option value="all">🧬 Alle Spezies</option>
+      <option value="human">🧑 Nur Menschen</option>
+      <option value="Haustier">🐾 Haustiere</option>
+      <option value="Pferd">🐴 Pferde</option>
+      <option value="Werwolf">🐺 Werwölfe</option>
+      <option value="Zauberer">🧙 Zauberer</option>
+      <option value="Fee">🧚 Feen</option>
+      <option value="Vampir">🧛 Vampire</option>
+      <option value="Meerjungfrau">🧜 Meerjungfrauen</option>
+      <option value="Alien">👽 Aliens</option>
     </select>
     <label class="muted small" style="cursor:pointer;"><input type="checkbox" id="savegame-group-hh" onchange="filterSavegameSims()" checked> 👨‍👩‍👧 Nach Haushalt gruppieren</label>
     <label class="muted small" style="cursor:pointer;font-weight:600;color:#a78bfa;"><input type="checkbox" id="savegame-played-filter" onchange="filterSavegameSims()"> 🎮 Meine Sims</label>
@@ -2387,6 +2742,7 @@ function renderSummary(data) {
   const conflictInfo = s.conflict_count ? `<br>🔀 Ressource-Konflikte: <b style="color:#8b5cf6;">${s.conflict_count}</b> Gruppen` : '';
   const addonInfo = s.addon_count ? `<br>🧩 Addon-Beziehungen: <b style="color:#6ee7b7;">${s.addon_count}</b> (OK — erwartet)` : '';
   const outdatedInfo = s.outdated_count ? `<br>⏰ Vor letztem Patch geändert: <b style="color:#fbbf24;">${s.outdated_count}</b> Mods` : '';
+  const skinInfo = s.skin_conflict_count ? `<br>🧑 Skin-Probleme: <b style="color:#ef4444;">${s.skin_conflict_count}</b> (kann Stein-Haut verursachen!)` : '';
   const ignoredGrp = countIgnoredGroups(data);
   const ignoredLabel = ignoredGrp ? ` <span style="color:#6ee7b7;">(${ignoredGrp} ignoriert)</span>` : '';
   return `
@@ -2396,6 +2752,7 @@ function renderSummary(data) {
     Verschwendeter Speicher (identische Duplikate): <b>${esc(s.wasted_h)}</b>
     ${corruptInfo}
     ${conflictInfo}
+    ${skinInfo}
     ${addonInfo}
     ${outdatedInfo}
   `;
@@ -2760,6 +3117,104 @@ function renderConflicts(data) {
   });
 }
 
+function renderSkinCheck(data) {
+  const list = data.skin_conflicts || [];
+  const summaryEl = document.getElementById('skincheck-summary');
+  const listEl = document.getElementById('skincheck-list');
+
+  if (list.length === 0) {
+    summaryEl.innerHTML = '<span style="color:#22c55e;">✅ Keine Skin/Overlay-Probleme gefunden — alles sauber!</span>';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  const highCount = list.filter(c => c.severity === 'hoch').length;
+  const midCount = list.filter(c => c.severity === 'mittel').length;
+  const lowCount = list.filter(c => c.severity === 'niedrig').length;
+  summaryEl.innerHTML =
+    `<b>${list.length}</b> Skin-Problem(e) erkannt: ` +
+    (highCount ? `<span style="color:#ef4444;font-weight:bold;">⚠️ ${highCount} kritisch</span> ` : '') +
+    (midCount ? `<span style="color:#fbbf24;font-weight:bold;">⚡ ${midCount} mittel</span> ` : '') +
+    (lowCount ? `<span style="color:#60a5fa;font-weight:bold;">ℹ️ ${lowCount} Hinweis</span> ` : '');
+
+  const cards = list.map((sc, i) => {
+    const sevColors = {hoch:'#ef4444', mittel:'#fbbf24', niedrig:'#60a5fa'};
+    const sevIcons = {hoch:'⚠️', mittel:'⚡', niedrig:'ℹ️'};
+    const sevLabels = {hoch:'Kritisch', mittel:'Mittel', niedrig:'Hinweis'};
+    const cardClass = sc.severity === 'hoch' ? 'skin-card' : sc.severity === 'niedrig' ? 'skin-card skin-info' : 'skin-card skin-warn';
+    const sevBadge = `<span class="skin-badge skin-badge-${sc.severity}" style="background:${sevColors[sc.severity]||'#94a3b8'}22;color:${sevColors[sc.severity]||'#94a3b8'};border:1px solid ${sevColors[sc.severity]||'#94a3b8'};">${sevIcons[sc.severity]||'❓'} ${sevLabels[sc.severity]||sc.severity}</span>`;
+
+    // Skin detail reasons
+    const detailRows = (sc.skin_details || []).map(sd => {
+      const fname = (sd.file.rel || sd.file.path || '').split(/[\\\\/]/).pop();
+      const reasons = (sd.reasons || []).map(r => `<span class="skin-reason">${esc(r)}</span>`).join(' ');
+      return `<div style="margin:4px 0;"><b style="color:#f0abfc;">${esc(fname)}</b> ${reasons}</div>`;
+    }).join('');
+
+    // File rows with actions
+    const fileRows = (sc.files || []).map(f => {
+      const showFull = document.getElementById('show_full') && document.getElementById('show_full').checked;
+      const rel = f.rel && f.rel !== f.path ? f.rel : '';
+      const mainLine = rel ? rel : f.path;
+      const fullLine = (rel && showFull)
+        ? `<div class="muted small pathline" style="margin-top:4px;"><code>${esc(f.path)}</code></div>`
+        : '';
+      const checked = selected.has(f.path) ? 'checked' : '';
+
+      // Deep info (category, body types)
+      let deepInfo = '';
+      const d = f.deep || {};
+      if (d.category) {
+        deepInfo += `<span class="pill" style="background:#1e293b;font-size:11px;">${esc(d.category)}</span> `;
+      }
+      if (d.cas_body_types && d.cas_body_types.length) {
+        deepInfo += d.cas_body_types.map(bt => `<span class="pill" style="background:#4a1942;color:#f0abfc;border:1px solid #7c3aed;font-size:11px;">${esc(bt)}</span>`).join(' ');
+      }
+
+      return `<div class="file" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div class="row1">
+          <input class="sel selbox" type="checkbox" data-path="${esc(f.path)}" ${checked}>
+          <span class="tag">${esc(f.root_label || '')}</span>
+          <span class="size">${esc(f.size_h || '?')}</span>
+          <span class="date" title="Zuletzt geändert">📅 ${esc(f.mtime || '?')}</span>
+        </div>
+        <div class="pathline" style="margin-top:6px;"><code>${esc(mainLine)}</code></div>
+        ${fullLine}
+        ${deepInfo ? `<div style="margin-top:4px;">${deepInfo}</div>` : ''}
+        <div class="flex" style="margin-top:10px;">
+          <button class="btn btn-ok" data-act="quarantine" data-path="${esc(f.path)}" title="Sicher in Quarantäne verschieben">📦 Quarantäne</button>
+          <button class="btn" data-act="open_folder" data-path="${esc(f.path)}" title="Ordner im Explorer öffnen">📂 Ordner öffnen</button>
+          <button class="btn btn-ghost" data-act="copy" data-path="${esc(f.path)}" title="Pfad kopieren">📋 Pfad kopieren</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Type pills (if conflict)
+    const typePills = (sc.top_types || []).map(([name, count]) =>
+      `<span class="conflict-type-pill">${esc(name)}: ${count}</span>`
+    ).join('');
+
+    return `<div class="${cardClass}" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:22px;">${sc.icon || '🧑'}</span>
+        ${sevBadge}
+        ${sc.shared_count > 0 ? `<span class="conflict-badge">${sc.shared_count} geteilte Keys</span>` : ''}
+        <span class="pill">${(sc.files||[]).length} Datei(en)</span>
+      </div>
+      <div style="font-weight:bold;color:#fca5a5;margin-bottom:6px;">${esc(sc.label || '')}</div>
+      <div class="muted small" style="margin-bottom:8px;">${esc(sc.hint || '')}</div>
+      <div style="background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:10px;border-left:3px solid #fbbf24;">
+        <span style="font-weight:bold;color:#fbbf24;">💡 Empfehlung:</span> <span class="muted">${esc(sc.action || '')}</span>
+      </div>
+      ${detailRows ? `<div style="background:#1a1325;border-radius:8px;padding:8px 12px;margin-bottom:10px;border:1px solid #4c1d95;"><span style="font-weight:bold;color:#c4b5fd;font-size:12px;">🔍 Skin-Details:</span>${detailRows}</div>` : ''}
+      ${typePills ? `<div class="conflict-types" style="margin-bottom:8px;">Geteilte Typen: ${typePills}</div>` : ''}
+      ${fileRows}
+    </div>`;
+  }).join('');
+
+  listEl.innerHTML = cards;
+}
+
 function buildPerFileMap(data) {
   // Sammle ALLE Findings pro Dateipfad
   const map = new Map(); // path -> { file, findings: [] }
@@ -2838,6 +3293,24 @@ function buildPerFileMap(data) {
     }
   }
 
+  // Skin-Konflikte
+  for (const sc of (data.skin_conflicts || [])) {
+    const partners = (sc.files || []).map(f => f.path);
+    for (const f of (sc.files || [])) {
+      const entry = ensure(f);
+      entry.findings.push({
+        category: 'skin',
+        typeLabel: 'Skin-Konflikt',
+        typeClass: 'pf-conflict',
+        severity: sc.severity,
+        label: sc.label,
+        hint: sc.hint,
+        partners: partners.filter(p => p !== f.path),
+        partnerFiles: (sc.files || []).filter(x => x.path !== f.path),
+      });
+    }
+  }
+
   return map;
 }
 
@@ -2860,6 +3333,7 @@ function updateNavBadges(data) {
   const contained = s.contained_count || 0;
   const outdated = s.outdated_count || 0;
   const deps = s.dependency_count || 0;
+  const skinConflicts = s.skin_conflict_count || 0;
 
   // Tab-Badges aktualisieren
   const dupBadge = document.getElementById('nav-badge-groups');
@@ -2878,6 +3352,11 @@ function updateNavBadges(data) {
   document.getElementById('nav-badge-contained').textContent = contained;
   document.getElementById('nav-badge-outdated').textContent = outdated;
   document.getElementById('nav-badge-deps').textContent = deps;
+
+  // Skin-Diagnose Badge
+  const skinBadge = document.getElementById('nav-badge-skincheck');
+  skinBadge.textContent = skinConflicts;
+  skinBadge.classList.toggle('badge-zero', skinConflicts === 0);
 
   // --- Dashboard-Karten aktualisieren ---
   const totalFiles = s.total_files || 0;
@@ -2904,6 +3383,10 @@ function updateNavBadges(data) {
   // Konflikte
   document.getElementById('dash-conflicts-count').textContent = conflict;
   document.getElementById('dash-conflicts').classList.toggle('dash-hidden', conflict === 0);
+
+  // Skin-Diagnose
+  document.getElementById('dash-skincheck-count').textContent = skinConflicts;
+  document.getElementById('dash-skincheck').classList.toggle('dash-hidden', skinConflicts === 0);
 
   // Enthaltene Mods
   document.getElementById('dash-contained-count').textContent = contained;
@@ -3736,7 +4219,7 @@ document.addEventListener('keydown', function(e) {
 function checkAllOK(data) {
   const s = data.summary || {};
   const groups = (s.groups_name||0) + (s.groups_content||0) + (s.groups_similar||0);
-  const hasProblems = groups > 0 || s.corrupt_count > 0 || s.conflict_count > 0 || (s.missing_dep_count||0) > 0;
+  const hasProblems = groups > 0 || s.corrupt_count > 0 || s.conflict_count > 0 || (s.missing_dep_count||0) > 0 || (s.skin_conflict_count||0) > 0;
   showConditionalSection('all-ok-banner', !hasProblems);
   renderHealthScore(data);
 }
@@ -3755,6 +4238,7 @@ function renderHealthScore(data) {
   const outdated = s.outdated_count || 0;
   const missingDeps = s.missing_dep_count || 0;
   const contained = s.contained_count || 0;
+  const skinConf = s.skin_conflict_count || 0;
 
   // Score berechnen (100 = perfekt)
   let score = 100;
@@ -3762,6 +4246,8 @@ function renderHealthScore(data) {
   score -= corrupt * 10;
   // Fehlende Deps: -8 pro Stück
   score -= missingDeps * 8;
+  // Skin-Konflikte: -6 pro Stück (Stein-Haut!)
+  score -= skinConf * 6;
   // Inhalt-Duplikate: -3 pro Gruppe
   score -= dupes * 3;
   // Konflikte: -2 pro Stück
@@ -5402,6 +5888,20 @@ function renderPerFile(data) {
         </div>`;
       }
 
+      if (fi.category === 'skin') {
+        const sevColor = fi.severity === 'hoch' ? '#fca5a5' : fi.severity === 'niedrig' ? '#93c5fd' : '#fde68a';
+        const sevLabel = fi.severity === 'hoch' ? '\u26a0\ufe0f Kritisch' : fi.severity === 'niedrig' ? '\u2139\ufe0f Hinweis' : '\u26a1 Mittel';
+        const partnerList = (fi.partnerFiles||[]).map(p =>
+          `<div class="pf-partner">\ud83e\uddd1 <code>${esc((p.rel||p.path).split(/[\\\\/]/).pop())}</code> \u00b7 ${esc(p.size_h)} \u00b7 ${esc(p.mtime)}</div>`
+        ).join('');
+        return `<div class="pf-section pf-skin">
+          <div class="pf-section-title">\ud83e\uddd1 ${esc(fi.label || 'Skin-Konflikt')} <span style="color:${sevColor}; font-size:12px; margin-left:8px;">${sevLabel}</span></div>
+          <div class="muted small">${esc(fi.hint || 'Skin/Overlay-Mod-Konflikt erkannt.')}</div>
+          ${fi.partners && fi.partners.length > 0 ? `<div class="muted small" style="margin-top:6px;">Kollidiert mit:</div>${partnerList}` : ''}
+          <div class="muted small" style="margin-top:6px; color:#fca5a5;">\ud83d\udc49 <b>Empfehlung:</b> Nur EINEN Skin/Overlay-Mod dieses Typs behalten. Entferne den anderen, um Stein-Haut zu vermeiden.</div>
+        </div>`;
+      }
+
       return '';
     }).join('');
 
@@ -5516,6 +6016,7 @@ async function reloadData() {
   renderAddons(data);
   renderContainedIn(data);
   renderConflicts(data);
+  renderSkinCheck(data);
   renderOutdated(data);
   renderDependencies(data);
   updateNavBadges(data);
@@ -6363,14 +6864,16 @@ reloadData().then(()=>{
   setLast('✅ Daten geladen');
   addLog('PAGE LOAD');
   updateSelCount();
-  // Ladescreen beenden
-  setLoaderProgress(100);
+  // Scan fertig — auf Savegame + Bibliothek warten
+  _scanReady = true;
+  _checkAllReady();
 }).catch(e=>{
   document.getElementById('groups').innerHTML = '<p class="muted">Fehler: ' + esc(e.message) + '</p>';
   setLast('❌ Fehler beim Laden: ' + e.message);
   addLog('LOAD ERROR :: ' + e.message);
-  // Ladescreen trotzdem beenden bei Fehler
-  setLoaderProgress(100);
+  // Scan als fertig markieren trotz Fehler
+  _scanReady = true;
+  _checkAllReady();
 });
 
 // Fehler-Analyse immer laden (unabhängig von Duplikat-Daten)
@@ -6806,7 +7309,8 @@ async function startTrayAnalysis(force) {
   const btnAnalyze = document.getElementById('btn-tray-analyze');
   const btnRefresh = document.getElementById('btn-tray-refresh');
 
-  statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:5%"></div></div><span>Starte Tray-Analyse… Mod-Index wird aufgebaut…</span>';
+  statusEl.innerHTML = _miniLoaderHTML('tray-loader', 'Tray-Analyse wird gestartet', 5);
+  _startMiniTipRotation('tray-loader');
   summaryEl.style.display = 'none';
   filtersEl.style.display = 'none';
   itemsEl.style.display = 'none';
@@ -6836,6 +7340,7 @@ async function startTrayAnalysis(force) {
     btnAnalyze.disabled = false;
     btnAnalyze.textContent = '🔍 Analysieren';
     _trayPolling = false;
+    _stopMiniTipRotation('tray-loader');
   }
 }
 
@@ -6859,14 +7364,20 @@ async function pollTray() {
         btnRefresh.style.display = 'inline-block';
         _refreshAfterTray();
       } else if (d.status === 'analyzing' || d.status === 'started') {
-        progress = Math.min(progress + 3, 90);
-        statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:' + progress + '%"></div></div><span>⏳ Analyse läuft… Tray-Dateien werden gescannt…</span>';
+        var p = (d.progress && d.progress.pct) ? d.progress.pct : Math.min(progress + 3, 90);
+        var msg = (d.progress && d.progress.msg) ? d.progress.msg : 'Tray wird gescannt…';
+        progress = p;
+        _setMiniBar('tray-loader', p);
+        var txtEl = document.getElementById('tray-loader-text');
+        if (txtEl) { txtEl.textContent = msg; }
+        else { statusEl.innerHTML = _miniLoaderHTML('tray-loader', msg, p); _startMiniTipRotation('tray-loader'); }
       } else if (d.status === 'error') {
         clearInterval(iv);
         _trayPolling = false;
         statusEl.innerHTML = '<span style="color:#f87171;">❌ Fehler: ' + esc(d.error || 'Unbekannt') + '</span>';
         btnAnalyze.disabled = false;
         btnAnalyze.textContent = '🔍 Analysieren';
+        _stopMiniTipRotation('tray-loader');
       }
     } catch(e) {
       clearInterval(iv);
@@ -6874,6 +7385,7 @@ async function pollTray() {
       statusEl.innerHTML = '<span style="color:#f87171;">❌ Verbindungsfehler</span>';
       btnAnalyze.disabled = false;
       btnAnalyze.textContent = '🔍 Analysieren';
+      _stopMiniTipRotation('tray-loader');
     }
   }, 2000);
 }
@@ -6886,6 +7398,7 @@ function renderTrayResults() {
   const mostUsedEl = document.getElementById('tray-most-used');
   const s = _trayData.summary;
 
+  _stopMiniTipRotation('tray-loader');
   statusEl.innerHTML = '<span style="color:#4ade80;">✅ Analyse abgeschlossen!</span>';
 
   // Summary grid
@@ -7148,7 +7661,8 @@ async function startSavegameAnalysis(force, selectedSave) {
   const listEl = document.getElementById('savegame-list');
   const btnAnalyze = document.getElementById('btn-savegame-analyze');
 
-  statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:5%"></div></div><span>⏳ Spielstand wird gelesen…</span>';
+  statusEl.innerHTML = _miniLoaderHTML('sg-loader', 'Spielstand wird gelesen', 5);
+  _startMiniTipRotation('sg-loader');
   summaryEl.style.display = 'none';
   filtersEl.style.display = 'none';
   listEl.style.display = 'none';
@@ -7177,6 +7691,8 @@ async function startSavegameAnalysis(force, selectedSave) {
     btnAnalyze.disabled = false;
     btnAnalyze.textContent = '🔍 Analysieren';
     _savegamePolling = false;
+    _stopMiniTipRotation('sg-loader');
+    if (!_savegameReady) { _savegameReady = true; _checkAllReady(); }
   }
 }
 
@@ -7198,8 +7714,13 @@ async function pollSavegame() {
         btnAnalyze.disabled = false;
         btnAnalyze.textContent = '🔍 Analysieren';
       } else if (d.status === 'analyzing' || d.status === 'started') {
-        progress = Math.min(progress + 5, 90);
-        statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:' + progress + '%"></div></div><span>⏳ Spielstand wird analysiert…</span>';
+        var p = (d.progress && d.progress.pct) ? d.progress.pct : Math.min(progress + 5, 90);
+        var msg = (d.progress && d.progress.msg) ? d.progress.msg : 'Spielstand wird analysiert…';
+        progress = p;
+        _setMiniBar('sg-loader', p);
+        var txtEl = document.getElementById('sg-loader-text');
+        if (txtEl) { txtEl.textContent = msg; }
+        else { statusEl.innerHTML = _miniLoaderHTML('sg-loader', msg, p); _startMiniTipRotation('sg-loader'); }
       }
     } catch(e) {
       clearInterval(iv);
@@ -7207,6 +7728,8 @@ async function pollSavegame() {
       statusEl.innerHTML = '<span style="color:#f87171;">❌ Verbindungsfehler</span>';
       btnAnalyze.disabled = false;
       btnAnalyze.textContent = '🔍 Analysieren';
+      _stopMiniTipRotation('sg-loader');
+      if (!_savegameReady) { _savegameReady = true; _checkAllReady(); }
     }
   }, 1500);
 }
@@ -7223,6 +7746,10 @@ function renderSavegameResults() {
   const listEl = document.getElementById('savegame-list');
   const selectEl = document.getElementById('savegame-select');
   const d = _savegameData;
+
+  // Savegame als geladen markieren (auch bei Fehler)
+  if (!_savegameReady) { _savegameReady = true; _checkAllReady(); }
+  _stopMiniTipRotation('sg-loader');
 
   if (d.error) {
     statusEl.innerHTML = '<span style="color:#f87171;">❌ ' + esc(d.error) + '</span>';
@@ -7248,9 +7775,17 @@ function renderSavegameResults() {
   const as = d.age_stats || {};
   const sp = d.species_stats || {};
   const sk = d.skin_stats || {};
+  const gameSets = d.game_settings || {};
+
+  // Gesamtvermögen aller Haushalte berechnen
+  const allFunds = new Map();
+  for (const sim of (d.sims || [])) {
+    if (sim.simoleons > 0 && sim.household) allFunds.set(sim.household, sim.simoleons);
+  }
+  const totalSimoleons = [...allFunds.values()].reduce((a,b)=>a+b, 0);
 
   summaryEl.style.display = 'block';
-  summaryEl.innerHTML = `<div class="tray-summary-grid">
+  let summaryHtml = `<div class="tray-summary-grid">
     <div class="tray-stat"><div class="tray-stat-num">${d.sim_count}</div><div class="tray-stat-label">🧑 Sims</div></div>
     <div class="tray-stat"><div class="tray-stat-num">${d.household_count}</div><div class="tray-stat-label">👨‍👩‍👧 Haushalte</div></div>
     <div class="tray-stat"><div class="tray-stat-num">${d.world_count}</div><div class="tray-stat-label">🌍 Welten</div></div>
@@ -7258,19 +7793,41 @@ function renderSavegameResults() {
     <div class="tray-stat"><div class="tray-stat-num">${gs['Weiblich']||0}</div><div class="tray-stat-label">♀️ Weiblich</div></div>
     <div class="tray-stat"><div class="tray-stat-num">${d.partner_count||0}</div><div class="tray-stat-label">💑 Paare</div></div>
   </div>
-  <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#94a3b8;">
+  <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#94a3b8;align-items:center;">
+    ${gameSets.game_version ? '<span class="game-version-badge">🎮 v' + esc(gameSets.game_version) + '</span>' : ''}
+    ${totalSimoleons > 0 ? '<span style="color:#86efac;font-weight:600;">§ ' + totalSimoleons.toLocaleString('de-DE') + ' Gesamt</span>' : ''}
     <span>👶${as['Baby']||0}</span><span>🧒${as['Kleinkind']||0}</span><span>🧒${as['Kind']||0}</span>
     <span>🧑${as['Teen']||0}</span><span>🧑${as['Junger Erwachsener']||0}</span><span>🧑${as['Erwachsener']||0}</span><span>👴${as['Älterer']||0}</span>
     <span style="margin-left:6px;color:#64748b;">|</span>
     ${Object.entries(sp).map(([k,v]) => '<span style="color:#a78bfa;">'+esc(k)+': '+v+'</span>').join('')}
     <span style="margin-left:6px;color:#64748b;">|</span>
     <span>📦 ${d.active_save_size_mb} MB</span>
-  </div>
-  ${(d.duplicate_sims && d.duplicate_sims.length > 0) ? `<div style="margin-top:10px;padding:10px 14px;background:#ef444420;border:1px solid #ef444440;border-radius:8px;">
+  </div>`;
+
+  // ── Spieleinstellungen-Panel ──
+  if (Object.keys(gameSets).length > 1) {
+    summaryHtml += '<div class="game-settings-panel" style="margin-top:12px;"><h3>⚙️ Spieleinstellungen</h3><div class="game-settings-grid">';
+    if (gameSets.cc_mods !== undefined) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🧩</span><div><div class="game-setting-label">CC/Mods</div><div class="game-setting-val">${gameSets.cc_mods ? '✅ Aktiv' : '❌ Aus'}</div></div></div>`;
+    if (gameSets.script_mods !== undefined) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">📜</span><div><div class="game-setting-label">Skript-Mods</div><div class="game-setting-val">${gameSets.script_mods ? '✅ Aktiv' : '❌ Aus'}</div></div></div>`;
+    if (gameSets.aging !== undefined) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">⏳</span><div><div class="game-setting-label">Alterung</div><div class="game-setting-val">${gameSets.aging ? '✅ An' : '❌ Aus'}</div></div></div>`;
+    if (gameSets.lifespan_label) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">⏱️</span><div><div class="game-setting-label">Lebensdauer</div><div class="game-setting-val">${esc(gameSets.lifespan_label)}</div></div></div>`;
+    if (gameSets.season_label) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🍂</span><div><div class="game-setting-label">Jahreszeiten</div><div class="game-setting-val">${esc(gameSets.season_label)}</div></div></div>`;
+    if (gameSets.autonomy_label) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🤖</span><div><div class="game-setting-label">Autonomie</div><div class="game-setting-val">${esc(gameSets.autonomy_label)}</div></div></div>`;
+    if (gameSets.language) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🌐</span><div><div class="game-setting-label">Sprache</div><div class="game-setting-val">${esc(gameSets.language)}</div></div></div>`;
+    if (gameSets.resolution) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🖥️</span><div><div class="game-setting-label">Auflösung</div><div class="game-setting-val">${esc(gameSets.resolution)}</div></div></div>`;
+    if (gameSets.online_features !== undefined) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🌐</span><div><div class="game-setting-label">Online</div><div class="game-setting-val">${gameSets.online_features ? '✅ An' : '❌ Aus'}</div></div></div>`;
+    if (gameSets.fullscreen !== undefined) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🖥️</span><div><div class="game-setting-label">Vollbild</div><div class="game-setting-val">${gameSets.fullscreen ? '✅ An' : '❌ Aus'}</div></div></div>`;
+    if (gameSets.fps_limit) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🎯</span><div><div class="game-setting-label">FPS-Limit</div><div class="game-setting-val">${gameSets.fps_limit}</div></div></div>`;
+    if (gameSets.ui_scale && gameSets.ui_scale !== 100) summaryHtml += `<div class="game-setting-item"><span class="game-setting-icon">🔍</span><div><div class="game-setting-label">UI-Skalierung</div><div class="game-setting-val">${gameSets.ui_scale}%</div></div></div>`;
+    summaryHtml += '</div></div>';
+  }
+
+  summaryHtml += `${(d.duplicate_sims && d.duplicate_sims.length > 0) ? `<div style="margin-top:10px;padding:10px 14px;background:#ef444420;border:1px solid #ef444440;border-radius:8px;">
     <div style="font-weight:700;color:#f87171;font-size:13px;">⚠️ ${d.duplicate_sims.length} doppelte Sim(s) erkannt!</div>
     <div style="font-size:11px;color:#fca5a5;margin-top:4px;">${d.duplicate_sims.map(ds => ds.count + 'x ' + esc(ds.name) + ' (' + ds.households.map(h=>esc(h)).join(', ') + ')').join(' &middot; ')}</div>
     <div style="font-size:10px;color:#94a3b8;margin-top:4px;">Doppelte Sims können durch Bugs oder Mods entstehen und Spielprobleme verursachen.</div>
   </div>` : ''}`;
+  summaryEl.innerHTML = summaryHtml;
 
   filtersEl.style.display = 'flex';
   listEl.style.display = 'block';
@@ -7307,11 +7864,21 @@ function renderSavegameResults() {
   filterSavegameSims();
 }
 
+// ── Global sim registry for character sheet ──
+if (!window._simRegistry) window._simRegistry = {};
+let _simRegIdx = 0;
+
 function _simCard(sim, showHousehold) {
   const isMale = sim.gender === 'Männlich';
   const isFemale = sim.gender === 'Weiblich';
   const genderCls = isMale ? 'male' : isFemale ? 'female' : 'unknown';
-  const avatarEmoji = sim.age === 'Baby' ? '👶' : sim.age === 'Kleinkind' ? '🧒' : sim.age === 'Kind' ? '🧒' : sim.species === 'Vampir' ? '🧛' : sim.species === 'Zauberer' ? '🧙' : isMale ? '👨' : isFemale ? '👩' : '🧑';
+  // Register sim for character sheet modal
+  const _regId = 'sreg_' + (_simRegIdx++);
+  window._simRegistry[_regId] = sim;
+  const avatarEmoji = sim.species_emoji ? sim.species_emoji : sim.age === 'Baby' ? '👶' : sim.age === 'Kleinkind' ? '🧒' : sim.age === 'Kind' ? '🧒' : isMale ? '👨' : isFemale ? '👩' : '🧑';
+
+  // Spezies-spezifische CSS-Klasse für Karten  
+  const speciesCls = {'Haustier':'pet','Pferd':'horse','Werwolf':'werewolf','Zauberer':'spellcaster','Fee':'fairy','Vampir':'vampire','Meerjungfrau':'mermaid','Alien':'alien'}[sim.species] || '';
 
   // Portrait: Bild (eingebettetes Base64 oder Emoji-Fallback)
   const simFullName = sim.full_name || '';
@@ -7326,23 +7893,50 @@ function _simCard(sim, showHousehold) {
   // Typ-Badge (Geschlecht)
   const typeBadge = `<span class="sim-type-badge ${genderCls}">${sim.gender_emoji} ${esc(sim.gender)}</span>`;
 
+  // Spezies-Badge (wenn nicht Mensch)
+  let speciesBadge = '';
+  if (sim.species) speciesBadge = `<span class="sim-type-badge" style="background:#7c3aed33;color:#c4b5fd;border:1px solid #7c3aed55;">${sim.species_emoji || '✨'} ${esc(sim.species)}</span>`;
+
   // Stats
   let statsHtml = '<div class="sim-card-stats">';
   statsHtml += `<div class="sim-stat"><div class="sim-stat-val">${sim.age_emoji}</div><div class="sim-stat-label">${esc(sim.age)}</div></div>`;
   if (sim.trait_count > 0) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">🎭 ${sim.trait_count}</div><div class="sim-stat-label">Traits</div></div>`;
   if (sim.relationship_count > 0) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">🤝 ${sim.relationship_count}</div><div class="sim-stat-label">Bezieh.</div></div>`;
-  if (sim.species) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">${sim.species === 'Vampir' ? '🧛' : '🧙'}</div><div class="sim-stat-label">${esc(sim.species)}</div></div>`;
+  if (sim.career_name) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">💼 ${sim.career_level||''}</div><div class="sim-stat-label">${esc(sim.career_name)}</div></div>`;
+  else if (sim.career_level > 0) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">💼 ${sim.career_level}</div><div class="sim-stat-label">Karriere</div></div>`;
+  const likesCnt = sim.likes ? Object.values(sim.likes).reduce((s,a)=>s+a.length,0) : 0;
+  const dislikesCnt = sim.dislikes ? Object.values(sim.dislikes).reduce((s,a)=>s+a.length,0) : 0;
+  if (likesCnt > 0 || dislikesCnt > 0) statsHtml += `<div class="sim-stat"><div class="sim-stat-val">❤️ ${likesCnt}</div><div class="sim-stat-label">${dislikesCnt > 0 ? '💔 '+dislikesCnt+' Abneig.' : 'Vorlieben'}</div></div>`;
   statsHtml += '</div>';
 
   // Badges
   let badges = '';
   if (showHousehold !== false) badges += `<span class="sim-badge sim-badge-hh">👨‍👩‍👧 ${esc(sim.household)}</span>`;
   if (sim.is_played) badges += `<span class="sim-badge" style="background:#a78bfa22;color:#c4b5fd;border:1px solid #a78bfa44;">🎮 Gespielt</span>`;
+  if (sim.simoleons > 0) badges += `<span class="sim-badge sim-badge-simoleons">§ ${sim.simoleons.toLocaleString('de-DE')}</span>`;
+  if (sim.lot_name) badges += `<span class="sim-badge sim-badge-lot">🏠 ${esc(sim.lot_name)}</span>`;
+  if (sim.gallery_username) badges += `<span class="sim-badge sim-badge-username">👤 ${esc(sim.gallery_username)}</span>`;
   if (sim._isBasegame) badges += `<span class="sim-badge sim-badge-basegame">🏠 Basegame</span>`;
   if (sim._isTownie) badges += `<span class="sim-badge sim-badge-townie">🤖 EA-Townie</span>`;
   if (sim._isDuplicate) badges += `<span class="sim-badge sim-badge-dupe">⚠️ Duplikat</span>`;
   if (sim._inLibrary) badges += `<span class="sim-badge" style="background:#22c55e22;color:#86efac;border:1px solid #22c55e44;">📚 In Bibliothek</span>`;
   if (sim.skin_tone) badges += `<span class="sim-badge sim-badge-skin">🎨 ${esc(sim.skin_tone)}</span>`;
+
+  // Trait-Details Aufschlüsselung
+  let traitDetailHtml = '';
+  if (sim.trait_details) {
+    const td = sim.trait_details;
+    const parts = [];
+    if (td.personality) parts.push('🧠 ' + td.personality + ' Persönl.');
+    if (td.bonus) parts.push('⭐ ' + td.bonus + ' Bonus');
+    if (td.lifestyle) parts.push('🏃 ' + td.lifestyle + ' Lifestyle');
+    if (td.likes) parts.push('❤️ ' + td.likes + ' Likes');
+    if (td.aspiration) parts.push('🌟 ' + td.aspiration + ' Aspiration');
+    if (parts.length > 0) {
+      const items = parts.map(p => `<span class="sim-trait-detail-item">${p}</span>`).join('');
+      traitDetailHtml = `<div class="sim-trait-details" style="display:flex;">${items}</div>`;
+    }
+  }
 
   // CC-Badge
   let ccHtml = '';
@@ -7418,6 +8012,29 @@ function _simCard(sim, showHousehold) {
     ageInfoHtml = `<div class="sim-detail-row"><span class="detail-icon">📅</span><span class="detail-label">Spielalter:</span><span class="detail-val">${sim.sim_age_days} Tage</span></div>`;
   }
 
+  // ── Outfits ──
+  let outfitHtml = '';
+  if (sim.outfit_summary && sim.outfit_summary.length > 0) {
+    const ofId = 'outfit-' + (sim.full_name || '').replace(/[^a-zA-Z0-9]/g, '') + '_' + (sim.sim_id || 0);
+    const catRows = sim.outfit_summary.map(o => {
+      const btTags = (o.body_types || []).map(bt => `<span class="outfit-bt-tag">${esc(bt)}</span>`).join('');
+      return `<div class="outfit-cat-row"><span class="outfit-cat-name">${esc(o.category)}</span><span class="outfit-cat-count">${o.part_count} Teile</span><div class="outfit-bt-tags">${btTags}</div></div>`;
+    }).join('');
+    // CC-Mods die zum Outfit gehören
+    let outfitCcHtml = '';
+    if (sim.outfit_cc_mods && sim.outfit_cc_mods.length > 0) {
+      const ccRows = sim.outfit_cc_mods.slice(0, 15).map(m =>
+        `<div class="lib-cc-item"><span class="lib-cc-item-name">${esc(m.name)}</span><span class="lib-cc-item-count">${m.matches}x</span></div>`
+      ).join('');
+      const moreCount = sim.outfit_cc_mods.length > 15 ? `<div class="muted small" style="padding:4px 0;">+ ${sim.outfit_cc_mods.length - 15} weitere…</div>` : '';
+      outfitCcHtml = `<div style="margin-top:6px;border-top:1px solid #334155;padding-top:6px;"><div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:4px;">🧩 CC-Teile im Outfit</div>${ccRows}${moreCount}</div>`;
+    }
+    outfitHtml = `<div class="sim-outfit-section">
+      <div class="sim-outfit-title" style="cursor:pointer;" onclick="document.getElementById('${ofId}').classList.toggle('open');event.stopPropagation();">👗 ${sim.outfit_total_parts || 0} Outfit-Teile · ${sim.outfit_categories ? sim.outfit_categories.length : 0} Kategorien ▾</div>
+      <div class="sim-outfit-detail lib-cc-list" id="${ofId}">${catRows}${outfitCcHtml}</div>
+    </div>`;
+  }
+
   // Familienmitglieder (aufklappbar, wenn mehr als 0)
   let familyHtml = '';
   if (sim.family_members && sim.family_members.length > 0) {
@@ -7432,10 +8049,10 @@ function _simCard(sim, showHousehold) {
     </div>`;
   }
 
-  return `<div class="sim-card ${genderCls}" data-has-portrait="1">
+  return `<div class="sim-card ${genderCls} ${speciesCls}" data-has-portrait="1" data-reg-id="${_regId}" onclick="openCharSheet('${_regId}')" style="cursor:pointer;">
     <div class="sim-card-topbar">
       <span class="sim-name" title="${esc(sim.full_name)}">${esc(sim.full_name)}</span>
-      <div class="sim-badges-row">${roleHtml}${typeBadge}</div>
+      <div class="sim-badges-row">${roleHtml}${speciesBadge}${typeBadge}</div>
     </div>
     ${portraitHtml}
     <div class="sim-card-info">
@@ -7443,6 +8060,7 @@ function _simCard(sim, showHousehold) {
       ${sim.world ? `<div class="sim-world-tag">🏘️ ${esc(sim.world)}</div>` : ''}
     </div>
     ${statsHtml}
+    ${traitDetailHtml}
     ${partnerHtml}
     ${relBarHtml}
     ${moodHtml}
@@ -7451,6 +8069,7 @@ function _simCard(sim, showHousehold) {
     ${needsHtml}
     <div class="sim-card-body"><div class="sim-badges">${badges}</div></div>
     ${ccHtml}
+    ${outfitHtml}
     ${familyHtml}
   </div>`;
 }
@@ -7462,6 +8081,7 @@ function filterSavegameSims() {
   const ageFilter = document.getElementById('savegame-age-filter').value;
   const genderFilter = document.getElementById('savegame-gender-filter').value;
   const worldFilter = document.getElementById('savegame-world-filter').value;
+  const speciesFilter = document.getElementById('savegame-species-filter').value;
   const groupHH = document.getElementById('savegame-group-hh').checked;
   const playedOnly = document.getElementById('savegame-played-filter').checked;
   const portraitOnly = document.getElementById('savegame-portrait-filter').checked;
@@ -7483,6 +8103,8 @@ function filterSavegameSims() {
       (s.species && s.species.toLowerCase().includes(search)) ||
       (s.family_role && s.family_role.toLowerCase().includes(search)) ||
       (s.mood_label && s.mood_label.toLowerCase().includes(search)) ||
+      (s.lot_name && s.lot_name.toLowerCase().includes(search)) ||
+      (s.gallery_username && s.gallery_username.toLowerCase().includes(search)) ||
       (s.top_skills && s.top_skills.some(sk => sk.name.toLowerCase().includes(search))) ||
       (s._ccMods && s._ccMods.some(m => m.name.toLowerCase().includes(search)))
     );
@@ -7490,6 +8112,8 @@ function filterSavegameSims() {
   if (ageFilter !== 'all') sims = sims.filter(s => s.age === ageFilter);
   if (genderFilter !== 'all') sims = sims.filter(s => s.gender === genderFilter);
   if (worldFilter !== 'all') sims = sims.filter(s => (s.world || '') === worldFilter);
+  if (speciesFilter === 'human') sims = sims.filter(s => !s.species);
+  else if (speciesFilter !== 'all') sims = sims.filter(s => (s.species || '') === speciesFilter);
   if (playedOnly) sims = sims.filter(s => s.is_played);
   if (portraitOnly) sims = sims.filter(s => s._hasPortrait);
   if (basegameOnly) sims = sims.filter(s => s._isBasegame);
@@ -7506,6 +8130,8 @@ function filterSavegameSims() {
   else if (sortBy === 'skills') sims.sort((a, b) => (b.skill_count||0) - (a.skill_count||0) || a.full_name.localeCompare(b.full_name));
   else if (sortBy === 'mood') sims.sort((a, b) => (b.mood_value||0) - (a.mood_value||0) || a.full_name.localeCompare(b.full_name));
   else if (sortBy === 'sim-age') sims.sort((a, b) => (b.sim_age_days||0) - (a.sim_age_days||0) || a.full_name.localeCompare(b.full_name));
+  else if (sortBy === 'simoleons') sims.sort((a, b) => (b.simoleons||0) - (a.simoleons||0) || a.full_name.localeCompare(b.full_name));
+  else if (sortBy === 'career') sims.sort((a, b) => (b.career_level||0) - (a.career_level||0) || (a.career_name||'').localeCompare(b.career_name||'') || a.full_name.localeCompare(b.full_name));
   else if (sortBy === 'world') sims.sort((a, b) => (a.world||'').localeCompare(b.world||'') || a.household.localeCompare(b.household) || a.full_name.localeCompare(b.full_name));
 
   let html = '';
@@ -7570,7 +8196,8 @@ async function startLibraryAnalysis(force) {
   const btnAnalyze = document.getElementById('btn-library-analyze');
   const btnRefresh = document.getElementById('btn-library-refresh');
 
-  statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:5%"></div></div><span>⏳ Bibliothek wird geladen…</span>';
+  statusEl.innerHTML = _miniLoaderHTML('lib-loader', 'Bibliothek wird geladen', 5);
+  _startMiniTipRotation('lib-loader');
   summaryEl.style.display = 'none';
   filtersEl.style.display = 'none';
   listEl.style.display = 'none';
@@ -7598,6 +8225,8 @@ async function startLibraryAnalysis(force) {
     btnAnalyze.disabled = false;
     btnAnalyze.textContent = '🔍 Laden';
     _libraryPolling = false;
+    _stopMiniTipRotation('lib-loader');
+    if (!_libraryReady) { _libraryReady = true; _checkAllReady(); }
   }
 }
 
@@ -7620,8 +8249,13 @@ async function pollLibrary() {
         btnAnalyze.textContent = '🔍 Laden';
         btnRefresh.style.display = '';
       } else {
-        progress = Math.min(progress + 8, 90);
-        statusEl.innerHTML = '<div class="tray-progress"><div class="tray-progress-bar" style="width:' + progress + '%"></div></div><span>⏳ Bibliothek wird analysiert…</span>';
+        var p = (d.progress && d.progress.pct) ? d.progress.pct : Math.min(progress + 8, 90);
+        var msg = (d.progress && d.progress.msg) ? d.progress.msg : 'Bibliothek wird analysiert…';
+        progress = p;
+        _setMiniBar('lib-loader', p);
+        var txtEl = document.getElementById('lib-loader-text');
+        if (txtEl) { txtEl.textContent = msg; }
+        else { statusEl.innerHTML = _miniLoaderHTML('lib-loader', msg, p); _startMiniTipRotation('lib-loader'); }
       }
     } catch(e) {
       clearInterval(iv);
@@ -7629,6 +8263,8 @@ async function pollLibrary() {
       statusEl.innerHTML = '<span style="color:#f87171;">❌ Verbindungsfehler</span>';
       btnAnalyze.disabled = false;
       btnAnalyze.textContent = '🔍 Laden';
+      _stopMiniTipRotation('lib-loader');
+      if (!_libraryReady) { _libraryReady = true; _checkAllReady(); }
     }
   }, 1200);
 }
@@ -7640,6 +8276,10 @@ function renderLibraryResults() {
   const listEl = document.getElementById('library-list');
   const d = _libraryData;
   window._libPortraitData = d.portrait_data || {};
+
+  // Bibliothek als geladen markieren (auch bei Fehler)
+  if (!_libraryReady) { _libraryReady = true; _checkAllReady(); }
+  _stopMiniTipRotation('lib-loader');
 
   if (d.error) {
     statusEl.innerHTML = '<span style="color:#f87171;">❌ ' + esc(d.error) + '</span>';
@@ -7890,10 +8530,243 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<!-- ═══ MMO CHARACTER SHEET OVERLAY ═══ -->
+<div class="cs-overlay" id="cs-overlay" onclick="if(event.target===this)closeCharSheet()">
+  <div class="cs-sheet" id="cs-sheet"></div>
+</div>
+
 <script>
 window.addEventListener('scroll', () => {
   document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
 });
+
+function openCharSheet(regId) {
+  const sim = window._simRegistry[regId];
+  if (!sim) return;
+  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+  // Portrait
+  const simFullName = sim.full_name || '';
+  const portraitSrc = (window._portraitData || {})[simFullName] || (window._libPortraitData || {})[simFullName];
+  const isMale = sim.gender === 'Männlich';
+  const genderCls = isMale ? 'male' : sim.gender === 'Weiblich' ? 'female' : 'unknown';
+  const avatarEmoji = sim.species_emoji || (sim.age === 'Baby' ? '👶' : sim.age === 'Kleinkind' ? '🧒' : sim.age === 'Kind' ? '🧒' : isMale ? '👨' : sim.gender === 'Weiblich' ? '👩' : '🧑');
+  const portraitHtml = portraitSrc
+    ? `<img src="${portraitSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cs-emoji" style="display:none;">${avatarEmoji}</div>`
+    : `<div class="cs-emoji">${avatarEmoji}</div>`;
+
+  // Tags
+  let tags = '';
+  if (sim.species) tags += `<span class="cs-tag cs-tag-species">${sim.species_emoji||'✨'} ${esc(sim.species)}</span>`;
+  tags += `<span class="cs-tag cs-tag-age">${sim.age_emoji||''} ${esc(sim.age)}</span>`;
+  tags += `<span class="cs-tag cs-tag-gender ${isMale?'male':''}">${sim.gender_emoji||''} ${esc(sim.gender)}</span>`;
+  if (sim.career_name) tags += `<span class="cs-tag cs-tag-career">💼 ${esc(sim.career_name)}${sim.career_level ? ' Lv.'+sim.career_level : ''}</span>`;
+  else if (sim.career_level > 0) tags += `<span class="cs-tag cs-tag-career">💼 Karriere Lv.${sim.career_level}</span>`;
+  const moodColors = {'Sehr glücklich':'#22c55e','Glücklich':'#4ade80','Neutral':'#60a5fa','Traurig':'#f59e0b','Sehr traurig':'#ef4444'};
+  if (sim.mood_label && sim.mood_label !== 'Unbekannt') {
+    const mc = moodColors[sim.mood_label] || '#60a5fa';
+    tags += `<span class="cs-tag cs-tag-mood" style="background:${mc}22;color:${mc};border:1px solid ${mc}44;">${sim.mood_emoji||''} ${esc(sim.mood_label)}</span>`;
+  }
+
+  // Gold (Simoleons)
+  let goldHtml = '';
+  if (sim.simoleons > 0) goldHtml = `<div class="cs-gold"><span class="cs-gold-icon">§</span><span class="cs-gold-val">${sim.simoleons.toLocaleString('de-DE')}</span></div>`;
+
+  // ── LEFT COLUMN ──
+  let leftCol = '';
+
+  // Skills
+  if (sim.top_skills && sim.top_skills.length > 0) {
+    leftCol += `<div class="cs-section-title"><span class="cs-st-icon">⚔️</span> Fähigkeiten</div>`;
+    for (const sk of sim.top_skills) {
+      const maxLvl = sk.max_level || 10;
+      const pct = Math.round((sk.level / maxLvl) * 100);
+      leftCol += `<div class="cs-skill"><span class="cs-skill-name">${esc(sk.name)}</span><div class="cs-skill-bar"><div class="cs-skill-fill" style="width:${pct}%"></div></div><span class="cs-skill-lvl">${sk.level}/${maxLvl}</span></div>`;
+    }
+  }
+
+  // Traits
+  if (sim.trait_details) {
+    const td = sim.trait_details;
+    leftCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">🧬</span> Eigenschaften</div><div class="cs-traits">`;
+    if (td.personality_names) td.personality_names.forEach(n => { leftCol += `<span class="cs-trait cs-trait-person">🧠 ${esc(n)}</span>`; });
+    if (td.bonus_names) td.bonus_names.forEach(n => { leftCol += `<span class="cs-trait cs-trait-bonus">⭐ ${esc(n)}</span>`; });
+    if (td.aspiration_names) td.aspiration_names.forEach(n => { leftCol += `<span class="cs-trait cs-trait-aspir">🌟 ${esc(n)}</span>`; });
+    if (td.likes_names) td.likes_names.forEach(n => { leftCol += `<span class="cs-trait cs-trait-like">❤️ ${esc(n)}</span>`; });
+    if (td.lifestyle_names) td.lifestyle_names.forEach(n => { leftCol += `<span class="cs-trait cs-trait-life">🏃 ${esc(n)}</span>`; });
+    // Fallback if no _names arrays, show counts
+    if (!td.personality_names && !td.bonus_names && !td.aspiration_names && !td.likes_names && !td.lifestyle_names) {
+      if (td.personality) leftCol += `<span class="cs-trait cs-trait-person">🧠 ${td.personality} Persönlichkeit</span>`;
+      if (td.bonus) leftCol += `<span class="cs-trait cs-trait-bonus">⭐ ${td.bonus} Bonus</span>`;
+      if (td.aspiration) leftCol += `<span class="cs-trait cs-trait-aspir">🌟 ${td.aspiration} Aspiration</span>`;
+      if (td.likes) leftCol += `<span class="cs-trait cs-trait-like">❤️ ${td.likes} Likes</span>`;
+      if (td.lifestyle) leftCol += `<span class="cs-trait cs-trait-life">🏃 ${td.lifestyle} Lifestyle</span>`;
+    }
+    leftCol += `</div>`;
+  }
+
+  // Likes & Dislikes
+  const _prefCatOrder = ['Farbe','Deko','Musik','Aktivitäten','Mode','Eigenschaft','Kommunikation'];
+  const _prefCatEmoji = {Farbe:'🎨',Deko:'🏠',Musik:'🎵','Aktivitäten':'🎯',Mode:'👗',Eigenschaft:'💭',Kommunikation:'💬'};
+  const hasLikes = sim.likes && Object.keys(sim.likes).length > 0;
+  const hasDislikes = sim.dislikes && Object.keys(sim.dislikes).length > 0;
+  if (hasLikes || hasDislikes) {
+    leftCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">❤️</span> Vorlieben & Abneigungen</div>`;
+    if (hasLikes) {
+      for (const cat of _prefCatOrder) {
+        const items = sim.likes[cat];
+        if (!items) continue;
+        const em = _prefCatEmoji[cat] || '';
+        leftCol += `<div class="cs-pref-row"><span class="cs-pref-cat">${em} ${esc(cat)}</span>`;
+        items.forEach(it => { leftCol += `<span class="cs-trait cs-trait-like">${esc(it)}</span>`; });
+        leftCol += `</div>`;
+      }
+    }
+    if (hasDislikes) {
+      leftCol += `<div style="margin:4px 0 2px;font-size:10px;color:#64748b;font-weight:600;">💔 Mag nicht</div>`;
+      for (const cat of _prefCatOrder) {
+        const items = sim.dislikes[cat];
+        if (!items) continue;
+        const em = _prefCatEmoji[cat] || '';
+        leftCol += `<div class="cs-pref-row"><span class="cs-pref-cat">${em} ${esc(cat)}</span>`;
+        items.forEach(it => { leftCol += `<span class="cs-trait cs-trait-dislike">${esc(it)}</span>`; });
+        leftCol += `</div>`;
+      }
+    }
+  }
+
+  // Relationships / Family
+  if (sim.family_members && sim.family_members.length > 0) {
+    leftCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">👪</span> Familie</div>`;
+    for (const m of sim.family_members) {
+      const mE = m.gender === 'Männlich' ? '♂️' : m.gender === 'Weiblich' ? '♀️' : '';
+      leftCol += `<div class="cs-family-member">${mE} ${esc(m.name)} <span class="cs-fm-role">${esc(m.role)}</span></div>`;
+    }
+  }
+
+  // Relationship Details
+  if (sim.relationships_detail && sim.relationships_detail.length > 0) {
+    leftCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">🤝</span> Beziehungen (${sim.relationships_detail.length})</div>`;
+    leftCol += `<div class="cs-rel-scroll">`;
+    for (const r of sim.relationships_detail) {
+      let tags = '';
+      if (r.family) tags += `<span class="cs-rel-tag cs-rel-fam">👪 ${esc(r.family)}</span>`;
+      if (r.romance) tags += `<span class="cs-rel-tag cs-rel-rom">💕 ${esc(r.romance)}</span>`;
+      if (r.friendship && r.friendship !== 'Bekannt') tags += `<span class="cs-rel-tag cs-rel-fri">🤝 ${esc(r.friendship)}</span>`;
+      if (r.compat) tags += `<span class="cs-rel-tag cs-rel-comp">${r.compat === 'Toll' ? '⭐' : r.compat === 'Schlecht' ? '⚡' : '👍'} ${esc(r.compat)}</span>`;
+      if (!tags && r.friendship === 'Bekannt') tags = `<span class="cs-rel-tag" style="opacity:0.5;">👋 Bekannt</span>`;
+      leftCol += `<div class="cs-rel-row"><span class="cs-rel-name">${esc(r.name)}</span><span class="cs-rel-tags">${tags}</span></div>`;
+    }
+    leftCol += `</div>`;
+  }
+
+  // ── RIGHT COLUMN ──
+  let rightCol = '';
+
+  // Needs
+  if (sim.needs && sim.needs.length > 0) {
+    rightCol += `<div class="cs-section-title"><span class="cs-st-icon">❤️</span> Vitalwerte</div>`;
+    for (const n of sim.needs) {
+      const pct = Math.max(0, Math.min(100, n.percent));
+      let cls = 'high';
+      if (pct < 20) cls = 'crit';
+      else if (pct < 40) cls = 'low';
+      else if (pct < 70) cls = 'med';
+      rightCol += `<div class="cs-need"><span class="cs-need-icon">${n.emoji}</span><span class="cs-need-name">${esc(n.name)}</span><div class="cs-need-bar"><div class="cs-need-fill ${cls}" style="width:${pct}%"></div></div><span class="cs-need-pct">${pct}%</span></div>`;
+    }
+  }
+
+  // Info rows
+  rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">📋</span> Steckbrief</div>`;
+  if (sim.household) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">👨‍👩‍👧</span><span class="cs-info-label">Haushalt</span><span class="cs-info-val">${esc(sim.household)}</span></div>`;
+  if (sim.world) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">🏘️</span><span class="cs-info-label">Welt</span><span class="cs-info-val">${esc(sim.world)}</span></div>`;
+  if (sim.lot_name) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">🏠</span><span class="cs-info-label">Grundstück</span><span class="cs-info-val">${esc(sim.lot_name)}</span></div>`;
+  if (sim.partner) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">💕</span><span class="cs-info-label">Partner</span><span class="cs-info-val">${esc(sim.partner)}</span></div>`;
+  if (sim.sim_age_days > 0) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">📅</span><span class="cs-info-label">Alter</span><span class="cs-info-val">${sim.sim_age_days} Sim-Tage</span></div>`;
+  if (sim.family_role && sim.family_role !== 'Einzelgänger') rightCol += `<div class="cs-info-row"><span class="cs-info-icon">👤</span><span class="cs-info-label">Rolle</span><span class="cs-info-val">${esc(sim.family_role)}</span></div>`;
+  if (sim.is_played) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">🎮</span><span class="cs-info-label">Status</span><span class="cs-info-val" style="color:#a78bfa;">Aktiv gespielt</span></div>`;
+  if (sim.gallery_username) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">🌐</span><span class="cs-info-label">Gallery</span><span class="cs-info-val">${esc(sim.gallery_username)}</span></div>`;
+  if (sim.skin_tone) rightCol += `<div class="cs-info-row"><span class="cs-info-icon">🎨</span><span class="cs-info-label">Hautton</span><span class="cs-info-val">${esc(sim.skin_tone)}</span></div>`;
+
+  // Equipment / Outfit
+  if (sim.outfit_summary && sim.outfit_summary.length > 0) {
+    rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">👗</span> Ausrüstung — ${sim.outfit_total_parts||0} Teile</div>`;
+    rightCol += `<div class="cs-equip-grid">`;
+    const equipIcons = {'Hut':'🎩','Haare':'💇','Oberteil':'👕','Unterteil':'👖','Schuhe':'👟','Handschuhe':'🧤','Ganzkörper':'👗','Ohrring':'💎','Brille':'👓','Halskette':'📿','Ring':'💍','Armband':'⌚','Tattoo':'🖊️','Strümpfe':'🧦','Socken':'🧦','Makeup':'💄','Lippenstift':'💋','Lidschatten':'👁️','Eyeliner':'✏️','Nagellack':'💅','Augenbrauen':'🤨','Wimpern':'👁️','Gesichtsbehaarung':'🧔','Skindetail':'🎭','Hautfarbe':'🎨','Sommersprossen':'✨','Kopfschmuck':'👑','Mantel':'🧥'};
+    for (const o of sim.outfit_summary) {
+      if (o.body_types && o.body_types.length > 0) {
+        for (const bt of o.body_types) {
+          const icon = equipIcons[bt] || '📦';
+          rightCol += `<div class="cs-equip-slot"><div class="cs-equip-icon">${icon}</div><div class="cs-equip-info"><div class="cs-equip-label">${esc(o.category)}</div><div class="cs-equip-val">${esc(bt)}</div></div></div>`;
+        }
+      } else {
+        rightCol += `<div class="cs-equip-slot"><div class="cs-equip-icon">👗</div><div class="cs-equip-info"><div class="cs-equip-label">${esc(o.category)}</div><div class="cs-equip-val">${o.part_count} Teile</div></div></div>`;
+      }
+    }
+    rightCol += `</div>`;
+  }
+
+  // CC Mods — Equipment grid with thumbnails
+  if (sim.outfit_cc_mods && sim.outfit_cc_mods.length > 0) {
+    const modsWithThumb = sim.outfit_cc_mods.filter(m => m.thumb);
+    const modsNoThumb = sim.outfit_cc_mods.filter(m => !m.thumb);
+    rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">🧩</span> CC-Equipment (${sim.outfit_cc_mods.length})</div>`;
+    if (modsWithThumb.length > 0) {
+      rightCol += `<div class="cs-equip-grid">`;
+      for (const m of modsWithThumb.slice(0, 20)) {
+        const shortName = m.name.replace(/\\.package$/i, '').replace(/_/g, ' ');
+        const displayName = shortName.length > 28 ? shortName.slice(0, 26) + '…' : shortName;
+        rightCol += `<div class="cs-equip-slot" title="${esc(m.name)}"><div class="cs-equip-icon" style="width:48px;height:48px;border-radius:8px;overflow:hidden;border:1px solid #312e81;"><img src="${m.thumb}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🧩';"></div><div class="cs-equip-info"><div class="cs-equip-label">${m.matches}x</div><div class="cs-equip-val">${esc(displayName)}</div></div></div>`;
+      }
+      if (modsWithThumb.length > 20) rightCol += `<div class="cs-equip-slot cs-equip-empty"><div class="cs-equip-icon">➕</div><div class="cs-equip-info"><div class="cs-equip-val">+${modsWithThumb.length - 20} weitere</div></div></div>`;
+      rightCol += `</div>`;
+    }
+    if (modsNoThumb.length > 0) {
+      rightCol += `<div class="cs-cc-list" style="margin-top:6px;">`;
+      for (const m of modsNoThumb.slice(0, 15)) {
+        rightCol += `<div class="cs-cc-item"><span class="cs-cc-name">${esc(m.name)}</span><span class="cs-cc-count">${m.matches}x</span></div>`;
+      }
+      if (modsNoThumb.length > 15) rightCol += `<div style="font-size:10px;color:#64748b;padding-top:4px;">+ ${modsNoThumb.length - 15} weitere...</div>`;
+      rightCol += `</div>`;
+    }
+  }
+  if (sim._ccCount > 0) {
+    rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">📦</span> CC-Mods im Haushalt (${sim._ccCount})</div><div class="cs-cc-list">`;
+    for (const m of (sim._ccMods || []).slice(0, 15)) {
+      rightCol += `<div class="cs-cc-item"><span class="cs-cc-name">${esc(m.name)}</span><span class="cs-cc-count">${m.matches}x</span></div>`;
+    }
+    if (sim._ccMods && sim._ccMods.length > 15) rightCol += `<div style="font-size:10px;color:#64748b;padding-top:4px;">+ ${sim._ccMods.length - 15} weitere...</div>`;
+    rightCol += `</div>`;
+  }
+
+  // Build the sheet
+  document.getElementById('cs-sheet').innerHTML = `
+    <button class="cs-close" onclick="closeCharSheet()" title="Schließen">✕</button>
+    <div class="cs-header">
+      <div class="cs-portrait">${portraitHtml}</div>
+      <div class="cs-header-info">
+        <div class="cs-name">${esc(sim.full_name)}</div>
+        <div class="cs-subtitle">${tags}</div>
+      </div>
+      ${goldHtml}
+    </div>
+    <div class="cs-body">
+      <div class="cs-col">${leftCol || '<div style="color:#334155;font-size:11px;">Keine Daten verfügbar</div>'}</div>
+      <div class="cs-col">${rightCol || '<div style="color:#334155;font-size:11px;">Keine Daten verfügbar</div>'}</div>
+    </div>
+    <div class="cs-footer">⚔️ Sims 4 Character Sheet — ${esc(sim.full_name)}</div>
+  `;
+
+  const overlay = document.getElementById('cs-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCharSheet() {
+  document.getElementById('cs-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCharSheet(); });
 </script>
 </body>
 </html>

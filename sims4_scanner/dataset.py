@@ -114,6 +114,7 @@ class Dataset:
         self.conflicts = []
         self.addon_pairs = []
         self.contained_in = []
+        self.skin_conflicts: list[dict] = []
         self.all_scanned_files: list[Path] = []
         self.non_mod_files: list[dict] = []
         self.tray_data = None  # wird vom Scan befüllt
@@ -446,6 +447,116 @@ class Dataset:
         if progress_cb:
             progress_cb("categorize", total, total, f"Kategorisierung abgeschlossen ({cached_count}/{total} aus Cache)")
 
+    def detect_skin_conflicts(self):
+        """Erkennt Skin/Overlay-Konflikte die zu Stein-Haut und Texturfehlern führen."""
+        import re as _re
+        _SKIN_BODY_TYPES = {'Gesichts-Overlay', 'Kopf', 'Körper'}
+        _SKIN_KEYWORDS = _re.compile(
+            r'(?:skin(?:tone|detail|overlay|blend|replacement)?|freckle|mole|birthmark|wrinkle|scar|blemish|dimple|body.?preset|default.?skin|face.?overlay)',
+            _re.IGNORECASE,
+        )
+        _deep_map = getattr(self, '_all_deep', {})
+
+        def _is_skin_mod(path_str: str, deep: dict | None = None) -> tuple[bool, list[str]]:
+            """Prüft ob ein Mod Skin/Overlay-Ressourcen enthält. Returns (is_skin, reasons)."""
+            reasons = []
+            if deep is None:
+                deep = _deep_map.get(path_str, {})
+            if not isinstance(deep, dict):
+                return False, reasons
+            body_types = deep.get('cas_body_types', [])
+            skin_types = [bt for bt in body_types if bt in _SKIN_BODY_TYPES]
+            if skin_types:
+                reasons.append(f"Body-Typ: {', '.join(skin_types)}")
+            cat = deep.get('category', '')
+            if 'Make-Up' in cat and skin_types:
+                reasons.append(f"Kategorie: {cat}")
+            fname = Path(path_str).stem if path_str else ''
+            if _SKIN_KEYWORDS.search(fname):
+                reasons.append(f"Dateiname: '{fname}' enthält Skin-Keyword")
+            return len(reasons) > 0, reasons
+
+        skin_conflicts = []
+
+        # 1. Konflikte die Skin-Mods betreffen
+        for conf in self.conflicts:
+            files_with_skin = []
+            for f in conf.get('files', []):
+                ps = f.get('path', '')
+                deep = f.get('deep') or _deep_map.get(ps, {})
+                is_skin, reasons = _is_skin_mod(ps, deep)
+                if is_skin:
+                    files_with_skin.append({'file': f, 'reasons': reasons})
+            has_cas = any(name == 'CAS Part' for name, count in conf.get('top_types', []))
+            if files_with_skin and has_cas:
+                skin_conflicts.append({
+                    'type': 'conflict',
+                    'severity': 'hoch',
+                    'icon': '⚔️',
+                    'label': 'Skin-Konflikt — Mods überschreiben sich gegenseitig',
+                    'hint': 'Zwei oder mehr Skin/Overlay-Mods teilen dieselben CAS-Part-IDs. Nur einer wird im Spiel angezeigt, der andere kann als Stein-Textur erscheinen.',
+                    'action': 'Behalte nur EINEN Skin-Mod dieser Art und verschiebe die anderen in Quarantäne.',
+                    'files': conf.get('files', []),
+                    'shared_count': conf.get('shared_count', 0),
+                    'top_types': conf.get('top_types', []),
+                    'skin_details': files_with_skin,
+                })
+
+        # 2. Korrupte Skin-Mods
+        for c in self.corrupt:
+            ps = c.get('path', '')
+            deep = c.get('deep') or _deep_map.get(ps, {})
+            is_skin, reasons = _is_skin_mod(ps, deep)
+            if is_skin:
+                skin_conflicts.append({
+                    'type': 'corrupt',
+                    'severity': 'hoch',
+                    'icon': '💀',
+                    'label': 'Korrupter Skin-Mod — verursacht Stein-Haut',
+                    'hint': f"Die Datei ist beschädigt ({c.get('status_label', 'Defekt')}) und enthält Skin-Daten. Das verursacht fast sicher Textur-Fehler.",
+                    'action': 'Sofort in Quarantäne verschieben und eine frische Version herunterladen.',
+                    'files': [c],
+                    'shared_count': 0,
+                    'top_types': [],
+                    'skin_details': [{'file': c, 'reasons': reasons}],
+                })
+
+        # 3. Skin-Mods die potentiell ohne Mesh sind (Recolors die Stein-Haut verursachen können)
+        for ps, deep in _deep_map.items():
+            if not isinstance(deep, dict):
+                continue
+            is_skin, reasons = _is_skin_mod(ps, deep)
+            if not is_skin:
+                continue
+            is_recolor = deep.get('is_recolor', False)
+            body_types = deep.get('cas_body_types', [])
+            has_skin_bt = any(bt in _SKIN_BODY_TYPES for bt in body_types)
+            if is_recolor and has_skin_bt:
+                already_listed = any(
+                    any(f.get('path', '') == ps for f in sc.get('files', []))
+                    for sc in skin_conflicts
+                )
+                if not already_listed:
+                    fobj = self._file_obj(Path(ps))
+                    fobj['deep'] = deep
+                    skin_conflicts.append({
+                        'type': 'recolor_warning',
+                        'severity': 'niedrig',
+                        'icon': '🎨',
+                        'label': 'Skin-Recolor ohne eigenes Mesh',
+                        'hint': 'Dieser Mod ist ein Recolor/Override für Skin-Texturen. Falls der Original-Skin-Mod fehlt, kann es zu Stein-Haut kommen.',
+                        'action': 'Stelle sicher, dass der passende Basis-Skin-Mod installiert ist.',
+                        'files': [fobj],
+                        'shared_count': 0,
+                        'top_types': [],
+                        'skin_details': [{'file': fobj, 'reasons': reasons}],
+                    })
+
+        # Sortierung: hoch → mittel → niedrig
+        _sev_order = {'hoch': 0, 'mittel': 1, 'niedrig': 2}
+        skin_conflicts.sort(key=lambda x: (_sev_order.get(x.get('severity', 'mittel'), 1), -x.get('shared_count', 0)))
+        self.skin_conflicts = skin_conflicts
+
     def detect_dependencies(self):
         """Erkennt Abhängigkeiten und Zusammengehörigkeit zwischen Mod-Dateien."""
         if not self.all_scanned_files:
@@ -666,11 +777,15 @@ class Dataset:
             for entry in coll:
                 entry['files'] = [f for f in entry['files'] if str(f.get('path', '')).strip().lower() != target]
             setattr(self, coll_name, [e for e in coll if len(e['files']) >= 2])
+        # Skin-Konflikte: Dateien entfernen, aber Einträge mit >= 1 Datei behalten (einzelne Skin-Mods)
+        for entry in self.skin_conflicts:
+            entry['files'] = [f for f in entry['files'] if str(f.get('path', '')).strip().lower() != target]
+        self.skin_conflicts = [e for e in self.skin_conflicts if len(e['files']) >= 1]
         self._invalidate_json_cache()
 
     def to_json(self) -> dict:
         # Cache prüfen: Generation-Counter statt nur Längen (erkennt auch Änderungen innerhalb)
-        cache_key = f"{self._generation}:{len(self.groups)}:{len(self.corrupt)}:{len(self.conflicts)}:{len(self.all_scanned_files)}:{len(self.non_mod_files)}"
+        cache_key = f"{self._generation}:{len(self.groups)}:{len(self.corrupt)}:{len(self.conflicts)}:{len(self.all_scanned_files)}:{len(self.non_mod_files)}:{len(getattr(self, 'skin_conflicts', []))}"
         if self._json_cache is not None and self._json_cache_key == cache_key:
             return self._json_cache
         wasted = 0
@@ -848,6 +963,7 @@ class Dataset:
                 "outdated_count": len(outdated),
                 "dependency_count": len(deps),
                 "missing_dep_count": len(getattr(self, 'missing_deps', [])),
+                "skin_conflict_count": len(getattr(self, 'skin_conflicts', [])),
                 "entries_total": sum(len(g["files"]) for g in self.groups),
                 "total_files": total_scanned, "problem_files": len(all_unique_files),
                 "total_size": total_size, "total_size_h": human_size(total_size),
@@ -861,6 +977,7 @@ class Dataset:
             "groups": self.groups, "corrupt": self.corrupt,
             "conflicts": self.conflicts, "addon_pairs": self.addon_pairs,
             "contained_in": self.contained_in,
+            "skin_conflicts": getattr(self, 'skin_conflicts', []),
             "outdated": outdated, "dependencies": deps,
             "all_files": all_files_list, "non_mod_files": self.non_mod_files,
             "non_mod_by_ext": getattr(self, '_non_mod_by_ext', []),

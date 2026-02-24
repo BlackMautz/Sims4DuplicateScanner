@@ -42,12 +42,99 @@ from .watcher import ModFolderWatcher
 from .tray import analyze_tray, build_mod_instance_index
 from .savegame import analyze_savegames
 from .tray_portraits import build_portrait_index, get_portrait_jpeg, match_renamed_sims, build_library_index
+from .skin_textures import extract_sim_textures, extract_texture_full_res
 from .basegame_sims import BASEGAME_SIMS
 from .townie_detector import detect_townies, PACK_SIMS
-from .wiki_portraits import get_wiki_portrait, get_wiki_portrait_cached
+from .wiki_portraits import get_wiki_portrait, get_wiki_portrait_cached, batch_prefetch_wiki_portraits
 from .name_translation import batch_translate_names
 from .avatar_generator import generate_sim_avatar
 from .web.template import build_html_page
+
+
+def _read_game_settings(sims4_dir: str) -> dict:
+    """Liest Options.ini + GameVersion.txt und extrahiert interessante Einstellungen."""
+    settings: dict = {}
+    if not sims4_dir:
+        return settings
+
+    # ── GameVersion.txt ──
+    ver_path = os.path.join(sims4_dir, "GameVersion.txt")
+    if os.path.isfile(ver_path):
+        try:
+            with open(ver_path, "rb") as f:
+                raw = f.read()
+            # Binäre Längen-Prefixe und Steuerzeichen entfernen
+            text = raw.decode("utf-8", errors="replace")
+            # Nur druckbare ASCII-Zeichen + Punkt behalten
+            clean = "".join(ch for ch in text if ch.isdigit() or ch == ".")
+            if clean:
+                settings["game_version"] = clean
+        except Exception:
+            pass
+
+    # ── Options.ini (Standard INI-Format) ──
+    opt_path = os.path.join(sims4_dir, "Options.ini")
+    if os.path.isfile(opt_path):
+        import configparser
+        cp = configparser.ConfigParser()
+        try:
+            cp.read(opt_path, encoding="utf-8")
+        except Exception:
+            return settings
+
+        # Interessante Schlüssel extrahieren
+        _MAP = {
+            ("options", "scriptmodsenabled"):     ("script_mods", "bool"),
+            ("options", "modsdisabled"):           ("mods_disabled", "bool"),
+            ("options", "simssetagingenabled"):    ("aging", "bool"),
+            ("options", "autoageunplayed"):        ("age_unplayed", "bool"),
+            ("options", "seasonlength"):           ("season_length", "int"),
+            ("options", "simssetagespeed"):        ("lifespan", "int"),
+            ("options", "uiscale"):                ("ui_scale", "int"),
+            ("options", "onlineaccess"):           ("online_features", "bool"),
+            ("options", "autonomyhousehold"):      ("autonomy_level", "int"),
+            ("options", "fullscreen"):             ("fullscreen", "bool"),
+            ("options", "resolutionwidth"):        ("res_w", "int"),
+            ("options", "resolutionheight"):       ("res_h", "int"),
+            ("options", "frameratelimit"):         ("fps_limit", "int"),
+        }
+        _LIFESPAN = {0: "Kurz", 1: "Normal", 2: "Lang"}
+        _SEASON = {0: "Aus", 1: "1 Woche", 2: "2 Tage", 7: "1 Woche", 14: "2 Wochen", 28: "4 Wochen"}
+        _AUTONOMY = {0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Hoch", 4: "Voll"}
+
+        for (section, key), (out_key, vtype) in _MAP.items():
+            try:
+                raw_val = cp.get(section, key)
+            except (configparser.NoSectionError, configparser.NoOptionError):
+                continue
+            try:
+                if vtype == "bool":
+                    settings[out_key] = raw_val.strip().lower() in ("1", "true", "yes")
+                elif vtype == "int":
+                    settings[out_key] = int(raw_val.strip())
+                elif vtype == "float":
+                    settings[out_key] = round(float(raw_val.strip()), 2)
+                else:
+                    settings[out_key] = raw_val.strip()
+            except (ValueError, TypeError):
+                settings[out_key] = raw_val.strip()
+
+        # Menschenlesbare Werte
+        if "lifespan" in settings:
+            settings["lifespan_label"] = _LIFESPAN.get(settings["lifespan"], f"Stufe {settings['lifespan']}")
+        if "season_length" in settings:
+            settings["season_label"] = _SEASON.get(settings["season_length"], f"{settings['season_length']} Tage")
+        if "autonomy_level" in settings:
+            settings["autonomy_label"] = _AUTONOMY.get(settings["autonomy_level"], f"Stufe {settings['autonomy_level']}")
+        # CC/Mods: modsdisabled=0 → Mods sind AN
+        if "mods_disabled" in settings:
+            settings["cc_mods"] = not settings["mods_disabled"]
+            del settings["mods_disabled"]
+        # Auflösung zusammensetzen
+        if "res_w" in settings and "res_h" in settings:
+            settings["resolution"] = f"{settings['res_w']}×{settings['res_h']}"
+
+    return settings
 
 
 class LocalServer:
@@ -69,14 +156,33 @@ class LocalServer:
         self._auto_rescan_time: float = 0
         self._tray_cache: dict | None = None
         self._tray_analyzing = False
+        self._tray_progress: dict = {"phase": "", "pct": 0, "msg": ""}
         self._savegame_cache: dict | None = None
         self._savegame_analyzing = False
+        self._savegame_progress: dict = {"phase": "", "pct": 0, "msg": ""}
         self._portrait_index: dict | None = None
         self._portrait_index_built = False
+        self._portrait_index_lock = threading.Lock()
         self._tray_households: list = []
         self._library_cache: dict | None = None
         self._library_analyzing = False
+        self._library_progress: dict = {"phase": "", "pct": 0, "msg": ""}
+        self._mod_instance_index: dict | None = None  # CAS-Part-ID → set(mod_paths)
         self._cache_lock = threading.Lock()
+
+    def _ensure_portrait_index(self):
+        """Thread-safe: baut Portrait-Index genau einmal auf."""
+        with self._portrait_index_lock:
+            if self._portrait_index_built:
+                return
+            tray_path = os.path.join(self.sims4_dir, "Tray") if self.sims4_dir else ""
+            if tray_path and os.path.isdir(tray_path):
+                self._portrait_index, self._tray_households = build_portrait_index(tray_path)
+            else:
+                self._portrait_index = {}
+                self._tray_households = []
+            self._portrait_index_built = True
+            print(f"[PORTRAITS] Index aufgebaut: {len(self._portrait_index or {})} Portraits", flush=True)
 
     def _start_watcher(self):
         roots = self.dataset.roots if self.dataset else []
@@ -132,6 +238,7 @@ class LocalServer:
                 server_ref._progress_lock.release()
                 ds.enrich_groups(progress_cb=progress_cb, deep_cache=deep_cache)
                 ds.enrich_all_files(progress_cb=progress_cb, deep_cache=deep_cache)
+                ds.detect_skin_conflicts()
                 ds.detect_dependencies()
                 ds.collect_non_mod_files(preloaded_paths=non_mod_paths)
                 save_deep_cache(deep_cache)
@@ -236,14 +343,7 @@ class LocalServer:
                 """Hängt Metadaten an savegame_cache an (schnell, kein HTTP)."""
                 with srv._cache_lock:
                     if srv._savegame_cache and "portrait_names" not in srv._savegame_cache:
-                        if not srv._portrait_index_built:
-                            tray_path = os.path.join(srv.sims4_dir, "Tray") if srv.sims4_dir else ""
-                            if tray_path and os.path.isdir(tray_path):
-                                srv._portrait_index, srv._tray_households = build_portrait_index(tray_path)
-                            else:
-                                srv._portrait_index = {}
-                                srv._tray_households = []
-                            srv._portrait_index_built = True
+                        srv._ensure_portrait_index()
                         idx = srv._portrait_index or {}
                         hh_data = srv._savegame_cache.get("households", {})
                         if hh_data and idx:
@@ -308,6 +408,12 @@ class LocalServer:
                         srv._savegame_cache["library_sim_names"] = list(lib_names)
                         if lib_names and old_count != len(lib_names):
                             print(f"[BIBLIOTHEK] {len(lib_names)} Sims in Bibliothek erkannt", flush=True)
+                    # ── Spieleinstellungen (Options.ini + GameVersion) ──
+                    if srv._savegame_cache and "game_settings" not in srv._savegame_cache:
+                        gs = _read_game_settings(srv.sims4_dir)
+                        srv._savegame_cache["game_settings"] = gs
+                        if gs.get("game_version"):
+                            print(f"[GAME] Version: {gs['game_version']}", flush=True)
 
             def _read_json(self):
                 try:
@@ -570,13 +676,14 @@ class LocalServer:
                     qs = parse_qs(u.query)
                     force = qs.get("force", [""])[0] == "1"
                     if server_ref._tray_analyzing:
-                        self._json(200, {"ok": True, "status": "analyzing", "data": None})
+                        self._json(200, {"ok": True, "status": "analyzing", "data": None, "progress": server_ref._tray_progress})
                         return
                     if server_ref._tray_cache and not force:
                         self._json(200, {"ok": True, "status": "ready", "data": server_ref._tray_cache})
                         return
                     # Analyse asynchron starten
                     server_ref._tray_analyzing = True
+                    server_ref._tray_progress = {"phase": "init", "pct": 0, "msg": "Starte Tray-Analyse…"}
                     def _run_tray():
                         try:
                             sims4 = server_ref.sims4_dir
@@ -588,8 +695,13 @@ class LocalServer:
                             if not roots:
                                 server_ref._tray_cache = {"items": [], "mod_usage": {}, "summary": {"total_items": 0, "households": 0, "lots": 0, "rooms": 0, "items_with_cc": 0, "total_mods_used": 0, "max_cc_item": "", "max_cc_count": 0}, "error": "Keine Mod-Ordner konfiguriert"}
                                 return
+                            server_ref._tray_progress = {"phase": "mod_index", "pct": 15, "msg": "Mod-Index wird aufgebaut…"}
                             mod_idx = build_mod_instance_index(roots)
+                            server_ref._tray_progress = {"phase": "analyze", "pct": 40, "msg": "Tray-Dateien werden gescannt…"}
                             result = analyze_tray(tray_path, mod_idx)
+                            server_ref._tray_progress = {"phase": "done", "pct": 100, "msg": "Fertig"}
+                            # Mod-Index speichern für Outfit-CC-Zuordnung
+                            server_ref._mod_instance_index = mod_idx
                             server_ref._tray_cache = result
                             # Library-Cache invalidieren damit CC neu zugeordnet wird
                             if server_ref._library_cache:
@@ -608,12 +720,13 @@ class LocalServer:
                     qs = parse_qs(u.query)
                     force = qs.get("force", [""])[0] == "1"
                     if server_ref._library_analyzing:
-                        self._json(200, {"ok": True, "status": "analyzing", "data": None})
+                        self._json(200, {"ok": True, "status": "analyzing", "data": None, "progress": server_ref._library_progress})
                         return
                     if server_ref._library_cache and not force:
                         self._json(200, {"ok": True, "status": "ready", "data": server_ref._library_cache})
                         return
                     server_ref._library_analyzing = True
+                    server_ref._library_progress = {"phase": "init", "pct": 0, "msg": "Starte Bibliothek-Analyse…"}
                     def _run_library():
                         try:
                             sims4 = server_ref.sims4_dir
@@ -621,7 +734,9 @@ class LocalServer:
                             if not tray_path or not os.path.isdir(tray_path):
                                 server_ref._library_cache = {"households": [], "error": "Tray-Ordner nicht gefunden"}
                                 return
+                            server_ref._library_progress = {"phase": "index", "pct": 15, "msg": "Tray-Haushalte werden gelesen…"}
                             hh_list = build_library_index(tray_path)
+                            server_ref._library_progress = {"phase": "cross_ref", "pct": 35, "msg": f"{len(hh_list)} Haushalte gefunden, Cross-Referenz…"}
                             # Savegame-Sims für Cross-Referenz
                             savegame_sim_names = set()
                             if server_ref._savegame_cache:
@@ -639,6 +754,7 @@ class LocalServer:
                                         library_only += 1
 
                             # CC-Info aus Tray-Cache zuordnen
+                            server_ref._library_progress = {"phase": "cc", "pct": 50, "msg": "CC-Daten werden zugeordnet…"}
                             tray_cc_map = {}
                             total_cc_households = 0
                             cc_data_available = bool(server_ref._tray_cache)
@@ -714,14 +830,21 @@ class LocalServer:
                                 "safe_to_delete_count": safe_count,
                             }
 
-                            # ── Portrait-Daten für Bibliotheks-Sims einbetten ──
+                            # ── Portrait-Daten für Bibliotheks-Sims einbetten (PARALLEL) ──
+                            server_ref._library_progress = {"phase": "portraits", "pct": 65, "msg": "Portraits werden eingebettet…"}
                             lib_portrait_data = {}
                             lib_idx = server_ref._portrait_index or {}
                             lib_tray = 0
                             lib_wiki = 0
+                            _lib_total_sims = sum(len(hh.get("sims", [])) for hh in hh_list)
+
+                            # Erst schnelle lokale Portraits (Tray) – seriell, kein I/O-Problem
+                            need_wiki_lib = []
+                            _lib_done_sims = 0
                             for hh in hh_list:
                                 for sim in hh.get("sims", []):
                                     sname = sim.get("full_name", "")
+                                    _lib_done_sims += 1
                                     if not sname or sname in lib_portrait_data:
                                         continue
                                     try:
@@ -730,16 +853,52 @@ class LocalServer:
                                             lib_portrait_data[sname] = "data:image/jpeg;base64," + _b64.b64encode(jpeg).decode("ascii")
                                             lib_tray += 1
                                             continue
-                                        wiki_img = get_wiki_portrait(sname)
-                                        if wiki_img:
-                                            lib_portrait_data[sname] = "data:image/jpeg;base64," + _b64.b64encode(wiki_img).decode("ascii")
-                                            lib_wiki += 1
                                     except Exception:
                                         pass
+                                    # Kein lokales Portrait → Wiki nötig
+                                    need_wiki_lib.append(sname)
+
+                            # Dann Wiki-Portraits: erst Batch-Prefetch, dann Einzeldownloads parallel
+                            if need_wiki_lib:
+                                server_ref._library_progress = {"phase": "wiki_dl", "pct": 72, "msg": f"Batch-Lookup für {len(need_wiki_lib)} Sims…"}
+                                batch_result_lib = batch_prefetch_wiki_portraits(need_wiki_lib)
+                                for sname, img_data in batch_result_lib.items():
+                                    lib_portrait_data[sname] = "data:image/jpeg;base64," + _b64.b64encode(img_data).decode("ascii")
+                                    lib_wiki += 1
+                                # Nur noch nicht-gefundene Sims einzeln laden
+                                need_wiki_lib = [n for n in need_wiki_lib if n not in batch_result_lib]
+
+                            if need_wiki_lib:
+                                server_ref._library_progress = {"phase": "wiki_dl", "pct": 80, "msg": f"Lade {len(need_wiki_lib)} Wiki-Portraits…"}
+                                def _fetch_lib_wiki(sname):
+                                    try:
+                                        wiki_img = get_wiki_portrait(sname)
+                                        if wiki_img:
+                                            return (sname, "data:image/jpeg;base64," + _b64.b64encode(wiki_img).decode("ascii"))
+                                    except Exception:
+                                        pass
+                                    return (sname, None)
+
+                                with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+                                    futures = {pool.submit(_fetch_lib_wiki, n): n for n in need_wiki_lib}
+                                    _lib_wiki_done = 0
+                                    for future in concurrent.futures.as_completed(futures):
+                                        _lib_wiki_done += 1
+                                        _lp = 75 + int((_lib_wiki_done / max(len(need_wiki_lib), 1)) * 20)
+                                        server_ref._library_progress = {"phase": "wiki_dl", "pct": min(_lp, 95), "msg": f"Wiki-Portraits: {_lib_wiki_done}/{len(need_wiki_lib)}"}
+                                        try:
+                                            sname, data_uri = future.result()
+                                            if data_uri:
+                                                lib_portrait_data[sname] = data_uri
+                                                lib_wiki += 1
+                                        except Exception:
+                                            pass
+
                             if lib_portrait_data:
                                 server_ref._library_cache["portrait_data"] = lib_portrait_data
                                 print(f"[BIBLIOTHEK] {len(lib_portrait_data)} Portraits eingebettet ({lib_tray} Tray, {lib_wiki} Wiki)", flush=True)
 
+                            server_ref._library_progress = {"phase": "done", "pct": 100, "msg": f"{len(hh_list)} Haushalte geladen"}
                             print(f"[BIBLIOTHEK] {len(hh_list)} Haushalte, {total_sims} Sims ({active_sims} im Spiel, {library_only} nur Bibliothek, {total_cc_households} mit CC)", flush=True)
                         except Exception as ex:
                             import traceback; traceback.print_exc()
@@ -759,7 +918,7 @@ class LocalServer:
                     if selected_save:
                         force = True
                     if server_ref._savegame_analyzing:
-                        self._json(200, {"ok": True, "status": "analyzing", "data": None})
+                        self._json(200, {"ok": True, "status": "analyzing", "data": None, "progress": server_ref._savegame_progress})
                         return
                     if server_ref._savegame_cache and not force:
                         # Portrait-Info anhängen
@@ -767,6 +926,7 @@ class LocalServer:
                         self._json(200, {"ok": True, "status": "ready", "data": server_ref._savegame_cache})
                         return
                     server_ref._savegame_analyzing = True
+                    server_ref._savegame_progress = {"phase": "init", "pct": 0, "msg": "Starte Savegame-Analyse…"}
                     def _run_savegame():
                         try:
                             sims4 = server_ref.sims4_dir
@@ -774,20 +934,89 @@ class LocalServer:
                             if not saves_path or not os.path.isdir(saves_path):
                                 server_ref._savegame_cache = {"sims": [], "sim_count": 0, "available_saves": [], "error": "Save-Ordner nicht gefunden"}
                                 return
+                            server_ref._savegame_progress = {"phase": "read", "pct": 10, "msg": "Spielstand wird gelesen…"}
                             result = analyze_savegames(saves_path, selected_save)
+                            server_ref._savegame_progress = {"phase": "sims", "pct": 35, "msg": f"{result.get('sim_count', 0)} Sims gefunden"}
                             server_ref._savegame_cache = result
 
+                            # ── Outfit-CAS-Parts mit Mod-Index abgleichen ──
+                            # Wenn Tray-Analyse gelaufen ist, können wir CAS-Part-IDs
+                            # den konkreten Mod-Dateien zuordnen
+                            if server_ref._tray_cache:
+                                tray_items = server_ref._tray_cache.get("items", [])
+                                # Mod-Instance-Index aus dem Tray-Cache extrahieren
+                                # (wurde bei Tray-Analyse aufgebaut)
+                                mod_usage = server_ref._tray_cache.get("mod_usage", {})
+                                # Baue schnellen CAS-Part → Mod-Name Lookup
+                                # Wir nutzen den bereits gebauten Mod-Index falls verfügbar
+                                mod_index_data = server_ref._mod_instance_index
+                                if mod_index_data:
+                                    from .dbpf import extract_thumbnail_fast
+                                    _thumb_cache = {}  # mod_path → thumbnail_b64 (cached)
+                                    _outfit_cc_count = 0
+                                    for sim in result.get("sims", []):
+                                        cas_ids = sim.get("cas_part_ids", [])
+                                        if not cas_ids:
+                                            sim["outfit_cc_mods"] = []
+                                            continue
+                                        cc_mods = {}  # mod_name → {count, path}
+                                        for cid in cas_ids:
+                                            mod_paths = mod_index_data.get(cid, set())
+                                            for mp in mod_paths:
+                                                mod_name = Path(mp).name
+                                                if mod_name not in cc_mods:
+                                                    cc_mods[mod_name] = {"count": 0, "path": mp}
+                                                cc_mods[mod_name]["count"] += 1
+                                        # Thumbnails laden (mit Cache)
+                                        mods_with_thumbs = []
+                                        for mod_name, info in sorted(cc_mods.items(), key=lambda x: -x[1]["count"]):
+                                            mp = info["path"]
+                                            if mp not in _thumb_cache:
+                                                try:
+                                                    _thumb_cache[mp] = extract_thumbnail_fast(Path(mp))
+                                                except Exception:
+                                                    _thumb_cache[mp] = None
+                                            mods_with_thumbs.append({
+                                                "name": mod_name,
+                                                "matches": info["count"],
+                                                "thumb": _thumb_cache[mp],
+                                            })
+                                        sim["outfit_cc_mods"] = mods_with_thumbs
+                                        if cc_mods:
+                                            _outfit_cc_count += 1
+                                    if _outfit_cc_count:
+                                        _thumb_ok = sum(1 for v in _thumb_cache.values() if v)
+                                        print(f"[OUTFITS] {_outfit_cc_count} Sims mit CC-Outfit-Teilen, {_thumb_ok}/{len(_thumb_cache)} Thumbnails", flush=True)
+
+                            # ── Outfit-Daten für Frontend aufbereiten ──
+                            # cas_part_ids (riesig) und outfits[].parts entfernen,
+                            # stattdessen kompakte Zusammenfassung erstellen
+                            from sims4_scanner.savegame import _BODY_TYPE_NAMES
+                            for sim in result.get("sims", []):
+                                # Kompakte Outfit-Zusammenfassung pro Kategorie
+                                outfit_summary = []
+                                for o in sim.get("outfits", []):
+                                    bt_names = []
+                                    for bt in o.get("body_types", []):
+                                        n = _BODY_TYPE_NAMES.get(bt, f"Typ {bt}")
+                                        if n not in bt_names:
+                                            bt_names.append(n)
+                                    outfit_summary.append({
+                                        "category": o["category"],
+                                        "part_count": len(o.get("parts", [])),
+                                        "body_types": bt_names,
+                                    })
+                                sim["outfit_summary"] = outfit_summary
+                                # Schwere Rohdaten entfernen (nur server-seitig gebraucht)
+                                sim.pop("cas_part_ids", None)
+                                sim.pop("outfits", None)
+                                # outfit_cc_mods, outfit_total_parts, outfit_categories bleiben
+
                             # ── Portrait-Daten im Hintergrund einbetten ──
+                            server_ref._savegame_progress = {"phase": "portraits", "pct": 45, "msg": "Portrait-Index wird aufgebaut…"}
                             print("[PORTRAITS] Starte Portrait-Einbettung...", flush=True)
-                            # Portrait-Index aufbauen
-                            if not server_ref._portrait_index_built:
-                                tray_path2 = os.path.join(sims4, "Tray") if sims4 else ""
-                                if tray_path2 and os.path.isdir(tray_path2):
-                                    server_ref._portrait_index, server_ref._tray_households = build_portrait_index(tray_path2)
-                                else:
-                                    server_ref._portrait_index = {}
-                                    server_ref._tray_households = []
-                                server_ref._portrait_index_built = True
+                            # Portrait-Index aufbauen (thread-safe Singleton)
+                            server_ref._ensure_portrait_index()
                             idx = server_ref._portrait_index or {}
                             # Rename-Match
                             hh_data = result.get("households", {})
@@ -806,6 +1035,7 @@ class LocalServer:
                             err_count = 0
 
                             # Phase 1: Tray-Portraits + Cached/Embedded (kein HTTP)
+                            server_ref._savegame_progress = {"phase": "tray_portraits", "pct": 55, "msg": "Tray-Portraits werden geladen…"}
                             need_wiki = []  # Sims die Wiki-Download brauchen
                             sim_info_map = {}  # name -> sim dict für SVG-Fallback
                             seen = set()
@@ -829,10 +1059,20 @@ class LocalServer:
                                     continue
                                 need_wiki.append(sim_name)
 
-                            # Phase 2: Batch Name-Translation (50 pro Request statt einzeln)
+                            # Phase 2: Batch Name-Translation + Wiki-Batch-Prefetch
                             if need_wiki:
+                                server_ref._savegame_progress = {"phase": "wiki", "pct": 70, "msg": f"{len(need_wiki)} Wiki-Portraits werden geladen…"}
                                 print(f"[PORTRAITS] {len(need_wiki)} Sims brauchen Wiki-Download...", flush=True)
                                 batch_translate_names(need_wiki)  # Pre-cache alle Übersetzungen
+                                # Batch-Prefetch: bis zu 50 Sims pro API-Call prüfen
+                                batch_result = batch_prefetch_wiki_portraits(need_wiki)
+                                for sname, img_data in batch_result.items():
+                                    portrait_data[sname] = "data:image/jpeg;base64," + _b64.b64encode(img_data).decode("ascii")
+                                    wiki_count += 1
+                                # Nur noch Sims die nicht per Batch gefunden wurden
+                                need_wiki = [n for n in need_wiki if n not in batch_result]
+                                if need_wiki:
+                                    print(f"[PORTRAITS] {len(need_wiki)} Sims nach Batch noch offen", flush=True)
 
                             # Phase 3: Wiki-Downloads parallel (ThreadPool, 8 Worker)
                             def _fetch_wiki_portrait(sim_name):
@@ -856,9 +1096,14 @@ class LocalServer:
                                 return (sim_name, None, "none")
 
                             if need_wiki:
+                                server_ref._savegame_progress = {"phase": "wiki_dl", "pct": 80, "msg": f"Lade {len(need_wiki)} Wiki-Portraits…"}
                                 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
                                     futures = {pool.submit(_fetch_wiki_portrait, name): name for name in need_wiki}
+                                    _done_count = 0
                                     for future in concurrent.futures.as_completed(futures):
+                                        _done_count += 1
+                                        _wp = 80 + int((_done_count / len(need_wiki)) * 15)
+                                        server_ref._savegame_progress = {"phase": "wiki_dl", "pct": min(_wp, 95), "msg": f"Portraits: {_done_count}/{len(need_wiki)}"}
                                         try:
                                             name, data_uri, src = future.result()
                                             if data_uri:
@@ -873,6 +1118,7 @@ class LocalServer:
                                             err_count += 1
 
                             result["portrait_data"] = portrait_data
+                            server_ref._savegame_progress = {"phase": "done", "pct": 100, "msg": f"{len(portrait_data)} Portraits eingebettet"}
                             print(f"[PORTRAITS] {len(portrait_data)} Portraits eingebettet ({tray_count} Tray, {wiki_count} Wiki, {svg_count} SVG" + (f", {err_count} Fehler" if err_count else "") + ")", flush=True)
                         except Exception as ex:
                             server_ref._savegame_cache = {"sims": [], "sim_count": 0, "available_saves": [], "error": str(ex)}
@@ -889,15 +1135,8 @@ class LocalServer:
                     if not sim_name:
                         self._send(400, b"missing name", "text/plain")
                         return
-                    # Portrait-Index lazy aufbauen
-                    if not server_ref._portrait_index_built:
-                        tray_path = os.path.join(server_ref.sims4_dir, "Tray") if server_ref.sims4_dir else ""
-                        if tray_path and os.path.isdir(tray_path):
-                            server_ref._portrait_index, server_ref._tray_households = build_portrait_index(tray_path)
-                        else:
-                            server_ref._portrait_index = {}
-                            server_ref._tray_households = []
-                        server_ref._portrait_index_built = True
+                    # Portrait-Index lazy aufbauen (thread-safe Singleton)
+                    server_ref._ensure_portrait_index()
                     idx = server_ref._portrait_index or {}
                     jpeg = get_portrait_jpeg(idx, sim_name)
                     if jpeg:
@@ -923,6 +1162,35 @@ class LocalServer:
                         species=sim_data.get("species", ""),
                     )
                     self._send(200, svg, "image/svg+xml")
+                    return
+
+                # ── Sim-Texturen API ──
+                if u.path == "/api/sim-textures":
+                    if self._check_token_qs(u): return
+                    qs = parse_qs(u.query)
+                    max_dim = min(int(qs.get("max_dim", ["512"])[0]), 1024)
+                    if not server_ref.sims4_dir:
+                        self._json(400, {"ok": False, "error": "Sims 4-Ordner nicht konfiguriert"})
+                        return
+                    try:
+                        result = extract_sim_textures(server_ref.sims4_dir, max_dim=max_dim)
+                        self._json(200, {"ok": True, **result})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                if u.path == "/api/sim-texture-full":
+                    if self._check_token_qs(u): return
+                    qs = parse_qs(u.query)
+                    instance_hex = qs.get("id", [""])[0]
+                    if not instance_hex or not server_ref.sims4_dir:
+                        self._send(400, b"missing params", "text/plain")
+                        return
+                    png = extract_texture_full_res(server_ref.sims4_dir, instance_hex)
+                    if png:
+                        self._send(200, png, "image/png")
+                    else:
+                        self._send(404, b"texture not found", "text/plain")
                     return
 
                 # ── Cache-Info GET ──

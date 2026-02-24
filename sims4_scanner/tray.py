@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import struct as _struct
 import time
+import concurrent.futures
 from pathlib import Path
 from collections import defaultdict
 
@@ -257,52 +258,71 @@ def build_mod_instance_index(mod_dirs: list[Path], progress_cb=None) -> dict:
     total = len(pkg_files)
     print(f"[TRAY] Mod-Index: {total} .package Dateien werden gelesen...", flush=True)
     t0 = time.time()
+
+    # ── Phase 1: Cache-Hits sofort verarbeiten, Cache-Misses sammeln ──
+    cache_miss_files = []  # (index, pkg_path, stat) für paralleles Lesen
     for i, pkg_path in enumerate(pkg_files):
         pkg_str = str(pkg_path)
-        t_file = time.time()
         try:
             st = pkg_path.stat()
             cached = cached_entries.get(pkg_str)
-            inst_ids = None
             if cached and abs(cached.get('mt', 0) - st.st_mtime) < 0.01 and cached.get('sz', -1) == st.st_size:
-                # Cache-Hit: Instance-IDs aus Cache
+                # Cache-Hit: sofort verarbeiten
                 inst_ids = cached.get('ids') or cached.get('keys')
                 cache_hits += 1
-            else:
-                # Cache-Miss: Datei lesen
-                raw_keys = read_dbpf_resource_keys(pkg_path)
-                if raw_keys:
-                    # Nur Instance-IDs extrahieren (viel kleiner als volle Keys)
-                    inst_ids = list({k[2] for k in raw_keys})
+                if inst_ids:
+                    for item in inst_ids:
+                        if isinstance(item, (list, tuple)) and len(item) >= 3:
+                            index[item[2]].add(pkg_str)
+                        else:
+                            index[item].add(pkg_str)
+                    new_entries[pkg_str] = {
+                        'mt': st.st_mtime,
+                        'sz': st.st_size,
+                        'ids': inst_ids if not isinstance(inst_ids[0], (list, tuple)) else list({x[2] for x in inst_ids}),
+                    }
                 else:
-                    inst_ids = []
-
-            if inst_ids:
-                for item in inst_ids:
-                    # Abwärtskompatibel: alte Cache-Einträge haben [type, group, inst]
-                    if isinstance(item, (list, tuple)) and len(item) >= 3:
-                        index[item[2]].add(pkg_str)
-                    else:
-                        index[item].add(pkg_str)
-
-                new_entries[pkg_str] = {
-                    'mt': st.st_mtime,
-                    'sz': st.st_size,
-                    'ids': inst_ids if not isinstance(inst_ids[0], (list, tuple)) else list({x[2] for x in inst_ids}),
-                }
+                    new_entries[pkg_str] = {'mt': st.st_mtime, 'sz': st.st_size, 'ids': []}
             else:
-                new_entries[pkg_str] = {'mt': st.st_mtime, 'sz': st.st_size, 'ids': []}
-
+                cache_miss_files.append((i, pkg_path, st))
         except Exception:
             pass
-        dt = time.time() - t_file
-        if dt > 3.0:
-            print(f"[TRAY] SLOW ({dt:.1f}s): {pkg_path.name}", flush=True)
         if progress_cb and (i % 200 == 0 or i == total - 1):
             progress_cb(i + 1, total, pkg_path.name)
-        # Konsolenfortschritt alle 500 Dateien
-        if i > 0 and i % 500 == 0:
-            print(f"[TRAY] {i}/{total} Dateien verarbeitet ({cache_hits} Cache-Hits)...", flush=True)
+
+    print(f"[TRAY] {cache_hits} Cache-Hits, {len(cache_miss_files)} Cache-Misses → parallel lesen...", flush=True)
+
+    # ── Phase 2: Cache-Misses parallel lesen (I/O-bound) ──
+    def _read_pkg(args):
+        _i, _path, _st = args
+        try:
+            raw_keys = read_dbpf_resource_keys(_path)
+            if raw_keys:
+                ids = list({k[2] for k in raw_keys})
+            else:
+                ids = []
+            return (str(_path), _st.st_mtime, _st.st_size, ids)
+        except Exception:
+            return (str(_path), _st.st_mtime, _st.st_size, [])
+
+    if cache_miss_files:
+        workers = min(6, len(cache_miss_files))  # Nicht zu viele für Disk-I/O
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            _miss_done = 0
+            for result_tuple in pool.map(_read_pkg, cache_miss_files):
+                _miss_done += 1
+                pkg_str, mt, sz, inst_ids = result_tuple
+                if inst_ids:
+                    for item in inst_ids:
+                        if isinstance(item, (list, tuple)) and len(item) >= 3:
+                            index[item[2]].add(pkg_str)
+                        else:
+                            index[item].add(pkg_str)
+                    new_entries[pkg_str] = {'mt': mt, 'sz': sz, 'ids': inst_ids}
+                else:
+                    new_entries[pkg_str] = {'mt': mt, 'sz': sz, 'ids': []}
+                if _miss_done % 200 == 0:
+                    print(f"[TRAY] Cache-Miss: {_miss_done}/{len(cache_miss_files)} gelesen...", flush=True)
 
     # Cache auf Disk speichern (nur Instance-IDs, nicht volle Keys)
     elapsed = time.time() - t0

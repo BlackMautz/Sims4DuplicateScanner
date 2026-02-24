@@ -6,7 +6,7 @@ from __future__ import annotations
 import base64 as _b64
 
 CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
-SCANNER_VERSION = "3.2.0"
+SCANNER_VERSION = "3.5.0"
 # Webhook-URL ist base64-kodiert, damit sie nicht direkt im Quelltext steht
 _WEBHOOK_ENC = (
     b"aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ3MDE5MDQ4NTgyNDg2"
