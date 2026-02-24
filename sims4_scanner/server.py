@@ -1873,6 +1873,26 @@ class LocalServer:
                         self._json(500, {"ok": False, "error": str(ex)})
                     return
 
+                if action == "save_cheat_favs":
+                    try:
+                        favs = payload.get("favs", [])
+                        cfg = load_config()
+                        cfg["cheat_favorites"] = favs
+                        save_config(cfg)
+                        self._json(200, {"ok": True})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
+                if action == "load_cheat_favs":
+                    try:
+                        cfg = load_config()
+                        favs = cfg.get("cheat_favorites", [])
+                        self._json(200, {"ok": True, "favs": favs})
+                    except Exception as ex:
+                        self._json(500, {"ok": False, "error": str(ex)})
+                    return
+
                 # ── Mod-Backup (Web-UI) ──
                 if action == "create_backup":
                     try:

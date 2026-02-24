@@ -60,6 +60,12 @@ class App(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.bind("<Map>", self._on_map)
 
+        # Fenster in den Vordergrund bringen (wichtig bei --noconsole EXE)
+        self.lift()
+        self.attributes("-topmost", True)
+        self.after(300, lambda: self.attributes("-topmost", False))
+        self.focus_force()
+
         # Auto-Update Check im Hintergrund
         self._update_banner_frame = None
         self._update_info = None

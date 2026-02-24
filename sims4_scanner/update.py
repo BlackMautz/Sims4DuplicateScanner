@@ -125,11 +125,12 @@ def apply_update_and_restart(update_path: str):
     """Erstellt ein Batch-Script das die alte EXE ersetzt und die neue startet.
 
     Ablauf:
-    1. Warte bis die aktuelle EXE nicht mehr gesperrt ist
-    2. Lösche die alte EXE
-    3. Benenne die neue (.update) in den alten Namen um
-    4. Starte die neue EXE
-    5. Lösche das Batch-Script
+    1. Zone-Identifier (Internet-Markierung) von der neuen EXE entfernen
+    2. Warte bis die aktuelle EXE nicht mehr gesperrt ist
+    3. Lösche die alte EXE
+    4. Benenne die neue (.update) in den alten Namen um
+    5. Starte die neue EXE
+    6. Lösche das Batch-Script
     """
     exe_path = _get_exe_path()
     if not exe_path:
@@ -137,6 +138,26 @@ def apply_update_and_restart(update_path: str):
 
     exe_name = os.path.basename(exe_path)
     exe_dir = os.path.dirname(exe_path)
+
+    # Zone.Identifier entfernen (Windows "Aus dem Internet"-Blockierung)
+    # Ohne das kann Windows SmartScreen die neue EXE blockieren
+    try:
+        zi_path = update_path + ":Zone.Identifier"
+        if os.path.exists(zi_path):
+            os.remove(zi_path)
+            print("[UPDATE] Zone.Identifier entfernt", flush=True)
+    except Exception:
+        pass
+    # Alternativ via PowerShell (robuster)
+    try:
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f'Unblock-File -Path "{update_path}"'],
+            timeout=5, capture_output=True,
+        )
+        print("[UPDATE] Unblock-File ausgeführt", flush=True)
+    except Exception:
+        pass
 
     # Batch-Script im selben Ordner erstellen
     bat_path = os.path.join(exe_dir, "_update.bat")
@@ -147,6 +168,9 @@ def apply_update_and_restart(update_path: str):
 echo Sims 4 Duplikate Scanner wird aktualisiert...
 echo Bitte warte einen Moment...
 cd /d "{exe_dir}"
+
+REM Warte kurz damit der alte Prozess sicher beendet ist
+ping -n 3 127.0.0.1 >nul 2>&1
 
 set RETRIES=0
 :WAIT_LOOP
@@ -171,9 +195,12 @@ if errorlevel 1 (
 )
 
 echo Update abgeschlossen! Starte Scanner...
-start "" "{exe_name}"
+ping -n 2 127.0.0.1 >nul 2>&1
+start "" "{exe_dir}\\{exe_name}"
 
 :END
+REM Kurz warten damit start den Prozess starten kann
+ping -n 3 127.0.0.1 >nul 2>&1
 del "%~f0" >nul 2>&1
 '''
 
@@ -182,12 +209,23 @@ del "%~f0" >nul 2>&1
 
     print(f"[UPDATE] Starte Update-Script: {bat_path}", flush=True)
 
-    # Bat minimiert starten
+    # CREATE_BREAKAWAY_FROM_JOB (0x01000000) sorgt dafür, dass das Batch-Script
+    # NICHT mit dem Parent-Prozess stirbt (PyInstaller Job-Object-Problem)
+    CREATE_BREAKAWAY_FROM_JOB = 0x01000000
     subprocess.Popen(
         ["cmd.exe", "/c", bat_path],
         cwd=exe_dir,
-        creationflags=subprocess.CREATE_NEW_CONSOLE,
+        creationflags=(
+            subprocess.CREATE_NEW_CONSOLE
+            | subprocess.CREATE_NEW_PROCESS_GROUP
+            | CREATE_BREAKAWAY_FROM_JOB
+        ),
+        close_fds=True,
     )
+
+    # Kurz warten damit das Batch-Script sicher gestartet ist
+    import time
+    time.sleep(1)
 
     # App beenden damit die EXE freigegeben wird
     print("[UPDATE] App wird beendet für Update...", flush=True)

@@ -4,6 +4,25 @@ Ein leistungsstarkes All-in-One-Werkzeug für Die Sims 4 — Mod-Verwaltung, Spi
 
 ---
 
+## 🆕 Was ist neu in v3.6.0?
+
+### 📖 Spotlight-Tutorial verbessert
+- **Sicherheit & Pflege** — Schritt 13 hebt jetzt alle 7 Wartungs-Tabs korrekt hervor (Script-Check, CC-Check, Save-Health, Cache, Tray-Cleaner, Backup, Speicherplatz) statt nur einen einzelnen Button
+- **Container-Spotlight** — intelligente Bounding-Box-Berechnung für `display:contents`-Elemente (alle Kinder-Buttons werden als Gruppe markiert)
+
+### ⭐ Cheat-Favoriten persistent
+- **Server-seitige Speicherung** — Favoriten werden jetzt in der AppData-Config gespeichert statt in `localStorage`
+- **Port-unabhängig** — Favoriten überleben den Neustart der App (vorher gingen sie verloren, weil bei jedem Start ein neuer Port verwendet wird)
+- **Automatische Migration** — bestehende `localStorage`-Favoriten werden einmalig auf Server-Speicherung übertragen
+- **Neue API-Endpunkte** — `save_cheat_favs` / `load_cheat_favs` für persistente Favoritenverwaltung
+
+### 🔧 Fehlerbehebungen & Verbesserungen
+- **Fehler-Analyse** — komplett überarbeitete Fehler-Auswertung mit verbesserter Mod-Erkennung
+- **Dashboard-Texte** — aktualisierte und klarere Beschreibungen
+- **Tutorial-Positionierung** — Tooltip bleibt immer im sichtbaren Bereich (scrollbar bei wenig Platz)
+
+---
+
 ## 🆕 Was ist neu in v3.5.0?
 
 ### 🧬 Character Sheet — RPG-Stil Sim-Steckbrief

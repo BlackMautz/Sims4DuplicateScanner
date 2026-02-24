@@ -77,30 +77,39 @@ def build_html_page() -> str:
   .legend-icon { text-align:center; min-width:80px; }
   .info-hint { background:#172554; border:1px solid #1e40af; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12px; color:#93c5fd; }
 
-  /* ---- Tutorial Overlay ---- */
-  #tutorial-overlay { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); justify-content:center; align-items:center; }
-  #tutorial-overlay.active { display:flex; }
-  #tutorial-card { background:linear-gradient(145deg,#0f172a,#1e1b4b); border:1px solid #4f46e5; border-radius:20px; padding:36px 40px 28px; max-width:600px; width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.6); position:relative; animation:tutorialIn 0.35s ease-out; }
+  /* ---- Spotlight Tutorial ---- */
+  #tutorial-overlay { display:none; position:fixed; inset:0; z-index:10000; }
+  #tutorial-overlay.active { display:block; }
+  #tutorial-backdrop { position:fixed; inset:0; z-index:10000; cursor:default; }
+  #tutorial-spotlight { position:fixed; border-radius:12px; box-shadow:0 0 0 99999px rgba(0,0,0,0.72); z-index:10001; pointer-events:none; display:none; transition:top 0.45s cubic-bezier(.4,0,.2,1),left 0.45s cubic-bezier(.4,0,.2,1),width 0.45s cubic-bezier(.4,0,.2,1),height 0.45s cubic-bezier(.4,0,.2,1); }
+  #tutorial-spotlight.visible { display:block; }
+  #tutorial-spotlight::after { content:''; position:absolute; inset:-4px; border-radius:14px; border:2px solid rgba(99,102,241,0.5); animation:spotPulse 2s ease-in-out infinite; pointer-events:none; }
+  @keyframes spotPulse { 0%,100%{border-color:rgba(99,102,241,0.3);box-shadow:inset 0 0 8px rgba(99,102,241,0.1)} 50%{border-color:rgba(99,102,241,0.8);box-shadow:inset 0 0 24px rgba(99,102,241,0.3)} }
   @keyframes tutorialIn { from { opacity:0; transform:translateY(30px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
-  #tutorial-card .tut-header { text-align:center; margin-bottom:20px; }
-  #tutorial-card .tut-icon { font-size:48px; margin-bottom:8px; display:block; }
-  #tutorial-card .tut-title { font-size:22px; font-weight:bold; color:#e2e8f0; margin-bottom:4px; }
-  #tutorial-card .tut-body { color:#cbd5e1; font-size:14px; line-height:1.7; min-height:100px; }
-  #tutorial-card .tut-body b { color:#a5b4fc; }
-  #tutorial-card .tut-body ul { margin:8px 0 0 18px; padding:0; }
-  #tutorial-card .tut-body li { margin-bottom:4px; }
-  .tut-footer { display:flex; justify-content:space-between; align-items:center; margin-top:24px; gap:12px; flex-wrap:wrap; }
-  .tut-dots { display:flex; gap:6px; justify-content:center; flex:1; }
-  .tut-dot { width:10px; height:10px; border-radius:50%; background:#334155; transition:all 0.2s; cursor:pointer; }
-  .tut-dot.active { background:#6366f1; transform:scale(1.3); }
-  .tut-dot.done { background:#4f46e5; }
+  #tutorial-tooltip { position:fixed; z-index:10002; background:linear-gradient(145deg,#0f172a 60%,#1e1b4b); border:1px solid #4f46e5; border-radius:16px; padding:28px 30px 20px; max-width:440px; min-width:280px; box-shadow:0 14px 44px rgba(0,0,0,0.55),0 0 0 1px rgba(99,102,241,0.15); pointer-events:auto; }
+  #tutorial-tooltip.center-mode { top:50%!important; left:50%!important; transform:translate(-50%,-50%); max-width:560px; width:90vw; animation:tutCenterIn 0.4s ease-out; }
+  @keyframes tutCenterIn { from{opacity:0;transform:translate(-50%,-50%) translateY(30px) scale(0.95)} to{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1)} }
+  #tutorial-tooltip.pos-mode { animation:tutTipIn 0.3s ease-out; }
+  @keyframes tutTipIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  #tutorial-tooltip .tut-header { text-align:center; margin-bottom:14px; }
+  #tutorial-tooltip .tut-icon { font-size:40px; display:block; margin-bottom:6px; }
+  #tutorial-tooltip .tut-title { font-size:19px; font-weight:bold; color:#e2e8f0; }
+  #tutorial-tooltip .tut-body { color:#cbd5e1; font-size:13px; line-height:1.7; max-height:40vh; overflow-y:auto; }
+  #tutorial-tooltip .tut-body b { color:#a5b4fc; }
+  #tutorial-tooltip .tut-body ul { margin:8px 0 0 18px; padding:0; }
+  #tutorial-tooltip .tut-body li { margin-bottom:3px; }
+  .tut-progress { display:flex; align-items:center; gap:10px; margin:16px 0 12px; }
+  .tut-progress-bar { flex:1; height:4px; background:#1e293b; border-radius:4px; overflow:hidden; }
+  .tut-progress-fill { height:100%; background:linear-gradient(90deg,#6366f1,#818cf8); border-radius:4px; transition:width 0.4s ease; }
+  .tut-progress-text { font-size:11px; color:#64748b; white-space:nowrap; min-width:40px; text-align:right; }
+  .tut-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; }
   .tut-btn { border:1px solid #4f46e5; background:#1e1b4b; color:#c7d2fe; padding:8px 20px; border-radius:10px; cursor:pointer; font-size:13px; transition:all 0.15s; white-space:nowrap; }
   .tut-btn:hover { background:#312e81; color:#e0e7ff; }
   .tut-btn-primary { background:#6366f1; color:#fff; border-color:#6366f1; font-weight:bold; }
   .tut-btn-primary:hover { background:#818cf8; }
   .tut-btn-skip { background:transparent; border-color:#334155; color:#64748b; font-size:12px; }
   .tut-btn-skip:hover { color:#94a3b8; border-color:#475569; }
-  .tut-check { display:flex; align-items:center; gap:8px; margin-top:16px; justify-content:center; }
+  .tut-check { display:flex; align-items:center; gap:8px; margin-top:14px; justify-content:center; }
   .tut-check label { color:#64748b; font-size:12px; cursor:pointer; }
   .tut-check input { accent-color:#6366f1; }
 
@@ -608,6 +617,50 @@ def build_html_page() -> str:
   .cs-rel-rom { background:#ec489915; color:#f9a8d4; border-color:#ec489933; }
   .cs-rel-fri { background:#3b82f615; color:#93c5fd; border-color:#3b82f633; }
   .cs-rel-comp { background:#f59e0b15; color:#fcd34d; border-color:#f59e0b33; }
+
+  /* ── Cheat-Konsole v2 ── */
+  .cheat-toolbar { display:flex; gap:12px; align-items:stretch; margin-bottom:18px; }
+  .cheat-search-wrap { position:relative; flex:1; }
+  .cheat-search-wrap::before { content:'🔍'; position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; z-index:1; }
+  .cheat-search { width:100%; padding:11px 16px 11px 42px; background:#0d1117; border:1px solid #30363d; border-radius:12px; color:#e6edf3; font-size:14px; outline:none; transition:border-color 0.2s, box-shadow 0.2s; box-sizing:border-box; }
+  .cheat-search:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.18); }
+  .cheat-fav-toggle { display:flex; align-items:center; gap:6px; padding:8px 18px; background:#0d1117; border:1px solid #30363d; border-radius:12px; color:#94a3b8; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; transition:all 0.2s; user-select:none; }
+  .cheat-fav-toggle:hover { border-color:#eab308; color:#fbbf24; }
+  .cheat-fav-toggle.active { background:#eab30812; border-color:#eab308; color:#fbbf24; box-shadow:0 0 12px rgba(234,179,8,0.12); }
+  .cheat-fav-toggle .fav-star { font-size:16px; }
+  .cheat-fav-count { font-size:11px; background:#eab30822; color:#fbbf24; padding:1px 7px; border-radius:8px; margin-left:2px; }
+  .cheat-cats { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; padding:0 2px; }
+  .cheat-cat-btn { background:#161b22; border:1px solid #21262d; color:#8b949e; padding:7px 16px; border-radius:99px; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.2s; user-select:none; }
+  .cheat-cat-btn:hover { background:#1c2333; border-color:#388bfd44; color:#c9d1d9; }
+  .cheat-cat-btn.active { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; border-color:transparent; box-shadow:0 2px 12px rgba(99,102,241,0.35); }
+  .cheat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(420px, 1fr)); gap:16px; }
+  .cheat-card { background:#0d1117; border:1px solid #21262d; border-radius:16px; overflow:hidden; transition:all 0.25s; }
+  .cheat-card:hover { border-color:#30363d; box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+  .cheat-card-head { padding:16px 20px 10px; display:flex; align-items:center; gap:14px; border-bottom:1px solid #21262d; }
+  .cheat-card-icon { font-size:28px; width:46px; height:46px; display:flex; align-items:center; justify-content:center; border-radius:12px; flex-shrink:0; }
+  .cheat-card-title { font-size:15px; font-weight:700; color:#e6edf3; letter-spacing:-0.01em; }
+  .cheat-card-desc { font-size:11px; color:#8b949e; margin-top:3px; }
+  .cheat-card-body { padding:8px 8px 12px; }
+  .cheat-row { display:grid; grid-template-columns:1fr auto auto auto; align-items:center; gap:8px; padding:9px 14px; margin:2px 0; border-radius:10px; cursor:pointer; transition:all 0.15s; position:relative; }
+  .cheat-row:hover { background:#161b22; }
+  .cheat-row-code { font-family:'Cascadia Code','Fira Code','JetBrains Mono',monospace; font-size:12.5px; color:#79c0ff; word-break:break-all; line-height:1.4; }
+  .cheat-row-desc { font-size:11px; color:#8b949e; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+  .cheat-row-fav { font-size:14px; opacity:0.3; cursor:pointer; transition:all 0.2s; padding:2px 4px; flex-shrink:0; user-select:none; }
+  .cheat-row-fav:hover { opacity:1; transform:scale(1.3); }
+  .cheat-row-fav.is-fav { opacity:1; filter:drop-shadow(0 0 4px rgba(234,179,8,0.5)); }
+  .cheat-row-copy { font-size:13px; opacity:0; transition:opacity 0.15s; flex-shrink:0; color:#8b949e; }
+  .cheat-row:hover .cheat-row-copy { opacity:0.7; }
+  .cheat-row:hover .cheat-row-copy:hover { opacity:1; color:#6366f1; }
+  .cheat-copied { background:#22c55e12 !important; }
+  .cheat-copied .cheat-row-copy { opacity:1 !important; color:#22c55e !important; }
+  .cheat-card.cheat-hidden { display:none; }
+  .cheat-row.cheat-hidden { display:none; }
+  .cheat-count { font-size:12px; color:#8b949e; font-weight:500; }
+  .cheat-req { display:inline-block; font-size:9px; padding:2px 7px; border-radius:6px; background:#f59e0b12; color:#f59e0b; border:1px solid #f59e0b28; font-weight:600; letter-spacing:0.02em; }
+  .cheat-note { font-size:11px; color:#8b949e; padding:6px 14px; font-style:italic; border-left:2px solid #30363d; margin:4px 12px; }
+  .cheat-card-fav { background:linear-gradient(135deg,#1a1500 0%,#0d1117 100%); }
+  .cheat-card-fav .cheat-card-body { max-height:300px; overflow-y:auto; }
+
   /* Footer */
   .cs-footer { padding:12px 24px; border-top:1px solid #ffffff06; text-align:center; font-size:10px; color:#334155; position:relative; z-index:1; }
   /* Responsive */
@@ -1090,7 +1143,7 @@ function _stopMiniTipRotation(id) {
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="switchTab('outdated')" id="nav-outdated">⏰ Veraltet <span class="nav-badge badge-zero" id="nav-badge-analysis">0</span></button>
   <button class="nav-tab" onclick="switchTab('deps')" id="nav-deps">🔗 Abhängigkeiten</button>
-  <button class="nav-tab" onclick="switchTab('errors')" id="nav-errors">📋 Fehler</button>
+  <button class="nav-tab" onclick="switchTab('errors')" id="nav-errors">📋 Fehler <span class="nav-badge badge-zero" id="nav-badge-errors">0</span></button>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="switchTab('tray')" id="nav-tray">🎭 Tray</button>
   <button class="nav-tab" onclick="switchTab('gallery')" id="nav-gallery">🖼️ CC-Galerie</button>
@@ -1104,6 +1157,7 @@ function _stopMiniTipRotation(id) {
   <button class="nav-tab" onclick="switchTab('quarantine')" id="nav-quarantine">🗃️ Quarantäne</button>
   <button class="nav-tab" onclick="switchTab('batch')" id="nav-batch">⚡ Batch</button>
   <button class="nav-tab" onclick="switchTab('log')" id="nav-log">📜 Log</button>
+  <span id="nav-group-maintenance" style="display:contents;">
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="switchTab('scriptcheck')" id="nav-scriptcheck">🛡️ Script-Check</button>
   <button class="nav-tab" onclick="switchTab('cccheck')" id="nav-cccheck">🔧 CC-Check</button>
@@ -1113,9 +1167,11 @@ function _stopMiniTipRotation(id) {
   <button class="nav-tab" onclick="switchTab('trayclean')" id="nav-trayclean">🗂️ Tray-Cleaner</button>
   <button class="nav-tab" onclick="switchTab('backup')" id="nav-backup">💼 Backup</button>
   <button class="nav-tab" onclick="switchTab('diskusage')" id="nav-diskusage">📏 Speicherplatz</button>
+  </span>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="switchTab('packages')" id="nav-packages">📦 Packages</button>
   <button class="nav-tab" onclick="switchTab('history')" id="nav-history">📚 Verlauf</button>
+  <button class="nav-tab" onclick="switchTab('cheats')" id="nav-cheats">🎮 Cheats</button>
   <div class="nav-tab-sep"></div>
   <button class="nav-tab" onclick="startTutorial()" title="Tutorial nochmal anzeigen">❓ Tutorial</button>
   <button class="nav-tab" onclick="openBugReport()" title="Bug melden">🐛 Bug</button>
@@ -1229,6 +1285,13 @@ function _stopMiniTipRotation(id) {
     <div class="dash-label">Fehlende Abhängigkeiten</div>
     <div class="dash-desc">Mods importieren Bibliotheken die nicht installiert sind — werden nicht funktionieren!</div>
     <span class="dash-action">Prüfen →</span>
+  </div>
+  <div class="dash-card dash-critical dash-hidden" id="dash-errors" onclick="switchTab('errors')">
+    <div class="dash-icon">📋</div>
+    <div class="dash-count" id="dash-errors-count">0</div>
+    <div class="dash-label">Fehler-Logs</div>
+    <div class="dash-desc" id="dash-errors-desc">Tiefenanalyse deiner Fehlerlogs — erkennt beteiligte Mods, zeigt Lösungen &amp; BetterExceptions-Hinweise.</div>
+    <span class="dash-action">Fehler analysieren →</span>
   </div>
   <div class="dash-card dash-info dash-hidden" id="dash-nonmod" onclick="switchTab('allmods')">
     <div class="dash-icon">📄</div>
@@ -2128,6 +2191,25 @@ function _stopMiniTipRotation(id) {
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════ -->
+<!-- ═══ CHEATS ═══ -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="box" id="cheats-section" data-tab="cheats" style="border:1px solid #1e3a5f;">
+  <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+    <h2>🎮 Sims 4 Cheat-Konsole</h2>
+    <span class="cheat-count" id="cheat-match-count"></span>
+  </div>
+  <div class="info-hint" style="margin-bottom:14px;">💡 <b>Cheats öffnen:</b> Im Spiel <kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> drücken. Klicke auf einen Cheat um ihn zu kopieren — dann im Spiel mit <kbd>Strg+V</kbd> einfügen.<br>Viele Cheats benötigen zuerst <code style="color:#79c0ff;">testingcheats true</code>. Markiere deine Lieblings-Cheats mit ⭐ für schnellen Zugriff.</div>
+  <div class="cheat-toolbar">
+    <div class="cheat-search-wrap">
+      <input type="text" class="cheat-search" id="cheat-search" placeholder="Cheat suchen… z.B. motherlode, Karriere, Fitness" oninput="filterCheats()">
+    </div>
+    <div class="cheat-count" id="cheat-fav-count-badge" style="display:flex;align-items:center;gap:6px;padding:0 14px;font-size:13px;color:#fbbf24;white-space:nowrap;">⭐ <span id="cheat-fav-count-num">0</span></div>
+  </div>
+  <div class="cheat-cats" id="cheat-cats"></div>
+  <div class="cheat-grid" id="cheat-grid"></div>
+</div>
+
 <script>
 const TOKEN = __TOKEN__;
 const LOGFILE = __LOGFILE__;
@@ -2198,6 +2280,394 @@ function switchTab(tabName) {
 
   // Nach Tab-Wechsel zum Anfang scrollen
   window.scrollTo({top: 0, behavior: 'smooth'});
+
+  // Cheats beim ersten Mal rendern
+  if (tabName === 'cheats' && !window._cheatsRendered) renderCheats();
+}
+
+// ═══════════════════════════════════════════════════
+// ═══ CHEAT-KONSOLE ═══
+// ═══════════════════════════════════════════════════
+const _CHEATS = [
+  { cat: 'Allgemein', icon: '⚙️', color: '#94a3b8', cheats: [
+    { code: 'testingcheats true', desc: 'Erweiterte Cheats aktivieren' },
+    { code: 'testingcheats false', desc: 'Erweiterte Cheats deaktivieren' },
+    { code: 'help', desc: 'Listet alle Cheat-Codes auf' },
+    { code: 'resetSim Vorname Nachname', desc: 'Setzt den genannten Sim zurück' },
+    { code: 'fullscreen', desc: 'Vollbildmodus umschalten' },
+    { code: 'headlineEffects off', desc: 'Plumbob + Gedankenblasen ausblenden' },
+    { code: 'headlineEffects on', desc: 'Plumbob + Gedankenblasen einblenden' },
+    { code: 'cas.fulleditmode', desc: 'Volle CAS-Bearbeitung im Spiel', req: 'testingcheats' },
+    { code: 'Death.toggle false', desc: 'Sims können nicht sterben' },
+    { code: 'Death.toggle true', desc: 'Sims können wieder sterben' },
+    { code: 'ui.toggle_silence_phone', desc: 'Handy lautlos / laut schalten' },
+  ]},
+  { cat: 'Geld', icon: '💰', color: '#22c55e', cheats: [
+    { code: 'kaching', desc: '+1.000 Simoleons' },
+    { code: 'rosebud', desc: '+1.000 Simoleons' },
+    { code: 'motherlode', desc: '+50.000 Simoleons' },
+    { code: 'money 1000000', desc: 'Konto auf 1 Mio. setzen', req: 'testingcheats' },
+    { code: 'sims.modify_funds +50000', desc: '50.000 hinzufügen', req: 'testingcheats' },
+    { code: 'sims.modify_funds -50000', desc: '50.000 abziehen', req: 'testingcheats' },
+    { code: 'FreeRealEstate on', desc: 'Alle Grundstücke kostenlos' },
+    { code: 'FreeRealEstate off', desc: 'Grundstückspreise zurücksetzen' },
+  ]},
+  { cat: 'Bedürfnisse', icon: '❤️', color: '#ef4444', cheats: [
+    { code: 'sims.fill_all_commodities', desc: 'Alle Bedürfnisse aller Sims füllen' },
+    { code: 'stats.fill_commodities_household', desc: 'Bedürfnisse des Haushalts füllen' },
+    { code: 'sims.give_satisfaction_points 5000', desc: '5.000 Zufriedenheitspunkte', req: 'testingcheats' },
+    { code: 'aspirations.complete_current_milestone', desc: 'Aktuelle Bestrebens-Stufe abschließen' },
+    { code: 'households.autopay_bills', desc: 'Rechnungen automatisch bezahlen' },
+  ]},
+  { cat: 'Bau & Kauf', icon: '🏠', color: '#3b82f6', cheats: [
+    { code: 'bb.moveobjects', desc: 'Objekte frei platzieren (0-9 = Höhe)' },
+    { code: 'bb.showhiddenobjects', desc: 'Versteckte Objekte freischalten' },
+    { code: 'bb.showliveeditobjects', desc: 'Welt-Deko-Objekte freischalten' },
+    { code: 'bb.enablefreebuild', desc: 'Bauen auf versteckten Grundstücken' },
+    { code: 'bb.ignoregameplayunlocksentitlement', desc: 'Karriere-Belohnungsobjekte freischalten' },
+    { code: 'object.setashead', desc: 'Objekt als Kopfschmuck (Shift-Klick)', req: 'testingcheats' },
+  ]},
+  { cat: 'Karriere', icon: '💼', color: '#f59e0b', cheats: [
+    { code: 'careers.promote Astronaut', desc: 'Astronaut befördern', req: 'testingcheats' },
+    { code: 'careers.promote Athletic', desc: 'Sportler befördern', req: 'testingcheats' },
+    { code: 'careers.promote Business', desc: 'Business befördern', req: 'testingcheats' },
+    { code: 'careers.promote Criminal', desc: 'Verbrecher befördern', req: 'testingcheats' },
+    { code: 'careers.promote Culinary', desc: 'Leckermaul befördern', req: 'testingcheats' },
+    { code: 'careers.promote Detective', desc: 'Polizist befördern', req: 'testingcheats' },
+    { code: 'careers.promote Doctor', desc: 'Arzt befördern', req: 'testingcheats' },
+    { code: 'careers.promote Entertainer', desc: 'Entertainer befördern', req: 'testingcheats' },
+    { code: 'careers.promote Painter', desc: 'Maler befördern', req: 'testingcheats' },
+    { code: 'careers.promote Secretagent', desc: 'Geheimagent befördern', req: 'testingcheats' },
+    { code: 'careers.promote Techguru', desc: 'Technik-Guru befördern', req: 'testingcheats' },
+    { code: 'careers.promote Styleinfluencer', desc: 'Stilbeeinflusser befördern', req: 'testingcheats' },
+    { code: 'careers.promote adult_writer', desc: 'Schriftsteller befördern', req: 'testingcheats' },
+    { code: 'careers.promote Actor', desc: 'Schauspieler befördern', req: 'testingcheats' },
+    { code: 'careers.promote Activist', desc: 'Politiker befördern', req: 'testingcheats' },
+    { code: 'careers.promote adult_critic', desc: 'Kritiker befördern', req: 'testingcheats' },
+    { code: 'careers.promote Social', desc: 'Soziale Medien befördern', req: 'testingcheats' },
+    { code: 'careers.promote Military', desc: 'Militär befördern', req: 'testingcheats' },
+    { code: 'careers.promote Education', desc: 'Bildungswesen befördern', req: 'testingcheats' },
+    { code: 'careers.promote Engineer', desc: 'Ingenieur befördern', req: 'testingcheats' },
+    { code: 'careers.promote Law', desc: 'Recht befördern', req: 'testingcheats' },
+    { code: 'careers.promote adult_active_scientist', desc: 'Wissenschaftler befördern', req: 'testingcheats' },
+    { code: 'careers.promote adult_active_Reaper', desc: 'Schnitter befördern', req: 'testingcheats' },
+    { code: 'careers.promote Mortician', desc: 'Bestatter befördern', req: 'testingcheats' },
+    { code: 'careers.promote Romance', desc: 'Romantiktherapeut befördern', req: 'testingcheats' },
+    { code: 'careers.promote Noble', desc: 'Adel befördern', req: 'testingcheats' },
+    { code: 'careers.add_career Astronaut', desc: 'Karriere Astronaut starten', req: 'testingcheats' },
+    { code: 'careers.remove_career Astronaut', desc: 'Karriere Astronaut beenden', req: 'testingcheats' },
+  ]},
+  { cat: 'Fähigkeiten', icon: '⚔️', color: '#a855f7', cheats: [
+    { code: 'stats.set_skill_level Major_Fishing 10', desc: 'Angeln auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Charisma 10', desc: 'Charisma auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Comedy 10', desc: 'Comedy auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Skill_Fitness 10', desc: 'Fitness auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Gardening 10', desc: 'Gartenarbeit auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_GourmetCooking 10', desc: 'Feinschmecker-Kochen Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Guitar 10', desc: 'Gitarre auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Handiness 10', desc: 'Geschicklichkeit auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_HomestyleCooking 10', desc: 'Kochen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Logic 10', desc: 'Logik auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Mischief 10', desc: 'Schelm auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Painting 10', desc: 'Malen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Piano 10', desc: 'Klavier auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Programming 10', desc: 'Programmieren auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_RocketScience 10', desc: 'Raumfahrttechnik auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Violin 10', desc: 'Geige auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_VideoGaming 10', desc: 'Videospiele auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Writing 10', desc: 'Schreiben auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Bartending 10', desc: 'Mixen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Singing 10', desc: 'Singen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Wellness 10', desc: 'Wellness auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Photography 10', desc: 'Fotografie auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Baking 10', desc: 'Backen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_DJ 10', desc: 'DJ-Mixen auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Parenting 10', desc: 'Erziehung auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Herbalism 10', desc: 'Kräuterkunde auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Acting 10', desc: 'Schauspielerei auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Archaeology 10', desc: 'Archäologie auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Robotic 10', desc: 'Robotik auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Research 10', desc: 'Forschen & Debattieren Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Rockclimbing 10', desc: 'Klettern auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Skiing 10', desc: 'Ski fahren auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Snowboarding 10', desc: 'Snowboarden auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMajor_FlowerArranging 10', desc: 'Blumenbinden auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMajor_Fabrication 10', desc: 'Herstellung auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Skill_CrossStitch 10', desc: 'Kreuzstich auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Vet 10', desc: 'Tierarzt auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_PipeOrgan 10', desc: 'Orgel auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Romance 10', desc: 'Romantik auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Swordsmanship 10', desc: 'Schwertkampf auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMajor_EquestrianSkill 10', desc: 'Reiten auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Pottery 10', desc: 'Töpfern auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Tattooing 10', desc: 'Tätowieren auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Major_Papercraft 10', desc: 'Papierbastelei auf Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level VampireLore 15', desc: 'Vampirsaga auf Stufe 15', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Minor_Dancing 5', desc: 'Tanzen auf Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Minor_Mediaproduction 5', desc: 'Medienproduktion auf Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMinor_JuiceFizzing 5', desc: 'Aufsprudeln auf Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMinor_RanchNectar 5', desc: 'Nektarherstellung auf Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level AdultMinor_Thanatology 5', desc: 'Thanatologie auf Stufe 5', req: 'testingcheats' },
+  ]},
+  { cat: 'Kinder-Skills', icon: '👶', color: '#ec4899', cheats: [
+    { code: 'stats.set_skill_level Skill_Child_Creativity 10', desc: 'Kind: Kreativität Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Skill_Child_Mental 10', desc: 'Kind: Mental Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Skill_Child_Motor 10', desc: 'Kind: Motorik Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Skill_Child_Social 10', desc: 'Kind: Sozial Stufe 10', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Toddler_Communication 5', desc: 'Kleinkind: Kommunikation Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Toddler_Imagination 5', desc: 'Kleinkind: Fantasie Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Toddler_Movement 5', desc: 'Kleinkind: Motorik Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Toddler_Potty 5', desc: 'Kleinkind: Töpfchen Stufe 5', req: 'testingcheats' },
+    { code: 'stats.set_skill_level Toddler_Thinking 5', desc: 'Kleinkind: Denken Stufe 5', req: 'testingcheats' },
+  ]},
+  { cat: 'Okkult', icon: '🧛', color: '#7c3aed', cheats: [
+    { code: 'traits.equip_trait trait_OccultVampire', desc: 'Sim in Vampir verwandeln' },
+    { code: 'traits.remove_trait trait_OccultVampire', desc: 'Vampir entfernen' },
+    { code: 'traits.equip_trait trait_OccultWerewolf', desc: 'Sim in Werwolf verwandeln' },
+    { code: 'traits.remove_trait trait_OccultWerewolf', desc: 'Werwolf entfernen' },
+    { code: 'traits.equip_trait trait_Occult_WitchOccult', desc: 'Sim in Magier verwandeln' },
+    { code: 'traits.remove_trait trait_Occult_WitchOccult', desc: 'Magier entfernen' },
+    { code: 'traits.equip_trait trait_OccultMermaid', desc: 'Sim in Meerjungfrau verwandeln' },
+    { code: 'traits.remove_trait trait_OccultMermaid', desc: 'Meerjungfrau entfernen' },
+    { code: 'traits.equip_trait trait_OccultAlien', desc: 'Sim in Alien verwandeln' },
+    { code: 'traits.remove_trait trait_OccultAlien', desc: 'Alien entfernen' },
+    { code: 'stats.set_stat rankedStatistic_WitchOccult_WitchXP 2850', desc: 'Magier: Max XP (Virtuose)', req: 'testingcheats' },
+    { code: 'stats.set_stat rankedStatistic_Werewolf_Progression 3000', desc: 'Werwolf: Max XP (Apex)', req: 'testingcheats' },
+  ]},
+  { cat: 'Geister', icon: '👻', color: '#6366f1', cheats: [
+    { code: 'traits.equip_trait hunger', desc: 'Geist: Tod durch Hunger' },
+    { code: 'traits.equip_trait drown', desc: 'Geist: Tod durch Ertrinken' },
+    { code: 'traits.equip_trait electrocution', desc: 'Geist: Tod durch Stromschlag' },
+    { code: 'traits.equip_trait embarrassment', desc: 'Geist: Tod durch Blamage' },
+    { code: 'traits.equip_trait laugh', desc: 'Geist: Tod durch Lachanfall' },
+    { code: 'traits.equip_trait oldage', desc: 'Geist: Tod durch Altersschwäche' },
+    { code: 'traits.equip_trait exhaust', desc: 'Geist: Tod durch Überanstrengung' },
+    { code: 'traits.equip_trait cowplant', desc: 'Geist: Kuhpflanze' },
+    { code: 'traits.equip_trait steam', desc: 'Geist: Tod in Sauna' },
+    { code: 'traits.equip_trait Ghost_Frozen', desc: 'Geist: Tod durch Erfrieren' },
+    { code: 'traits.equip_trait Ghost_Overheat', desc: 'Geist: Tod durch Hitze' },
+    { note: '↩️ Rückgängig: traits.remove_trait statt traits.equip_trait verwenden' },
+  ]},
+  { cat: 'Jahreszeiten', icon: '🌦️', color: '#0ea5e9', cheats: [
+    { code: 'seasons.advance_season', desc: 'Zur nächsten Jahreszeit wechseln' },
+    { code: 'seasons.set_season 1', desc: 'Frühling setzen' },
+    { code: 'seasons.set_season 2', desc: 'Sommer setzen' },
+    { code: 'seasons.set_season 3', desc: 'Herbst setzen' },
+    { code: 'seasons.set_season 4', desc: 'Winter setzen' },
+    { code: 'weather.summon_lightning_strike', desc: 'Blitz in der Nachbarschaft' },
+    { code: 'weather.lightning_strike_object', desc: 'Blitz in zufälliges Objekt' },
+  ]},
+  { cat: 'Ökologie', icon: '🌿', color: '#10b981', cheats: [
+    { code: 'eco_footprint.set_eco_footprint_state 0', desc: 'Grüner ökologischer Abdruck', req: 'testingcheats' },
+    { code: 'eco_footprint.set_eco_footprint_state 1', desc: 'Neutraler ökologischer Abdruck', req: 'testingcheats' },
+    { code: 'eco_footprint.set_eco_footprint_state 2', desc: 'Industrieller ökologischer Abdruck', req: 'testingcheats' },
+  ]},
+  { cat: 'Teenager', icon: '📚', color: '#f97316', cheats: [
+    { code: 'careers.promote Teen_Retail', desc: 'Einzelhandel befördern', req: 'testingcheats' },
+    { code: 'careers.promote Babysitter', desc: 'Babysitter befördern', req: 'testingcheats' },
+    { code: 'careers.promote Barista', desc: 'Barista befördern', req: 'testingcheats' },
+    { code: 'careers.promote FastFood', desc: 'Fastfood befördern', req: 'testingcheats' },
+    { code: 'careers.promote Manual', desc: 'Handarbeiter befördern', req: 'testingcheats' },
+    { code: 'careers.promote Scout', desc: 'Pfadfinder befördern', req: 'testingcheats' },
+    { code: 'careers.add_career HSTeam_FootballTeam', desc: 'Football-Team beitreten' },
+    { code: 'careers.add_career HSTeam_CheerTeam', desc: 'Cheerleading-Team beitreten' },
+    { code: 'careers.add_career HSTeam_ChessTeam', desc: 'Schach-Team beitreten' },
+    { code: 'careers.add_career HSTeam_ComputerTeam', desc: 'Computer-Team beitreten' },
+  ]},
+  { cat: 'Handelsvorteile', icon: '🏪', color: '#14b8a6', cheats: [
+    { code: 'bucks.unlock_perk StorePlacard_1 true', desc: 'Plakette "Mein erster Simoleon"' },
+    { code: 'bucks.unlock_perk PedestalMimic true', desc: 'Provokativer Ausstelltisch' },
+    { code: 'bucks.unlock_perk RetailOutfit true', desc: 'Pfiffiges Shirt' },
+    { code: 'bucks.unlock_perk RegisterMimic true', desc: 'Ladenkasse von Morgen' },
+    { code: 'bucks.unlock_perk AdditionalWorker_1 true', desc: 'Zusätzlicher Angestellter Nr. 1' },
+    { code: 'bucks.unlock_perk AdditionalWorker_2 true', desc: 'Zusätzlicher Angestellter Nr. 2' },
+    { code: 'bucks.unlock_perk RestockSpeed_Small true', desc: 'Schneller auffüllen (gering)' },
+    { code: 'bucks.unlock_perk RestockSpeed_Large true', desc: 'Schneller auffüllen (extrem)' },
+    { code: 'bucks.unlock_perk CheckoutSpeed_Small true', desc: 'Schneller kassieren (gering)' },
+    { code: 'bucks.unlock_perk CheckoutSpeed_Large true', desc: 'Schneller kassieren (extrem)' },
+    { code: 'bucks.unlock_perk SureSaleSocial true', desc: 'Sicherer Verkauf' },
+    { code: 'bucks.unlock_perk InstantRestock true', desc: 'Sofort auffüllen' },
+    { code: 'bucks.unlock_perk CustomerPurchaseIntent true', desc: 'Seriöser Kunde' },
+    { code: 'bucks.unlock_perk ImproveRetailSocials true', desc: 'Raffinierter Verkäufer' },
+  ]},
+];
+
+let _cheatActiveCat = null;
+let _cheatFavCache = new Set();
+window._cheatsRendered = false;
+
+function _loadCheatFavs() {
+  return _cheatFavCache;
+}
+function _saveCheatFavs(favSet) {
+  _cheatFavCache = favSet;
+  // Persist to server (fire-and-forget)
+  postAction('save_cheat_favs', '', { favs: [...favSet] }).catch(e => console.warn('save_cheat_favs failed:', e));
+}
+async function _initCheatFavs() {
+  try {
+    const r = await postAction('load_cheat_favs', '');
+    if (r.favs && Array.isArray(r.favs) && r.favs.length > 0) {
+      _cheatFavCache = new Set(r.favs);
+    } else {
+      // Migrate from localStorage if present (one-time)
+      try {
+        const old = JSON.parse(localStorage.getItem('sims4_cheat_favs') || '[]');
+        if (Array.isArray(old) && old.length > 0) {
+          _cheatFavCache = new Set(old);
+          _saveCheatFavs(_cheatFavCache);
+          localStorage.removeItem('sims4_cheat_favs');
+        }
+      } catch(m) {}
+    }
+  } catch(e) { console.warn('load_cheat_favs failed:', e); }
+}
+
+function toggleCheatFav(code, ev) {
+  ev.stopPropagation();
+  const favs = _loadCheatFavs();
+  if (favs.has(code)) favs.delete(code); else favs.add(code);
+  _saveCheatFavs(favs);
+  // Komplett neu rendern damit Fav-Karte oben aktualisiert wird
+  renderCheats();
+  filterCheats();
+}
+
+function _updateFavBadge() {
+  const favs = _loadCheatFavs();
+  const badge = document.getElementById('cheat-fav-count-badge');
+  const num = document.getElementById('cheat-fav-count-num');
+  if (num) num.textContent = favs.size;
+  if (badge) badge.style.display = favs.size > 0 ? 'flex' : 'none';
+}
+
+function _buildFavCard(favs) {
+  // Sammle alle Fav-Cheats aus allen Kategorien
+  let favCheats = [];
+  _CHEATS.forEach(g => {
+    g.cheats.forEach(c => {
+      if (c.code && favs.has(c.code)) favCheats.push(c);
+    });
+  });
+  if (favCheats.length === 0) return '';
+
+  let html = '<div class="cheat-card cheat-card-fav" data-cheat-cat="__favs__" style="grid-column:1/-1;border-color:#eab30833;">';
+  html += '<div class="cheat-card-head" style="border-bottom-color:#eab30822;"><div class="cheat-card-icon" style="background:#eab30815;color:#eab308;">⭐</div>';
+  html += '<div><div class="cheat-card-title" style="color:#fbbf24;">Meine Favoriten</div>';
+  html += '<div class="cheat-card-desc">' + favCheats.length + ' gespeichert — Klicke ⭐ zum Entfernen</div></div></div>';
+  html += '<div class="cheat-card-body">';
+  favCheats.forEach(c => {
+    const searchText = (c.code + ' ' + c.desc).toLowerCase();
+    html += '<div class="cheat-row" data-search="' + esc(searchText) + '" onclick="copyCheat(this, \'' + c.code.replace(/'/g, "\\'") + '\')" title="Klicken zum Kopieren">';
+    html += '<span class="cheat-row-code">' + esc(c.code) + '</span>';
+    if (c.req) html += '<span class="cheat-req">' + esc(c.req) + '</span>';
+    html += '<span class="cheat-row-desc">' + esc(c.desc) + '</span>';
+    html += '<span class="cheat-row-fav is-fav" data-fav-code="' + esc(c.code) + '" onclick="toggleCheatFav(\'' + c.code.replace(/'/g, "\\'") + '\', event)">⭐</span>';
+    html += '<span class="cheat-row-copy">📋</span>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function renderCheats() {
+  window._cheatsRendered = true;
+  const grid = document.getElementById('cheat-grid');
+  const cats = document.getElementById('cheat-cats');
+  const favs = _loadCheatFavs();
+
+  // Kategorie-Buttons
+  let catHtml = '<button class="cheat-cat-btn active" onclick="filterCheatCat(null, this)">Alle</button>';
+  if (favs.size > 0) {
+    catHtml += '<button class="cheat-cat-btn" onclick="filterCheatCat(\'__favs__\', this)" style="border-color:#eab30844;color:#fbbf24;">⭐ Favoriten <span style="opacity:.5;font-size:10px;">' + favs.size + '</span></button>';
+  }
+  _CHEATS.forEach(g => {
+    catHtml += '<button class="cheat-cat-btn" onclick="filterCheatCat(\'' + g.cat.replace(/'/g, "\\'") + '\', this)">' + g.icon + ' ' + g.cat + ' <span style="opacity:.5;font-size:10px;">' + g.cheats.filter(c=>c.code).length + '</span></button>';
+  });
+  cats.innerHTML = catHtml;
+
+  // Favoriten-Karte ganz oben + normale Karten
+  let html = _buildFavCard(favs);
+
+  _CHEATS.forEach(g => {
+    html += '<div class="cheat-card" data-cheat-cat="' + esc(g.cat) + '">';
+    html += '<div class="cheat-card-head"><div class="cheat-card-icon" style="background:' + g.color + '15;color:' + g.color + ';">' + g.icon + '</div>';
+    html += '<div><div class="cheat-card-title">' + esc(g.cat) + '</div>';
+    html += '<div class="cheat-card-desc">' + g.cheats.filter(c=>c.code).length + ' Cheats</div></div></div>';
+    html += '<div class="cheat-card-body">';
+    g.cheats.forEach(c => {
+      if (c.note) {
+        html += '<div class="cheat-note">' + c.note + '</div>';
+        return;
+      }
+      const isFav = favs.has(c.code);
+      const searchText = (c.code + ' ' + c.desc).toLowerCase();
+      html += '<div class="cheat-row" data-search="' + esc(searchText) + '" onclick="copyCheat(this, \'' + c.code.replace(/'/g, "\\'") + '\')" title="Klicken zum Kopieren">';
+      html += '<span class="cheat-row-code">' + esc(c.code) + '</span>';
+      if (c.req) html += '<span class="cheat-req">' + esc(c.req) + '</span>';
+      html += '<span class="cheat-row-desc">' + esc(c.desc) + '</span>';
+      html += '<span class="cheat-row-fav' + (isFav ? ' is-fav' : '') + '" data-fav-code="' + esc(c.code) + '" onclick="toggleCheatFav(\'' + c.code.replace(/'/g, "\\'") + '\', event)">' + (isFav ? '⭐' : '☆') + '</span>';
+      html += '<span class="cheat-row-copy">📋</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  grid.innerHTML = html;
+  _updateFavBadge();
+  updateCheatCount();
+}
+
+function copyCheat(el, code) {
+  navigator.clipboard.writeText(code).then(() => {
+    el.classList.add('cheat-copied');
+    const copyEl = el.querySelector('.cheat-row-copy');
+    if (copyEl) copyEl.textContent = '✅';
+    showToast('Kopiert: ' + code, 'success', 2000);
+    setTimeout(() => {
+      el.classList.remove('cheat-copied');
+      if (copyEl) copyEl.textContent = '📋';
+    }, 1500);
+  });
+}
+
+function filterCheatCat(cat, btn) {
+  _cheatActiveCat = cat;
+  document.querySelectorAll('.cheat-cat-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filterCheats();
+}
+
+function filterCheats() {
+  const query = (document.getElementById('cheat-search').value || '').toLowerCase().trim();
+  const cards = document.querySelectorAll('.cheat-card');
+  let total = 0;
+  cards.forEach(card => {
+    const cat = card.getAttribute('data-cheat-cat');
+    if (_cheatActiveCat && cat !== _cheatActiveCat) { card.classList.add('cheat-hidden'); return; }
+    card.classList.remove('cheat-hidden');
+    const rows = card.querySelectorAll('.cheat-row');
+    let visibleInCard = 0;
+    rows.forEach(row => {
+      const searchText = row.getAttribute('data-search') || '';
+      if (query && !searchText.includes(query)) {
+        row.classList.add('cheat-hidden');
+      } else {
+        row.classList.remove('cheat-hidden');
+        visibleInCard++;
+      }
+    });
+    if (query && visibleInCard === 0) card.classList.add('cheat-hidden');
+    else total += visibleInCard;
+  });
+  updateCheatCount(total);
+}
+
+function updateCheatCount(n) {
+  const el = document.getElementById('cheat-match-count');
+  if (!el) return;
+  const totalCheats = _CHEATS.reduce((s, g) => s + g.cheats.filter(c=>c.code).length, 0);
+  if (n === undefined) el.textContent = totalCheats + ' Cheats';
+  else el.textContent = n + ' / ' + totalCheats + ' Cheats';
 }
 
 // Duplikate-Tab: groups-view vs perfile-view
@@ -4043,56 +4513,187 @@ loadTags();
 loadCurseForge();
 
 const TUTORIAL_STEPS = [
-  {icon:'🎮',title:'Willkommen beim Sims 4 Mod-Scanner!',body:'<b>Schön, dass du da bist!</b> Dieses Tool hilft dir, deine Mods-Sammlung sauber und organisiert zu halten.<br><br>In diesem kurzen Tutorial zeigen wir dir alle wichtigen Funktionen.<br><br><b>💡 Tipp:</b> Du kannst das Tutorial jederzeit über den <b>❓ Tutorial</b>-Button in der Tab-Leiste erneut starten.'},
-  {icon:'🧭',title:'Die Tab-Navigation',body:'Oben findest du die <b>Tab-Leiste</b> mit allen Bereichen. Jeder Bereich hat seinen eigenen Tab:<br><ul><li><b>🏠 Dashboard</b> — Übersicht aller Ergebnisse</li><li><b>📂 Duplikate / 💀 Korrupte / 🧩 Addons / 🏷️ Enthaltene / ⚔️ Konflikte</b></li><li><b>⏰ Veraltet / 🔗 Abhängigkeiten / 📋 Fehler</b></li><li><b>🎭 Tray / 🖼️ CC-Galerie / 💾 Savegames</b></li><li><b>📊 Statistik / 👤 Creators / 📁 Alle Mods</b></li><li><b>📥 Import / 🗃️ Quarantäne / ⚡ Batch / 📜 Log</b></li><li><b>🛡️ Script-Check / 🔧 CC-Check / ❤️ Save-Health</b></li><li><b>🗑️ Cache / 🗂️ Tray-Cleaner / 💼 Backup / 📏 Speicherplatz</b></li></ul>Die <b>Badges</b> hinter den Tabs zeigen die Anzahl der Funde an.'},
-  {icon:'🏠',title:'Das Dashboard',body:'Das <b>Dashboard</b> ist dein Startpunkt. Hier siehst du auf einen Blick:<br><ul><li>💀 <b>Korrupte Dateien</b> — Sofort entfernen!</li><li>📂 <b>Duplikate</b> — Doppelte Mod-Dateien</li><li>⚔️ <b>Konflikte</b> — Mods die sich überschreiben</li><li>📦 <b>Enthaltene Mods</b> — Mods in Bundles enthalten</li><li>⏰ <b>Veraltete Mods</b> — Vor letztem Patch erstellt</li><li>❌ <b>Fehlende Abhängigkeiten</b> — Mods ohne Voraussetzungen</li></ul>Klicke auf eine <b>Karte</b> um direkt zum passenden Tab zu springen!'},
-  {icon:'📂',title:'Tab: Duplikate',body:'Im Tab <b>📂 Duplikate</b> findest du alles zu doppelten Dateien:<br><ul><li><b>📦 Inhalt-Duplikate</b> — 100% identische Kopien</li><li><b>📛 Name-Duplikate</b> — Gleicher Name, verschiedene Ordner</li><li><b>🔤 Ähnliche Namen</b> — Wahrscheinlich verschiedene Versionen</li></ul>Setze <b>Häkchen ☑️</b> bei Dateien die du entfernen willst.<br><br>Verwandte Tabs: <b>💀 Korrupte</b>, <b>🧩 Addons</b>, <b>🏷️ Enthaltene</b>, <b>⚔️ Konflikte</b> — jeweils mit eigenem Tab!'},
-  {icon:'⚔️',title:'Konflikte & Schweregrade',body:'Konflikte werden nach <b>Schweregrad</b> farblich markiert:<br><br><span style="background:#ef4444;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚠️ Kritisch</span> <span style="color:#ef4444;">3+ Tuning-Ressourcen</span> — Kann Gameplay-Fehler verursachen, aufräumen!<br><br><span style="background:#fbbf24;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚡ Mittel</span> <span style="color:#fbbf24;">CAS/Sim-Data betroffen</span> — Könnte Darstellungsfehler verursachen<br><br><span style="background:#22c55e;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Niedrig</span> <span style="color:#22c55e;">Nur Texturen/Meshes</span> — Meistens gewollt, behalten<br><br><span style="background:#94a3b8;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">💤 Harmlos</span> <span style="color:#94a3b8;">1-2 geteilte Keys</span> — Mods teilen einzelne Assets, kein Problem<br><br><span style="background:#60a5fa;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Gewollt</span> <span style="color:#60a5fa;">Zusammengehörige Dateien</span> — Gleicher Mod, behalten!'},
-  {icon:'⏰',title:'Analyse-Tabs',body:'Die Analyse deiner Mods ist auf eigene Tabs aufgeteilt:<br><ul><li><b>⏰ Veraltet</b> — Mods die vor dem letzten Spiel-Patch erstellt wurden</li><li><b>🔗 Abhängigkeiten</b> — Welche Mods andere Mods brauchen</li><li><b>📋 Fehler</b> — Ausgewertete Fehlerlogs (lastException.txt)</li></ul>Hier erkennst du auf einen Blick, welche Mods Probleme verursachen könnten!'},
-  {icon:'🎭',title:'Tray, Galerie & Savegames',body:'Deine gespeicherten Inhalte haben eigene Tabs:<br><ul><li><b>🎭 Tray</b> — Welche Mods deine Sims und Häuser brauchen</li><li><b>🖼️ CC-Galerie</b> — Alle Custom Content Vorschaubilder</li><li><b>💾 Savegames</b> — Spielstand-Analyse</li></ul>⚠️ Wenn du einen Mod löschen willst, der von einem gespeicherten Sim benutzt wird, wirst du <b>gewarnt</b>!'},
-  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen dir Aktionen zur Verfügung:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt die Datei sicher (rückgängig machbar!)</li><li><b>� Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Sicher:</b> Es wird niemals sofort etwas gelöscht! Alle Dateien landen zuerst in der Quarantäne. Endgültig löschen kannst du nur im Tab <b>🗃️ Quarantäne</b>.'},
-  {icon:'🛠',title:'Werkzeug-Tabs',body:'Praktische Helfer haben eigene Tabs:<br><ul><li><b>📥 Import</b> — Neue Mods sicher importieren</li><li><b>🗃️ Quarantäne</b> — Verschobene Dateien verwalten/wiederherstellen</li><li><b>⚡ Batch</b> — Alle markierten Dateien auf einmal verarbeiten</li><li><b>📜 Log</b> — Alle durchgeführten Aktionen nachverfolgen</li></ul>Über die <b>Checkboxen</b> bei jeder Datei und dann <b>Batch-Quarantäne</b> kannst du schnell aufräumen.'},
-  {icon:'🔎',title:'Globale Suche',body:'Die <b>Globale Suche</b> unterhalb der Tab-Leiste durchsucht <b>ALLES</b> auf einmal:<br><ul><li>Dateinamen und Pfade</li><li>Notizen und Tags</li><li>Creator-Informationen</li><li>CurseForge-Daten</li></ul>Einfach eintippen — die Ergebnisse erscheinen sofort!'},
-  {icon:'🏷️',title:'Notizen & Tags',body:'Du kannst zu jeder Mod <b>persönliche Notizen</b> und <b>Tags</b> hinzufügen:<br><br><b>📝 Notizen</b> — Freitext, z.B. "Funktioniert super mit XY Mod"<br><b>🏷️ Tags</b> — Kategorie-Labels wie "Favorit", "Testen", "Behalten"<br><br>Alles wird gespeichert und überlebt Rescans! Nutze Tags um deine Mods zu organisieren.'},
-  {icon:'🛡️',title:'Sicherheit & Pflege',body:'Für die Pflege deiner Mods gibt es eigene Tabs:<br><ul><li><b>🛡️ Script-Check</b> — Prüft Scripts auf Sicherheitsrisiken</li><li><b>🔧 CC-Check</b> — Findet kaputtes Custom Content</li><li><b>❤️ Save-Health</b> — Prüft Spielstand-Gesundheit</li><li><b>🗑️ Cache</b> — Cache-Dateien bereinigen</li><li><b>🗂️ Tray-Cleaner</b> — Verwaiste Tray-Dateien aufräumen</li><li><b>💼 Backup</b> — Mods-Ordner sichern</li><li><b>📏 Speicherplatz</b> — Speicherverbrauch analysieren</li></ul>'},
-  {icon:'📚',title:'Verlauf & Statistik',body:'<b>📚 Verlauf:</b><br><ul><li><b>📸 Mod-Snapshot</b> — Ein Foto deiner Mod-Sammlung bei jedem Scan</li><li><b>📋 Scan-Historie</b> — Alle Aktionen nachvollziehen</li></ul><b>📊 Statistik / 👤 Creators / 📁 Alle Mods:</b><br><ul><li>Gesamtzahlen und Analyse</li><li>Mod-Ersteller verwalten</li><li>Komplette Liste durchsuchen</li></ul>'},
-  {icon:'🎉',title:'Fertig! Viel Spaß!',body:'Du kennst jetzt alle <b>wichtigen Funktionen</b>!<br><br><b>Noch ein paar Tipps:</b><ul><li>Der <b>🔄 Auto-Watcher</b> erkennt Änderungen automatisch</li><li>Erstelle <b>Creator-Verknüpfungen</b> unter <b>👤 Creators</b></li><li>Nutze den <b>📥 Import</b>-Tab für neue Mods</li><li>Schau regelmäßig bei <b>⏰ Veraltet</b> und <b>🔗 Abhängigkeiten</b> nach Problemen</li></ul><b>🎮 Happy Simming!</b>'}
+  {icon:'🎮',title:'Willkommen beim Sims 4 Mod-Scanner!',body:'<b>Schön, dass du da bist!</b> Dieses Tool hilft dir, deine Mods-Sammlung sauber und organisiert zu halten.<br><br>Klicke <b>Weiter</b>, um die <b>interaktive Tour</b> zu starten — wir zeigen dir alles Schritt für Schritt!<br><br><b>💡 Tipp:</b> Du kannst das Tutorial jederzeit über den <b>❓ Tutorial</b>-Button erneut starten.',target:null,tab:null},
+  {icon:'🧭',title:'Die Tab-Navigation',body:'Das ist die <b>Tab-Leiste</b>. Hier findest du <b>alle 30 Bereiche</b> des Scanners — von Duplikaten über Fehler-Analyse bis zur Cheat-Konsole.<br><br>Die <b>Badges</b> hinter den Tabs zeigen die Anzahl der Funde an.',target:'#section-nav',tab:'dashboard'},
+  {icon:'🏠',title:'Das Dashboard',body:'Das <b>Dashboard</b> ist dein Startpunkt:<br><ul><li>💀 Korrupte Dateien</li><li>📂 Duplikate</li><li>⚔️ Konflikte</li><li>🧑 Skin-Probleme</li><li>📋 Fehler-Logs</li></ul>Klicke auf eine <b>Karte</b> um direkt zum passenden Tab zu springen!',target:'#dashboard',tab:'dashboard'},
+  {icon:'📂',title:'Tab: Duplikate',body:'Hier findest du doppelte Dateien:<br><ul><li><b>📦 Inhalt-Duplikate</b> — 100% identische Kopien</li><li><b>📛 Name-Duplikate</b> — Gleicher Name, verschiedene Ordner</li><li><b>🔤 Ähnliche Namen</b> — Verschiedene Versionen</li></ul>Setze <b>Häkchen ☑️</b> bei Dateien die du entfernen willst.',target:'#nav-groups',tab:'dashboard'},
+  {icon:'⚔️',title:'Konflikte & Schweregrade',body:'Konflikte werden nach <b>Schweregrad</b> markiert:<br><br><span style="background:#ef4444;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚠️ Kritisch</span> <span style="color:#ef4444;">3+ Tuning-Ressourcen</span><br><span style="background:#fbbf24;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">⚡ Mittel</span> <span style="color:#fbbf24;">CAS/Sim-Data</span><br><span style="background:#22c55e;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">✅ Niedrig</span> <span style="color:#22c55e;">Texturen/Meshes</span><br><span style="background:#94a3b8;color:#000;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;">💤 Harmlos</span> <span style="color:#94a3b8;">Einzelne Assets</span>',target:'#nav-conflicts',tab:'dashboard'},
+  {icon:'🧑',title:'Skin-Diagnose',body:'Hilft beim berüchtigten <b>Stein-Haut-Bug</b>!<br><ul><li>Welche Skin-Mods die <b>gleichen CAS-Part-IDs</b> verwenden</li><li>Welche <b>Overlay-Mods sich überschreiben</b></li><li>Ob ein Skin-Recolor <b>ohne Basis-Mod</b> installiert ist</li></ul><b>💡 Lösung:</b> Nur EINEN Skin-/Overlay-Mod pro Typ behalten!',target:'#nav-skincheck',tab:'dashboard'},
+  {icon:'⏰',title:'Analyse-Tabs',body:'Die tiefere Analyse deiner Mods:<br><ul><li><b>⏰ Veraltet</b> — Vor dem letzten Patch erstellt</li><li><b>🔗 Abhängigkeiten</b> — Welche Mods Voraussetzungen brauchen</li><li><b>📋 Fehler</b> — Tiefenanalyse aller Fehlerlogs mit Mod-Erkennung &amp; BetterExceptions</li></ul>',target:'#nav-errors',tab:'dashboard'},
+  {icon:'🎭',title:'Tray, Galerie & Savegames',body:'Deine gespeicherten Inhalte:<br><ul><li><b>🎭 Tray</b> — Mod-Abhängigkeiten deiner Sims/Häuser</li><li><b>🖼️ CC-Galerie</b> — Custom Content Vorschaubilder</li><li><b>💾 Savegames</b> — Spielstand-Analyse</li></ul>⚠️ Bei Mod-Löschung wirst du <b>gewarnt</b> wenn ein Sim den Mod nutzt!',target:'#nav-tray',tab:'dashboard'},
+  {icon:'⚡',title:'Aktionen & Quarantäne',body:'Für jede Datei stehen Aktionen bereit:<br><ul><li><b>📦 Quarantäne</b> — Verschiebt sicher (rückgängig machbar!)</li><li><b>📂 Öffnen</b> — Zeigt den Ordner im Explorer</li></ul><b>🛡️ Es wird niemals sofort gelöscht!</b> Alles geht zuerst in die Quarantäne.',target:'#nav-quarantine',tab:'dashboard'},
+  {icon:'🛠',title:'Werkzeug-Tabs',body:'Praktische Werkzeuge:<br><ul><li><b>📥 Import</b> — Neue Mods importieren</li><li><b>🗃️ Quarantäne</b> — Verschobene Dateien verwalten</li><li><b>⚡ Batch</b> — Alle markierten auf einmal verarbeiten</li><li><b>📜 Log</b> — Alle Aktionen nachverfolgen</li></ul>',target:'#nav-import',tab:'dashboard'},
+  {icon:'🔎',title:'Globale Suche',body:'Die <b>Globale Suche</b> durchsucht <b>ALLES</b> auf einmal:<br><ul><li>Dateinamen und Pfade</li><li>Notizen und Tags</li><li>Creator-Informationen</li><li>CurseForge-Daten</li></ul>Einfach eintippen — die Ergebnisse erscheinen sofort!',target:'#global-search-box',tab:'dashboard'},
+  {icon:'🏷️',title:'Notizen & Tags',body:'Du kannst zu jeder Mod <b>persönliche Notizen</b> und <b>Tags</b> hinzufügen:<br><br><b>📝 Notizen</b> — Freitext, z.B. "Funktioniert super mit XY Mod"<br><b>🏷️ Tags</b> — Labels wie "Favorit", "Testen", "Behalten"<br><br>Alles wird gespeichert und überlebt Rescans!',target:null,tab:null},
+  {icon:'🛡️',title:'Sicherheit & Pflege',body:'Tabs für die Pflege deiner Mods:<br><ul><li><b>🛡️ Script-Check</b> — Scripts auf Risiken prüfen</li><li><b>🔧 CC-Check</b> — Kaputtes CC finden</li><li><b>❤️ Save-Health</b> — Spielstand-Gesundheit</li><li><b>🗑️ Cache</b> — Cache bereinigen</li><li><b>🗂️ Tray-Cleaner</b> — Verwaiste Tray-Dateien</li><li><b>💼 Backup</b> — Mods-Ordner sichern</li><li><b>📏 Speicherplatz</b> — Speicherverbrauch</li></ul>',target:'#nav-group-maintenance',tab:'dashboard'},
+  {icon:'📦',title:'Package-Browser',body:'Im <b>📦 Package-Browser</b> schaust du <b>in deine Mod-Dateien hinein</b>:<br><ul><li>Durchsuchbare Liste aller .package-Dateien</li><li>Zeigt was drin steckt — Kleidung, Möbel, Haare…</li><li>Erkennt <b>Ressource-Typen</b> (CAS Parts, Objekte, Tuning…)</li></ul>Perfekt um unbekannte Mods zu identifizieren!',target:'#nav-packages',tab:'dashboard'},
+  {icon:'📚',title:'Verlauf & Statistik',body:'<b>📚 Verlauf:</b><br><ul><li><b>📸 Mod-Snapshot</b> — Ein Foto deiner Sammlung pro Scan</li><li><b>📊 Verlaufs-Diagramm</b> — Entwicklung über Zeit</li></ul><b>📊 Statistik / 👤 Creators / 📁 Alle Mods:</b><br><ul><li>Gesamtzahlen und Analyse</li><li>Mod-Ersteller verwalten</li></ul>',target:'#nav-history',tab:'dashboard'},
+  {icon:'🎮',title:'Cheat-Konsole',body:'Dein <b>Nachschlagewerk für alle Sims 4 Cheats</b>!<br><ul><li><b>Durchsuchbar</b> — Tippe z.B. "Geld" oder "Karriere" ein</li><li><b>Nach Kategorien</b> sortiert</li><li><b>Ein-Klick kopieren</b> — Im Spiel mit <kbd>Strg+V</kbd> einfügen</li><li><b>⭐ Favoriten</b> — Deine Lieblings-Cheats merken</li></ul><b>💡</b> Cheat-Konsole im Spiel: <kbd>Strg</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>',target:'#nav-cheats',tab:'cheats'},
+  {icon:'🎉',title:'Fertig! Viel Spaß!',body:'Du kennst jetzt alle <b>wichtigen Funktionen</b>!<br><br><b>Noch ein paar Tipps:</b><ul><li>Der <b>🔄 Auto-Watcher</b> erkennt Änderungen automatisch</li><li>Erstelle <b>Creator-Verknüpfungen</b> unter <b>👤 Creators</b></li><li>Nutze den <b>📥 Import</b>-Tab für neue Mods</li><li>Die <b>🎮 Cheat-Konsole</b> hilft beim Testen</li></ul><b>🎮 Happy Simming!</b>',target:null,tab:'dashboard'}
 ];
 
 let tutorialStep = 0;
+let _tutRafId = null;
 
 function renderTutorialStep() {
   const step = TUTORIAL_STEPS[tutorialStep];
+  const tooltip = document.getElementById('tutorial-tooltip');
+  const spotlight = document.getElementById('tutorial-spotlight');
+
+  // Fill content
   document.getElementById('tut-step-icon').textContent = step.icon;
   document.getElementById('tut-step-title').textContent = step.title;
   document.getElementById('tut-step-body').innerHTML = step.body;
 
-  // Dots
-  const dotsEl = document.getElementById('tut-dots');
-  dotsEl.innerHTML = TUTORIAL_STEPS.map((_, i) =>
-    `<div class="tut-dot ${i === tutorialStep ? 'active' : (i < tutorialStep ? 'done' : '')}" onclick="tutorialGoTo(${i})"></div>`
-  ).join('');
+  // Progress bar
+  const pct = Math.round((tutorialStep / (TUTORIAL_STEPS.length - 1)) * 100);
+  document.getElementById('tut-progress-fill').style.width = pct + '%';
+  document.getElementById('tut-progress-text').textContent = (tutorialStep + 1) + ' / ' + TUTORIAL_STEPS.length;
 
   // Buttons
   document.getElementById('tut-btn-prev').style.display = tutorialStep === 0 ? 'none' : '';
   const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
   document.getElementById('tut-btn-next').textContent = isLast ? '✅ Fertig!' : 'Weiter →';
   document.getElementById('tut-btn-skip').style.display = isLast ? 'none' : '';
+
+  // Switch tab if needed
+  if (step.tab) switchTab(step.tab);
+
+  // Position spotlight + tooltip
+  positionTutorial();
+}
+
+function positionTutorial() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  const tooltip = document.getElementById('tutorial-tooltip');
+  const spotlight = document.getElementById('tutorial-spotlight');
+
+  if (_tutRafId) { cancelAnimationFrame(_tutRafId); _tutRafId = null; }
+
+  // Reset any previous constrained sizing
+  tooltip.style.maxHeight = '';
+  tooltip.style.overflowY = '';
+
+  if (!step.target) {
+    // Centered modal mode
+    spotlight.classList.remove('visible');
+    tooltip.classList.remove('pos-mode');
+    tooltip.classList.add('center-mode');
+    tooltip.style.top = '';
+    tooltip.style.left = '';
+    return;
+  }
+
+  const targetEl = document.querySelector(step.target);
+  if (!targetEl) {
+    spotlight.classList.remove('visible');
+    tooltip.classList.remove('pos-mode');
+    tooltip.classList.add('center-mode');
+    tooltip.style.top = '';
+    tooltip.style.left = '';
+    return;
+  }
+
+  // Scroll target into view
+  targetEl.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'nearest' });
+
+  _tutRafId = requestAnimationFrame(() => {
+    setTimeout(() => {
+      let rect = targetEl.getBoundingClientRect();
+      // display:contents elements have zero-size rects — compute from children
+      if (rect.width === 0 && rect.height === 0 && targetEl.children.length > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const child of targetEl.children) {
+          const cr = child.getBoundingClientRect();
+          if (cr.width === 0 && cr.height === 0) continue;
+          minX = Math.min(minX, cr.left);
+          minY = Math.min(minY, cr.top);
+          maxX = Math.max(maxX, cr.right);
+          maxY = Math.max(maxY, cr.bottom);
+        }
+        if (minX !== Infinity) {
+          rect = { top: minY, left: minX, right: maxX, bottom: maxY,
+                   width: maxX - minX, height: maxY - minY };
+        }
+      }
+      const pad = 10;
+
+      // Position spotlight around target
+      spotlight.classList.add('visible');
+      spotlight.style.top = (rect.top - pad) + 'px';
+      spotlight.style.left = (rect.left - pad) + 'px';
+      spotlight.style.width = (rect.width + pad * 2) + 'px';
+      spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+      // Position tooltip near target
+      tooltip.classList.remove('center-mode');
+      tooltip.classList.add('pos-mode');
+      tooltip.style.maxHeight = '';
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const gap = 16;
+      const margin = 10;
+
+      // Temporarily remove max-height constraint to measure natural height
+      let th = tooltip.offsetHeight;
+      let tw = tooltip.offsetWidth;
+
+      let top, left;
+      const spaceBelow = vh - rect.bottom - gap - pad - margin;
+      const spaceAbove = rect.top - gap - pad - margin;
+
+      if (spaceBelow >= th) {
+        // Fits below
+        top = rect.bottom + gap + pad;
+      } else if (spaceAbove >= th) {
+        // Fits above
+        top = rect.top - gap - pad - th;
+      } else if (spaceBelow >= spaceAbove) {
+        // More space below — put there but cap height
+        top = rect.bottom + gap + pad;
+        const maxH = spaceBelow - 10;
+        tooltip.style.maxHeight = maxH + 'px';
+        tooltip.style.overflowY = 'auto';
+      } else {
+        // More space above — put there but cap height
+        const maxH = spaceAbove - 10;
+        tooltip.style.maxHeight = maxH + 'px';
+        tooltip.style.overflowY = 'auto';
+        top = margin;
+      }
+
+      // Clamp top so tooltip is always visible
+      th = tooltip.offsetHeight;
+      top = Math.max(margin, Math.min(top, vh - th - margin));
+
+      // Center horizontally on target, clamped to viewport
+      left = rect.left + rect.width / 2 - tw / 2;
+      left = Math.max(margin, Math.min(left, vw - tw - margin));
+
+      tooltip.style.top = top + 'px';
+      tooltip.style.left = left + 'px';
+    }, 180);
+  });
 }
 
 function startTutorial() {
   tutorialStep = 0;
-  renderTutorialStep();
   document.getElementById('tutorial-overlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  renderTutorialStep();
 }
 
 function closeTutorial() {
   document.getElementById('tutorial-overlay').classList.remove('active');
+  document.getElementById('tutorial-spotlight').classList.remove('visible');
+  document.getElementById('tutorial-tooltip').classList.remove('pos-mode');
+  document.getElementById('tutorial-tooltip').classList.remove('center-mode');
   document.body.style.overflow = '';
   if (document.getElementById('tut-dont-show').checked) {
     markTutorialSeen();
   }
+  switchTab('dashboard');
 }
 
 function tutorialNext() {
@@ -4136,13 +4737,21 @@ async function checkTutorialOnStart() {
   } catch(e) { console.warn('Tutorial-Check fehlgeschlagen', e); }
 }
 
-// Tutorial-Keyboard Navigation
+// Tutorial keyboard navigation
 document.addEventListener('keydown', function(e) {
   const overlay = document.getElementById('tutorial-overlay');
   if (!overlay.classList.contains('active')) return;
   if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); tutorialNext(); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); tutorialPrev(); }
   if (e.key === 'Escape') { e.preventDefault(); closeTutorial(); }
+});
+
+// Reposition on window resize
+window.addEventListener('resize', function() {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (overlay && overlay.classList.contains('active') && TUTORIAL_STEPS[tutorialStep] && TUTORIAL_STEPS[tutorialStep].target) {
+    positionTutorial();
+  }
 });
 
 // Check on page load
@@ -4219,7 +4828,8 @@ document.addEventListener('keydown', function(e) {
 function checkAllOK(data) {
   const s = data.summary || {};
   const groups = (s.groups_name||0) + (s.groups_content||0) + (s.groups_similar||0);
-  const hasProblems = groups > 0 || s.corrupt_count > 0 || s.conflict_count > 0 || (s.missing_dep_count||0) > 0 || (s.skin_conflict_count||0) > 0;
+  const errData = window.__errorData || {total:0, hoch:0, mittel:0};
+  const hasProblems = groups > 0 || s.corrupt_count > 0 || s.conflict_count > 0 || (s.missing_dep_count||0) > 0 || (s.skin_conflict_count||0) > 0 || errData.hoch > 0;
   showConditionalSection('all-ok-banner', !hasProblems);
   renderHealthScore(data);
 }
@@ -4240,12 +4850,21 @@ function renderHealthScore(data) {
   const contained = s.contained_count || 0;
   const skinConf = s.skin_conflict_count || 0;
 
+  // Fehler-Logs mit einbeziehen
+  const errData = window.__errorData || {total:0, hoch:0, mittel:0};
+  const errHoch = errData.hoch || 0;
+  const errMittel = errData.mittel || 0;
+
   // Score berechnen (100 = perfekt)
   let score = 100;
   // Korrupte: -10 pro Datei (sehr schlecht)
   score -= corrupt * 10;
   // Fehlende Deps: -8 pro Stück
   score -= missingDeps * 8;
+  // Fehler-Logs (schwerwiegend): -7 pro Stück
+  score -= errHoch * 7;
+  // Fehler-Logs (mittel): -3 pro Stück
+  score -= errMittel * 3;
   // Skin-Konflikte: -6 pro Stück (Stein-Haut!)
   score -= skinConf * 6;
   // Inhalt-Duplikate: -3 pro Gruppe
@@ -4286,9 +4905,11 @@ function renderHealthScore(data) {
   // Detail-Text
   const problems = [];
   if (corrupt > 0) problems.push(`💀 ${corrupt} korrupte Datei(en)`);
+  if (errHoch > 0) problems.push(`📋 ${errHoch} schwere Fehler-Log(s)`);
   if (missingDeps > 0) problems.push(`❌ ${missingDeps} fehlende Abhängigkeit(en)`);
   if (dupes > 0) problems.push(`📂 ${dupes} Inhalt-Duplikat(e)`);
   if (conflicts > 0) problems.push(`⚔️ ${conflicts} Konflikt(e)`);
+  if (errMittel > 0) problems.push(`📋 ${errMittel} mittlere Fehler-Log(s)`);
   if (outdated > 0) problems.push(`⏰ ${outdated} veraltete Mod(s)`);
   if (contained > 0) problems.push(`📦 ${contained} redundante Mod(s)`);
   const detailEl = document.getElementById('health-detail');
@@ -6860,6 +7481,7 @@ for (const id of ['q','f_name','f_content','f_similar','g_mod','show_full','keep
 }
 
 // initial load
+_initCheatFavs().then(() => {
 reloadData().then(()=>{
   setLast('✅ Daten geladen');
   addLog('PAGE LOAD');
@@ -6875,6 +7497,7 @@ reloadData().then(()=>{
   _scanReady = true;
   _checkAllReady();
 });
+}); // end _initCheatFavs
 
 // Fehler-Analyse immer laden (unabhängig von Duplikat-Daten)
 loadErrors();
@@ -6933,6 +7556,42 @@ function renderErrors(data) {
   const niedrig = errors.filter(e => e.schwere === 'niedrig').length;
   const unbekannt = errors.filter(e => e.schwere === 'unbekannt').length;
 
+  // --- Dashboard-Karte für Fehler aktualisieren ---
+  const dashErrors = document.getElementById('dash-errors');
+  const dashErrorsCount = document.getElementById('dash-errors-count');
+  const dashErrorsDesc = document.getElementById('dash-errors-desc');
+  if (dashErrors && dashErrorsCount) {
+    dashErrorsCount.textContent = errors.length;
+    if (errors.length === 0) {
+      dashErrors.classList.add('dash-hidden');
+    } else {
+      dashErrors.classList.remove('dash-hidden');
+      // Schweregrad-basiertes Styling
+      if (hoch > 0) {
+        dashErrors.className = 'dash-card dash-critical';
+      } else if (mittel > 0) {
+        dashErrors.className = 'dash-card dash-warn';
+      } else {
+        dashErrors.className = 'dash-card dash-info';
+      }
+      // Beschreibung mit Schweregrad-Info
+      let descParts = [];
+      if (hoch > 0) descParts.push(`<b style="color:#ef4444;">${hoch}x Schwerwiegend</b>`);
+      if (mittel > 0) descParts.push(`<b style="color:#f59e0b;">${mittel}x Mittel</b>`);
+      if (niedrig > 0) descParts.push(`${niedrig}x Gering`);
+      if (unbekannt > 0) descParts.push(`${unbekannt}x Unbekannt`);
+      dashErrorsDesc.innerHTML = descParts.join(', ') + ' — Klicke für Details und Lösungen.';
+    }
+    // Fehler-Badge im Nav aktualisieren
+    const errBadge = document.getElementById('nav-badge-errors');
+    if (errBadge) {
+      errBadge.textContent = errors.length;
+      errBadge.classList.toggle('badge-zero', errors.length === 0);
+    }
+  }
+  // Globale Variable für Health-Score
+  window.__errorData = {total: errors.length, hoch: hoch, mittel: mittel};
+
   let summaryHtml = '';
   if (errors.length === 0) {
     summaryHtml = '✅ <b>Keine Fehler gefunden!</b> Deine Fehlerlog-Dateien sind sauber.';
@@ -6974,38 +7633,67 @@ function renderErrors(data) {
 
   let html = '';
   for (const err of errors) {
-    const modsHtml = (err.betroffene_mods && err.betroffene_mods.length > 0)
-      ? `<div class="err-mods"><span class="muted small">Betroffene Mod-Dateien:</span> ${err.betroffene_mods.map(m => `<span class="err-mod-tag">${esc(m)}</span>`).join('')}</div>`
-      : '';
+    // --- Betroffene Mods (verbessert) ---
+    let modsHtml = '';
+    if (err.betroffene_mods && err.betroffene_mods.length > 0) {
+      modsHtml = '<div class="err-mods"><span class="muted small">🎯 Beteiligte Mods:</span> ' +
+        err.betroffene_mods.map(m => '<span class="err-mod-tag">' + esc(m) + '</span>').join('') +
+        '</div>';
+    }
 
+    // --- BetterExceptions-Hinweis ---
+    let beHtml = '';
+    if (err.be_advice && err.be_advice !== 'Not available. More info may be in BE Report.') {
+      beHtml = '<div style="background:#1a1a2e; border-left:3px solid #8b5cf6; padding:6px 10px; margin:6px 0; border-radius:4px; font-size:12px;">' +
+        '<span style="color:#8b5cf6;">🔮 BetterExceptions:</span> <span style="color:#c4b5fd;">' + esc(err.be_advice) + '</span></div>';
+    }
+
+    // --- Anzahl-Badge ---
+    let countBadge = '';
+    if (err.anzahl && err.anzahl > 1) {
+      countBadge = '<span style="background:#7c3aed; color:#fff; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + err.anzahl + 'x</span>';
+    }
+
+    // --- Raw Snippet (lesbarer Traceback) ---
     const rawHtml = err.raw_snippet
-      ? `<details class="err-raw"><summary>📄 Originaler Log-Auszug anzeigen</summary><pre>${esc(err.raw_snippet)}</pre></details>`
+      ? '<details class="err-raw"><summary>📄 Traceback / Log-Auszug anzeigen</summary><pre style="white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto;">' + esc(err.raw_snippet) + '</pre></details>'
       : '';
 
+    // --- Status-Badge ---
     const statusBadge = err.status === 'neu'
       ? '<span class="err-status neu">🆕 NEU</span>'
       : err.status === 'bekannt'
         ? '<span class="err-status bekannt">🔄 BEKANNT</span>'
         : '';
 
-    html += `
-    <div class="err-card ${err.schwere}">
-      <div class="flex" style="align-items:center; gap:8px; flex-wrap:wrap;">
-        <span>${schwereIcon(err.schwere)}</span>
-        <span class="err-title">${esc(err.titel)}</span>
-        <span class="err-schwere ${err.schwere}">${schwereLabel(err.schwere)}</span>
-        ${statusBadge}
-      </div>
-      <div class="err-explain">${esc(err.erklaerung)}</div>
-      <div class="err-solution">💡 <b>Lösung:</b> ${esc(err.loesung)}</div>
-      ${modsHtml}
-      <div class="err-meta">
-        <span>📁 ${esc(err.datei)}</span>
-        <span>📅 ${esc(err.datum)}</span>
-        <span>📂 ${esc(err.kategorie)}</span>
-      </div>
-      ${rawHtml}
-    </div>`;
+    // --- Erklärung mit Zeilenumbrüchen ---
+    const explainLines = esc(err.erklaerung).split('\n→ ');
+    let explainHtml = explainLines[0];
+    if (explainLines.length > 1) {
+      explainHtml += '<div style="margin-top:4px; padding-left:8px; border-left:2px solid #334155; font-size:12px; color:#94a3b8;">';
+      for (let i = 1; i < explainLines.length; i++) {
+        explainHtml += '<div style="margin:2px 0;">→ ' + explainLines[i] + '</div>';
+      }
+      explainHtml += '</div>';
+    }
+
+    html += '<div class="err-card ' + err.schwere + '">' +
+      '<div class="flex" style="align-items:center; gap:8px; flex-wrap:wrap;">' +
+        '<span>' + schwereIcon(err.schwere) + '</span>' +
+        '<span class="err-title">' + esc(err.titel) + '</span>' +
+        '<span class="err-schwere ' + err.schwere + '">' + schwereLabel(err.schwere) + '</span>' +
+        countBadge + statusBadge +
+      '</div>' +
+      '<div class="err-explain">' + explainHtml + '</div>' +
+      '<div class="err-solution">💡 <b>Lösung:</b> ' + esc(err.loesung) + '</div>' +
+      modsHtml + beHtml +
+      '<div class="err-meta">' +
+        '<span>📁 ' + esc(err.datei) + '</span>' +
+        '<span>📅 ' + esc(err.datum) + '</span>' +
+        '<span>📂 ' + esc(err.kategorie) + '</span>' +
+      '</div>' +
+      rawHtml +
+    '</div>';
   }
 
   document.getElementById('error-list').innerHTML = html;
@@ -8023,11 +8711,10 @@ function _simCard(sim, showHousehold) {
     // CC-Mods die zum Outfit gehören
     let outfitCcHtml = '';
     if (sim.outfit_cc_mods && sim.outfit_cc_mods.length > 0) {
-      const ccRows = sim.outfit_cc_mods.slice(0, 15).map(m =>
+      const ccRows = sim.outfit_cc_mods.map(m =>
         `<div class="lib-cc-item"><span class="lib-cc-item-name">${esc(m.name)}</span><span class="lib-cc-item-count">${m.matches}x</span></div>`
       ).join('');
-      const moreCount = sim.outfit_cc_mods.length > 15 ? `<div class="muted small" style="padding:4px 0;">+ ${sim.outfit_cc_mods.length - 15} weitere…</div>` : '';
-      outfitCcHtml = `<div style="margin-top:6px;border-top:1px solid #334155;padding-top:6px;"><div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:4px;">🧩 CC-Teile im Outfit</div>${ccRows}${moreCount}</div>`;
+      outfitCcHtml = `<div style="margin-top:6px;border-top:1px solid #334155;padding-top:6px;"><div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:4px;">🧩 CC-Teile im Outfit (${sim.outfit_cc_mods.length})</div><div style="max-height:200px;overflow-y:auto;">${ccRows}</div></div>`;
     }
     outfitHtml = `<div class="sim-outfit-section">
       <div class="sim-outfit-title" style="cursor:pointer;" onclick="document.getElementById('${ofId}').classList.toggle('open');event.stopPropagation();">👗 ${sim.outfit_total_parts || 0} Outfit-Teile · ${sim.outfit_categories ? sim.outfit_categories.length : 0} Kategorien ▾</div>
@@ -8511,17 +9198,24 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <div id="tutorial-overlay">
-  <div id="tutorial-card">
+  <div id="tutorial-backdrop" onclick="closeTutorial()"></div>
+  <div id="tutorial-spotlight"></div>
+  <div id="tutorial-tooltip">
     <div class="tut-header">
       <span class="tut-icon" id="tut-step-icon"></span>
       <div class="tut-title" id="tut-step-title"></div>
     </div>
     <div class="tut-body" id="tut-step-body"></div>
-    <div class="tut-dots" id="tut-dots"></div>
+    <div class="tut-progress">
+      <div class="tut-progress-bar"><div class="tut-progress-fill" id="tut-progress-fill"></div></div>
+      <span class="tut-progress-text" id="tut-progress-text"></span>
+    </div>
     <div class="tut-footer">
       <button class="tut-btn tut-btn-skip" id="tut-btn-skip" onclick="closeTutorial()">Überspringen</button>
-      <button class="tut-btn" id="tut-btn-prev" onclick="tutorialPrev()">← Zurück</button>
-      <button class="tut-btn tut-btn-primary" id="tut-btn-next" onclick="tutorialNext()">Weiter →</button>
+      <div style="display:flex;gap:8px;">
+        <button class="tut-btn" id="tut-btn-prev" onclick="tutorialPrev()">← Zurück</button>
+        <button class="tut-btn tut-btn-primary" id="tut-btn-next" onclick="tutorialNext()">Weiter →</button>
+      </div>
     </div>
     <div class="tut-check">
       <input type="checkbox" id="tut-dont-show">
@@ -8712,30 +9406,27 @@ function openCharSheet(regId) {
     const modsNoThumb = sim.outfit_cc_mods.filter(m => !m.thumb);
     rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">🧩</span> CC-Equipment (${sim.outfit_cc_mods.length})</div>`;
     if (modsWithThumb.length > 0) {
-      rightCol += `<div class="cs-equip-grid">`;
-      for (const m of modsWithThumb.slice(0, 20)) {
+      rightCol += `<div class="cs-equip-grid" style="max-height:320px;overflow-y:auto;">`;
+      for (const m of modsWithThumb) {
         const shortName = m.name.replace(/\\.package$/i, '').replace(/_/g, ' ');
         const displayName = shortName.length > 28 ? shortName.slice(0, 26) + '…' : shortName;
         rightCol += `<div class="cs-equip-slot" title="${esc(m.name)}"><div class="cs-equip-icon" style="width:48px;height:48px;border-radius:8px;overflow:hidden;border:1px solid #312e81;"><img src="${m.thumb}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🧩';"></div><div class="cs-equip-info"><div class="cs-equip-label">${m.matches}x</div><div class="cs-equip-val">${esc(displayName)}</div></div></div>`;
       }
-      if (modsWithThumb.length > 20) rightCol += `<div class="cs-equip-slot cs-equip-empty"><div class="cs-equip-icon">➕</div><div class="cs-equip-info"><div class="cs-equip-val">+${modsWithThumb.length - 20} weitere</div></div></div>`;
       rightCol += `</div>`;
     }
     if (modsNoThumb.length > 0) {
-      rightCol += `<div class="cs-cc-list" style="margin-top:6px;">`;
-      for (const m of modsNoThumb.slice(0, 15)) {
+      rightCol += `<div class="cs-cc-list" style="margin-top:6px;max-height:200px;overflow-y:auto;">`;
+      for (const m of modsNoThumb) {
         rightCol += `<div class="cs-cc-item"><span class="cs-cc-name">${esc(m.name)}</span><span class="cs-cc-count">${m.matches}x</span></div>`;
       }
-      if (modsNoThumb.length > 15) rightCol += `<div style="font-size:10px;color:#64748b;padding-top:4px;">+ ${modsNoThumb.length - 15} weitere...</div>`;
       rightCol += `</div>`;
     }
   }
   if (sim._ccCount > 0) {
-    rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">📦</span> CC-Mods im Haushalt (${sim._ccCount})</div><div class="cs-cc-list">`;
-    for (const m of (sim._ccMods || []).slice(0, 15)) {
+    rightCol += `<div class="cs-section-title" style="margin-top:12px;"><span class="cs-st-icon">📦</span> CC-Mods im Haushalt (${sim._ccCount})</div><div class="cs-cc-list" style="max-height:260px;overflow-y:auto;">`;
+    for (const m of (sim._ccMods || [])) {
       rightCol += `<div class="cs-cc-item"><span class="cs-cc-name">${esc(m.name)}</span><span class="cs-cc-count">${m.matches}x</span></div>`;
     }
-    if (sim._ccMods && sim._ccMods.length > 15) rightCol += `<div style="font-size:10px;color:#64748b;padding-top:4px;">+ ${sim._ccMods.length - 15} weitere...</div>`;
     rightCol += `</div>`;
   }
 
